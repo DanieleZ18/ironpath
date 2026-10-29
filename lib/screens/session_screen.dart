@@ -14,7 +14,8 @@ import 'exercise_detail_screen.dart';
 
 enum _Phase { exercise, rest, finished }
 
-/// The heart of the app. Matte dark, mint accent, quiet numerals.
+/// The heart of the app. One soft block per set, a thick rest ring, and
+/// the plan's tier hue carried through every phase.
 
 class SessionScreen extends StatefulWidget {
   final Plan plan;
@@ -39,6 +40,7 @@ class _SessionScreenState extends State<SessionScreen> {
   final List<ItemLog> _log = [];
 
   Plan get plan => widget.plan;
+  Color get _hue => Iron.tier(plan.builtin ? plan.tier : 0);
   PlanItem get _item => plan.items[_itemIdx];
 
   /// 55+ users recover slower: every rest is 30s longer (locked rule).
@@ -55,13 +57,15 @@ class _SessionScreenState extends State<SessionScreen> {
       });
       return;
     }
-    WakelockPlus.enable(); // screen stays on for the whole workout
+    // screen stays on for the whole workout; best-effort — browsers may
+    // refuse the wake lock, which must not surface as an uncaught error
+    WakelockPlus.enable().catchError((Object _) {});
     _prefillWeight();
   }
 
   @override
   void dispose() {
-    WakelockPlus.disable();
+    WakelockPlus.disable().catchError((Object _) {});
     _timer?.cancel();
     _weightCtrl.dispose();
     super.dispose();
@@ -150,6 +154,16 @@ class _SessionScreenState extends State<SessionScreen> {
     });
   }
 
+  /// Nudge the weight field by [delta] kg (never below zero).
+  void _bumpWeight(double delta) {
+    final cur =
+        double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.')) ??
+            _lastWeightShown ??
+            0;
+    final next = (cur + delta).clamp(0, 999).toDouble();
+    setState(() => _weightCtrl.text = fmtWeight(next));
+  }
+
   void _addRest() {
     setState(() {
       _restRemaining += 15;
@@ -208,6 +222,9 @@ class _SessionScreenState extends State<SessionScreen> {
             child: Text(L10n.t('stay')),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Iron.danger,
+                minimumSize: const Size(0, 44)),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(L10n.t('quit')),
           ),
@@ -230,15 +247,29 @@ class _SessionScreenState extends State<SessionScreen> {
       child: Scaffold(
         backgroundColor: Iron.bg,
         appBar: AppBar(
-          title: Text(_phase == _Phase.finished
-              ? L10n.t('sessionFinished')
-              : plan.title(L10n.zh)),
+          automaticallyImplyLeading: _phase == _Phase.finished,
+          leading: _phase == _Phase.finished
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+          title: Text(
+            _phase == _Phase.finished ? '' : plan.title(L10n.zh),
+            style: Iron.body(16, weight: FontWeight.w800),
+          ),
         ),
-        body: switch (_phase) {
-          _Phase.exercise => _buildExercise(context),
-          _Phase.rest => _buildRest(context),
-          _Phase.finished => _buildFinished(context),
-        },
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: KeyedSubtree(
+            key: ValueKey('$_phase-$_itemIdx-$_setIdx'),
+            child: switch (_phase) {
+              _Phase.exercise => _buildExercise(context),
+              _Phase.rest => _buildRest(context),
+              _Phase.finished => _buildFinished(context),
+            },
+          ),
+        ),
       ),
     );
   }
@@ -247,76 +278,140 @@ class _SessionScreenState extends State<SessionScreen> {
 
   Widget _buildExercise(BuildContext context) {
     final zh = L10n.zh;
+    final hue = _hue;
     final ex = Store.instance.exerciseById(_item.exerciseId);
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
         children: [
           Row(
             children: [
               Text(
-                  zh
-                      ? '动作 ${_itemIdx + 1} / ${plan.items.length}'
-                      : 'EXERCISE ${_itemIdx + 1} OF ${plan.items.length}',
-                  style: Iron.caption()),
+                  '${L10n.tf('exerciseProgress', _itemIdx + 1)} / ${plan.items.length}'
+                      .toUpperCase(),
+                  style: Iron.eyebrow(color: hue)),
               const Spacer(),
-              Text((ex?.nameEn ?? '').toUpperCase(),
-                  style: Iron.caption(color: Iron.faint)),
+              Text(
+                  '${(100 * _itemIdx / plan.items.length).round()}%',
+                  style: Iron.eyebrow()),
             ],
           ),
-          SizedBox(height: 8),
-          BarbellProgress(current: _itemIdx + 1, total: plan.items.length),
-          SizedBox(height: 18),
-          Text(ex?.name(zh) ?? _item.exerciseId, style: Iron.hero(28)),
-          SizedBox(height: 12),
-          _imageTile(context),
-          if (ex != null)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => ExerciseDetailPage(exercise: ex),
-                  ));
-                },
-                child: Text(L10n.t('description'),
-                    style: Iron.caption(color: Iron.accent)),
-              ),
-            ),
-          SizedBox(height: 4),
+          const SizedBox(height: 8),
+          BarbellProgress(
+              current: _itemIdx + 1, total: plan.items.length, color: hue),
+          const SizedBox(height: 18),
+
+          // ---- the set card
           IronCard(
-            padding:
-                const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+            color: Iron.tint(hue),
+            radius: Iron.rXL,
+            padding: const EdgeInsets.all(22),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                    zh
-                        ? '第 ${_setIdx + 1} 组 · 共 ${_item.sets} 组'
-                        : 'Set ${_setIdx + 1} of ${_item.sets}',
-                    style: Iron.hero(26, weight: FontWeight.w600)),
-                SizedBox(height: 6),
-                Text('${_item.sets} × ${_item.reps} · ${L10n.t('rest')} $_effectiveRest${L10n.t('seconds')}',
-                    style: Iron.caption()),
+                Row(
+                  children: [
+                    IconBlob(exerciseIcon(ex?.category ?? ''),
+                        color: hue, size: 56, onTint: true),
+                    const Spacer(),
+                    if (ex != null)
+                      TextButton.icon(
+                        style: TextButton.styleFrom(foregroundColor: hue),
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => ExerciseDetailPage(exercise: ex),
+                          ));
+                        },
+                        icon: const Icon(Icons.menu_book_rounded, size: 18),
+                        label: Text(L10n.t('description')),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(ex?.name(zh) ?? _item.exerciseId, style: Iron.hero(28)),
+                if (zh && ex != null)
+                  Text(ex.nameEn, style: Iron.caption(color: Iron.faint)),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    SetDots(
+                        done: _setIdx, total: _item.sets, color: hue, size: 14),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                          zh
+                              ? '第 ${_setIdx + 1} 组 · 共 ${_item.sets} 组'
+                              : 'Set ${_setIdx + 1} of ${_item.sets}',
+                          style: Iron.body(16,
+                              weight: FontWeight.w800, color: hue)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    IronPill('${L10n.t('target')} ${_item.reps}',
+                        color: hue, icon: Icons.repeat_rounded),
+                    IronPill(
+                        '${L10n.t('rest')} $_effectiveRest${L10n.t('seconds')}',
+                        color: hue,
+                        icon: Icons.timer_outlined),
+                  ],
+                ),
               ],
             ),
           ),
-          SizedBox(height: 12),
-          TextField(
-            controller: _weightCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            style: Iron.body(15),
-            decoration: InputDecoration(
-              labelText: L10n.t('weightKg'),
-              helperText: _lastWeightShown == null
-                  ? null
-                  : '${L10n.t('lastWeightHint')}: ${fmtWeight(_lastWeightShown!)} kg',
+          const SizedBox(height: 14),
+
+          // ---- weight
+          IronCard(
+            radius: Iron.rM,
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L10n.t('weightKg'), style: Iron.caption()),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _roundBtn(Icons.remove_rounded, () => _bumpWeight(-2.5)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _weightCtrl,
+                        textAlign: TextAlign.center,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: Iron.hero(26),
+                        decoration: InputDecoration(
+                          hintText: '—',
+                          suffixText: 'kg',
+                          suffixStyle: Iron.caption(),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _roundBtn(Icons.add_rounded, () => _bumpWeight(2.5)),
+                  ],
+                ),
+                if (_lastWeightShown != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                      '${L10n.t('lastWeightHint')}: ${fmtWeight(_lastWeightShown!)} kg',
+                      style: Iron.caption(color: Iron.faint)),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           IronButton(
             label: L10n.t('completeSet'),
-            icon: Icons.check,
+            icon: Icons.check_rounded,
+            color: hue,
             onPressed: _completeSet,
           ),
         ],
@@ -324,20 +419,15 @@ class _SessionScreenState extends State<SessionScreen> {
     );
   }
 
-  Widget _imageTile(BuildContext context) {
-    return Container(
-      height: 110,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Iron.card,
-        borderRadius: BorderRadius.all(Iron.rM),
-      ),
-      child: Icon(
-        _item.exerciseId.startsWith('db_')
-            ? Icons.fitness_center
-            : Icons.accessibility_new,
-        size: 40,
-        color: Iron.faint,
+  Widget _roundBtn(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Iron.tint(_hue),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+            width: 48, height: 48, child: Icon(icon, color: _hue)),
       ),
     );
   }
@@ -349,7 +439,7 @@ class _SessionScreenState extends State<SessionScreen> {
     String nextLabel;
     if (_setIdx + 1 < _item.sets) {
       nextLabel =
-          '${Store.instance.exerciseById(_item.exerciseId)?.name(zh) ?? _item.exerciseId} · ${zh ? '第 ${_setIdx + 2} 组' : 'SET ${_setIdx + 2}'}';
+          '${Store.instance.exerciseById(_item.exerciseId)?.name(zh) ?? _item.exerciseId} · ${zh ? '第 ${_setIdx + 2} 组' : 'Set ${_setIdx + 2}'}';
     } else if (_itemIdx + 1 < plan.items.length) {
       final next = plan.items[_itemIdx + 1];
       nextLabel = Store.instance.exerciseById(next.exerciseId)?.name(zh) ??
@@ -359,82 +449,73 @@ class _SessionScreenState extends State<SessionScreen> {
     }
     final m = _restRemaining ~/ 60;
     final s = _restRemaining % 60;
+    final tip = trainingTips[_restCount % trainingTips.length];
     return SafeArea(
-      child: Center(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(L10n.t('restTime'), style: Iron.caption(color: Iron.sub)),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: 230,
-              height: 230,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 230,
-                    height: 230,
-                    child: CircularProgressIndicator(
-                      value: _restTotal == 0
-                          ? 0
-                          : _restRemaining / _restTotal,
-                      strokeWidth: 6,
-                      strokeCap: StrokeCap.round,
-                      backgroundColor: Iron.cardHi,
-                      valueColor: AlwaysStoppedAnimation(Iron.accent),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    Text(L10n.t('restTime').toUpperCase(),
+                        style: Iron.eyebrow(color: Iron.accent)),
+                    const SizedBox(height: 18),
+                    RestRing(
+                      value: _restTotal == 0 ? 0 : _restRemaining / _restTotal,
+                      child: Text('$m:${s.toString().padLeft(2, '0')}',
+                          style: Iron.hero(64)),
                     ),
-                  ),
-                  Text('$m:${s.toString().padLeft(2, '0')}',
-                      style: Iron.hero(72, weight: FontWeight.w300)),
-                ],
+                    const SizedBox(height: 24),
+                    IronCard(
+                      radius: Iron.rM,
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        children: [
+                          IconBlob(Icons.skip_next_rounded, color: _hue),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(L10n.t('nextUp'), style: Iron.caption()),
+                                Text(nextLabel,
+                                    style: Iron.body(15,
+                                        weight: FontWeight.w800)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _tipCard(zh ? tip.zh : tip.en),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(nextLabel,
-                  textAlign: TextAlign.center, style: Iron.caption()),
-            ),
-            const SizedBox(height: 18),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 36),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.tips_and_updates_outlined,
-                      size: 14, color: Iron.faint),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      L10n.zh
-                          ? trainingTips[_restCount % trainingTips.length].zh
-                          : trainingTips[_restCount % trainingTips.length].en,
-                      style: Iron.caption(color: Iron.faint),
-                    ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56)),
+                    onPressed: _addRest,
+                    child: const Text('+15 s'),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 26),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _addRest,
-                      child: const Text('+15 s'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child:
-                        IronButton(label: L10n.t('skipRest'), onPressed: _advance),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: IronButton(
+                      label: L10n.t('skipRest'),
+                      icon: Icons.fast_forward_rounded,
+                      onPressed: _advance),
+                ),
+              ],
             ),
           ],
         ),
@@ -442,53 +523,100 @@ class _SessionScreenState extends State<SessionScreen> {
     );
   }
 
+  Widget _tipCard(String text) {
+    final hue = Iron.tier(2);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Iron.tint(hue),
+        borderRadius: const BorderRadius.all(Iron.rM),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lightbulb_rounded, size: 20, color: hue),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L10n.t('tipTitle'), style: Iron.caption(color: hue)),
+                const SizedBox(height: 2),
+                Text(text, style: Iron.body(13)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------- finished
 
   Widget _buildFinished(BuildContext context) {
+    final zh = L10n.zh;
     final total = _log.fold<int>(0, (a, i) => a + i.sets.length);
+    final recovery = trainingTips[1];
     return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        children: [
+          Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                  color: Iron.tint(Iron.accent), shape: BoxShape.circle),
+              child: Icon(Icons.check_rounded, size: 72, color: Iron.accent),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(L10n.t('greatJob'),
+              textAlign: TextAlign.center, style: Iron.hero(30)),
+          const SizedBox(height: 6),
+          Text('${L10n.t('sessionFinished')} · ${plan.title(zh)}',
+              textAlign: TextAlign.center, style: Iron.caption()),
+          const SizedBox(height: 24),
+          Row(
             children: [
-              Icon(Icons.check_circle_outline,
-                  size: 64, color: Iron.accent),
-              SizedBox(height: 16),
-              Text(L10n.t('sessionFinished'), style: Iron.hero(28)),
-              SizedBox(height: 8),
-              Text(
-                  '${L10n.t('totalSets')}: $total · ${L10n.t('duration')}: ${fmtDuration(_durationSeconds)}',
-                  style: Iron.caption()),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  L10n.zh ? trainingTips[1].zh : trainingTips[1].en,
-                  textAlign: TextAlign.center,
-                  style: Iron.caption(color: Iron.faint),
-                ),
-              ),
-              SizedBox(height: 24),
-              // AdMob interstitial goes here (week 6-7) — never mid-workout.
-              Container(
-                height: 80,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Iron.card,
-                  borderRadius: BorderRadius.all(Iron.rM),
-                ),
-                child: Text(L10n.t('adPlaceholder'),
-                    style: Iron.caption(color: Iron.faint)),
-              ),
-              const SizedBox(height: 24),
-              IronButton(
-                  label: L10n.t('finish'),
-                  onPressed: () => Navigator.of(context).pop()),
+              Expanded(
+                  child: StatTile(
+                      value: '$total', label: L10n.t('totalSets'))),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: StatTile(
+                      value: fmtDuration(_durationSeconds),
+                      label: L10n.t('duration'),
+                      color: Iron.tier(1))),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: StatTile(
+                      value: '${_log.length}',
+                      label: L10n.t('statExercises'),
+                      color: Iron.tier(2))),
             ],
           ),
-        ),
+          const SizedBox(height: 14),
+          _tipCard(zh ? recovery.zh : recovery.en),
+          const SizedBox(height: 14),
+          // AdMob interstitial goes here (week 6-7) — never mid-workout.
+          Container(
+            height: 80,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Iron.cardHi,
+              borderRadius: const BorderRadius.all(Iron.rM),
+            ),
+            child: Text(L10n.t('adPlaceholder'),
+                style: Iron.caption(color: Iron.faint)),
+          ),
+          const SizedBox(height: 20),
+          IronButton(
+              label: L10n.t('finish'),
+              icon: Icons.home_rounded,
+              onPressed: () => Navigator.of(context).pop()),
+        ],
       ),
     );
   }

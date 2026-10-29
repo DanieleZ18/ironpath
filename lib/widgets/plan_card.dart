@@ -12,9 +12,17 @@ import '../weekly_program.dart'
 String tierLabel(int tier) => L10n.t(switch (tier) {
       1 => 'beginner',
       2 => 'intermediate',
-      _ => 'advanced',
+      3 => 'advanced',
+      _ => 'customTier',
     });
 
+/// Friendly glyph per tier: sprout → climbing → on fire; custom = notepad.
+IconData tierIcon(int tier) => switch (tier) {
+      1 => Icons.eco_rounded,
+      2 => Icons.trending_up_rounded,
+      3 => Icons.local_fire_department_rounded,
+      _ => Icons.edit_note_rounded,
+    };
 
 /// "每周 2-4 天" style label for a plan's intended weekly rhythm
 /// (collapses to a single number when the range has one value).
@@ -24,6 +32,9 @@ String freqLabel(Plan plan) => L10n.tf(
         ? '${plan.daysMin}'
         : '${plan.daysMin}-${plan.daysMax}');
 
+/// "约 35 分钟 · 6 个动作" — the one-line summary every plan surface shows.
+String planMeta(Plan plan) =>
+    '${L10n.tf('estDuration', plan.estimatedMinutes())} · ${L10n.tf('exercisesCount', plan.items.length)}';
 
 /// Localized summary of how many exercises need equipment, or '' when all
 /// exercises are available.
@@ -68,13 +79,13 @@ List<TierSummary> tierSummaries() {
             ..sort((a, b) {
               final c = score(a).compareTo(score(b));
               if (c != 0) return c;
-              // stable tiebreak: seed order (builtin), then custom order
+              // stable tiebreak: seed order
               return builtinPlans.indexOf(a).compareTo(builtinPlans.indexOf(b));
             })),
   ];
 }
 
-/// Home card for one tier: matte card, small tier dot, mint action.
+/// Home card for one tier: a soft block in the tier's hue.
 
 class TierCard extends StatelessWidget {
   final TierSummary summary;
@@ -94,77 +105,46 @@ class TierCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final zh = L10n.zh;
     final plan = summary.bestPlan;
-    final tierCol = Iron.tierColor[summary.tier] ?? Iron.sub;
-    return Container(
-      decoration: BoxDecoration(
-        color: Iron.card,
-        borderRadius: BorderRadius.all(Iron.rL),
-      ),
-      padding: const EdgeInsets.all(16),
+    final hue = Iron.tier(summary.tier);
+    final missing =
+        unavailableLabel(plan, Store.instance.settings.userEquipment);
+    return IronCard(
+      color: Iron.tint(hue),
+      onTap: onOpenLibrary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                    color: tierCol, borderRadius: const BorderRadius.all(Radius.circular(4))),
-              ),
-              SizedBox(width: 8),
-              Text(tierLabel(summary.tier),
-                  style: Iron.body(16, weight: FontWeight.w600)),
+              IronPill(tierLabel(summary.tier),
+                  color: hue, icon: tierIcon(summary.tier), solid: true),
               if (recommended) ...[
-                SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Iron.accent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.all(Iron.rS),
-                  ),
-                  child: Text(L10n.t('recommendedForYou'),
-                      style: Iron.caption(color: Iron.accent)
-                          .copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: IronPill(L10n.t('recommendedForYou'),
+                      color: hue, icon: Icons.star_rounded),
                 ),
               ],
               const Spacer(),
               Text(L10n.tf('plansCount', summary.plans.length),
-                  style: Iron.caption(color: Iron.faint)),
+                  style: Iron.caption(color: hue)),
             ],
           ),
-          SizedBox(height: 8),
-          Text(plan.title(zh), style: Iron.body(14, color: Iron.sub)),
-          SizedBox(height: 2),
-          Text(
-            '${L10n.tf('estDuration', plan.estimatedMinutes())} · ${L10n.tf('exercisesCount', plan.items.length)} · ${freqLabel(plan)}',
-            style: Iron.caption(color: Iron.faint),
-          ),
-          if (unavailableLabel(plan, Store.instance.settings.userEquipment)
-              .isNotEmpty) ...[
-            SizedBox(height: 2),
-            Text(
-              unavailableLabel(
-                  plan, Store.instance.settings.userEquipment),
-              style: Iron.caption(color: Iron.sub),
-            ),
+          const SizedBox(height: 14),
+          Text(plan.title(zh), style: Iron.hero(19)),
+          const SizedBox(height: 4),
+          Text('${planMeta(plan)} · ${freqLabel(plan)}',
+              style: Iron.caption()),
+          if (missing.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(missing, style: Iron.caption(color: hue)),
           ],
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onStart,
-                  icon: Icon(Icons.play_arrow, size: 18),
-                  label: Text(L10n.t('startWorkout')),
-                ),
-              ),
-              IconButton(
-                onPressed: onOpenLibrary,
-                icon: Icon(Icons.list, color: Iron.sub),
-              ),
-            ],
+          const SizedBox(height: 14),
+          IronButton(
+            label: L10n.t('startWorkout'),
+            icon: Icons.play_arrow_rounded,
+            color: hue,
+            onPressed: onStart,
           ),
         ],
       ),
@@ -172,7 +152,7 @@ class TierCard extends StatelessWidget {
   }
 }
 
-/// Compact plan row for the library.
+/// Plan row for the library: tier blob, title, meta, chevron.
 
 class PlanCard extends StatelessWidget {
   final Plan plan;
@@ -183,45 +163,46 @@ class PlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zh = L10n.zh;
-    return Material(
-      color: Iron.card,
-      borderRadius: const BorderRadius.all(Iron.rM),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: const BorderRadius.all(Iron.rM),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(plan.title(zh), style: Iron.body(15)),
-                        SizedBox(height: 2),
-                        Text(
-                          '${L10n.tf('exercisesCount', plan.items.length)} · ${L10n.tf('estDuration', plan.estimatedMinutes())} · ${freqLabel(plan)}',
-                          style: Iron.caption(color: Iron.faint),
-                        ),
-                        if (unavailableLabel(
-                                plan, Store.instance.settings.userEquipment)
-                            .isNotEmpty)
-                          Text(
-                            unavailableLabel(plan,
-                                Store.instance.settings.userEquipment),
-                            style: Iron.caption(color: Iron.sub),
-                          ),
-                      ],
-                    ),
-                  ),
-              Icon(
-                plan.builtin ? Icons.chevron_right : Icons.edit_outlined,
-                size: 17,
-                color: Iron.faint,
-              ),
-            ],
+    final hue = Iron.tier(plan.builtin ? plan.tier : 0);
+    final missing =
+        unavailableLabel(plan, Store.instance.settings.userEquipment);
+    return IronCard(
+      onTap: onTap,
+      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+      radius: Iron.rM,
+      child: Row(
+        children: [
+          IconBlob(plan.builtin ? tierIcon(plan.tier) : tierIcon(0),
+              color: hue, size: 46),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(plan.title(zh),
+                    style: Iron.body(16, weight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(
+                  plan.builtin
+                      ? '${planMeta(plan)} · ${freqLabel(plan)}'
+                      : planMeta(plan),
+                  style: Iron.caption(),
+                ),
+                if (missing.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(missing, style: Iron.caption(color: hue)),
+                ],
+              ],
+            ),
           ),
-        ),
+          Icon(
+            plan.builtin
+                ? Icons.chevron_right_rounded
+                : Icons.edit_rounded,
+            size: 22,
+            color: Iron.faint,
+          ),
+        ],
       ),
     );
   }

@@ -36,10 +36,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Store.instance.save();
   }
 
-  void _setReminderTime({int? hour, int? minute}) {
+  Future<void> _pickReminderTime() async {
+    final s = Store.instance.settings;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: s.reminderHour, minute: s.reminderMinute),
+    );
+    if (picked == null) return;
     setState(() {
-      if (hour != null) Store.instance.settings.reminderHour = hour;
-      if (minute != null) Store.instance.settings.reminderMinute = minute;
+      s.reminderHour = picked.hour;
+      s.reminderMinute = picked.minute;
     });
     Store.instance.save();
   }
@@ -49,146 +55,131 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final s = Store.instance.settings;
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          _sectionTitle(L10n.t('appearance')),
-          RadioGroup<String>(
-            groupValue: s.appearance,
-            onChanged: (value) {
-              if (value != null) _setAppearance(value);
-            },
-            child: Column(
-              children: [
-                RadioListTile<String>(
-                  value: 'system',
-                  title:
-                      Text(L10n.t('systemDefault'), style: Iron.body(14)),
-                ),
-                RadioListTile<String>(
-                  value: 'dark',
-                  title: Text(L10n.t('dark'), style: Iron.body(14)),
-                ),
-                RadioListTile<String>(
-                  value: 'light',
-                  title: Text(L10n.t('light'), style: Iron.body(14)),
-                ),
-              ],
-            ),
+          Text(L10n.t('tabSettings'), style: Iron.hero(28)),
+          const SizedBox(height: 16),
+
+          // ---- appearance
+          _label(L10n.t('appearance')),
+          _segmented(
+            value: s.appearance,
+            onChanged: _setAppearance,
+            options: [
+              ('system', Icons.brightness_auto_rounded, L10n.t('systemShort')),
+              ('light', Icons.light_mode_rounded, L10n.t('light')),
+              ('dark', Icons.dark_mode_rounded, L10n.t('dark')),
+            ],
           ),
-          SizedBox(height: 8),
-          _sectionTitle(L10n.t('language')),
-          RadioGroup<String>(
-            groupValue: s.lang,
-            onChanged: (value) {
-              if (value != null) _setLang(value);
-            },
-            child: Column(
-              children: [
-                RadioListTile<String>(
-                  value: 'system',
-                  activeColor: Iron.accent,
-                  title:
-                      Text(L10n.t('systemDefault'), style: Iron.body(14)),
-                ),
-                RadioListTile<String>(
-                  value: 'en',
-                  activeColor: Iron.accent,
-                  title: Text(L10n.t('english'), style: Iron.body(14)),
-                ),
-                RadioListTile<String>(
-                  value: 'zh',
-                  activeColor: Iron.accent,
-                  title: Text(L10n.t('chinese'), style: Iron.body(14)),
-                ),
-              ],
-            ),
+          const SizedBox(height: 20),
+
+          // ---- language
+          _label(L10n.t('language')),
+          _segmented(
+            value: s.lang,
+            onChanged: _setLang,
+            options: [
+              ('system', Icons.translate_rounded, L10n.t('systemShort')),
+              ('zh', Icons.language_rounded, L10n.t('chinese')),
+              ('en', Icons.language_rounded, L10n.t('english')),
+            ],
           ),
-          SizedBox(height: 16),
-          _sectionTitle(L10n.t('soundHaptics')),
-          SwitchListTile(
-            value: s.feedbackOn,
-            onChanged: (v) {
-              setState(() => Store.instance.settings.feedbackOn = v);
-              Store.instance.save();
-            },
-            activeThumbColor: Iron.onAccent,
-            activeTrackColor: Iron.accent,
-            inactiveTrackColor: Iron.cardHi,
-            inactiveThumbColor: Iron.faint,
-            title: Text(L10n.t('soundHaptics'), style: Iron.body(14)),
-            subtitle: Text(L10n.t('soundHapticsHint'),
-                style: Iron.caption(color: Iron.faint)),
-          ),
-          SizedBox(height: 16),
-          _sectionTitle(L10n.t('reminders')),
-          SwitchListTile(
-            value: s.remindersOn,
-            onChanged: _setReminders,
-            activeThumbColor: Iron.onAccent,
-            activeTrackColor: Iron.accent,
-            inactiveTrackColor: Iron.cardHi,
-            inactiveThumbColor: Iron.faint,
-            title: Text(
-                '${L10n.t('reminders')}: ${pad2(s.reminderHour)}:${pad2(s.reminderMinute)}',
-                style: Iron.body(14)),
-          ),
-          if (s.remindersOn)
-            Row(
-              children: [
-                SizedBox(width: 16),
-                DropdownButton<int>(
-                  value: s.reminderHour,
-                  dropdownColor: Iron.cardHi,
-                  items: [
-                    for (var h = 0; h < 24; h++)
-                      DropdownMenuItem(
-                          value: h,
-                          child: Text(pad2(h), style: Iron.body(14))),
-                  ],
-                  onChanged: (v) => _setReminderTime(hour: v),
-                ),
-                const Text(' : '),
-                DropdownButton<int>(
-                  value: s.reminderMinute,
-                  dropdownColor: Iron.cardHi,
-                  items: [
-                    for (var m = 0; m < 60; m += 5)
-                      DropdownMenuItem(
-                          value: m,
-                          child: Text(pad2(m), style: Iron.body(14))),
-                  ],
-                  onChanged: (v) => _setReminderTime(minute: v),
-                ),
-              ],
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
-            child: Text(L10n.t('reminderStub'),
-                style: Iron.caption(color: Iron.faint)),
-          ),
-          SizedBox(height: 16),
-          _sectionTitle(L10n.t('runAgain')),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const OnboardingPage(reentry: true),
-              ));
-            },
-            icon: Icon(Icons.person_pin_outlined, size: 18),
-            label: Text(L10n.t('runAgain')),
-          ),
-          SizedBox(height: 16),
-          _sectionTitle(L10n.t('about')),
-          SizedBox(height: 4),
+          const SizedBox(height: 20),
+
+          // ---- workout
           IronCard(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(
+              children: [
+                _switchRow(
+                  icon: Icons.volume_up_rounded,
+                  hue: Iron.tier(1),
+                  title: L10n.t('soundHaptics'),
+                  subtitle: L10n.t('soundHapticsHint'),
+                  value: s.feedbackOn,
+                  onChanged: (v) {
+                    setState(() => Store.instance.settings.feedbackOn = v);
+                    Store.instance.save();
+                  },
+                ),
+                _divider(),
+                _switchRow(
+                  icon: Icons.notifications_rounded,
+                  hue: Iron.tier(2),
+                  title: L10n.t('reminders'),
+                  subtitle: L10n.t('reminderStub'),
+                  value: s.remindersOn,
+                  onChanged: _setReminders,
+                ),
+                if (s.remindersOn) ...[
+                  _divider(),
+                  _row(
+                    icon: Icons.schedule_rounded,
+                    hue: Iron.tier(2),
+                    title: L10n.t('reminderTime'),
+                    trailing: IronPill(
+                        '${pad2(s.reminderHour)}:${pad2(s.reminderMinute)}',
+                        color: Iron.tier(2),
+                        solid: true),
+                    onTap: _pickReminderTime,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          IronCard(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(
+              children: [
+                _row(
+                  icon: Icons.person_pin_rounded,
+                  hue: Iron.accent,
+                  title: L10n.t('runAgain'),
+                  trailing:
+                      Icon(Icons.chevron_right_rounded, color: Iron.faint),
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const OnboardingPage(reentry: true),
+                    ));
+                  },
+                ),
+                _divider(),
+                _row(
+                  icon: Icons.description_rounded,
+                  hue: Iron.tier(3),
+                  title: L10n.t('licenses'),
+                  trailing:
+                      Icon(Icons.chevron_right_rounded, color: Iron.faint),
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: L10n.t('appTitle'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // ---- about
+          _label(L10n.t('about')),
+          IronCard(
+            color: Iron.tint(Iron.accent),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(L10n.t('offlinePitch'),
-                    style: Iron.body(13, color: Iron.sub)),
-                SizedBox(height: 12),
-                Text(L10n.t('disclaimer'),
-                    style: Iron.caption(color: Iron.faint)),
+                Row(
+                  children: [
+                    Icon(Icons.lock_rounded, size: 18, color: Iron.accent),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(L10n.t('offlinePitch'),
+                          style: Iron.body(14, weight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(L10n.t('disclaimer'), style: Iron.caption()),
               ],
             ),
           ),
@@ -197,10 +188,117 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _sectionTitle(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text, style: Iron.body(16, weight: FontWeight.w600)),
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+        child: Text(text, style: Iron.body(16, weight: FontWeight.w800)),
+      );
+
+  Widget _divider() => Divider(
+      height: 1, thickness: 1, indent: 64, endIndent: 16, color: Iron.line);
+
+  /// Three-up choice row: icon + label tiles, the selected one tinted.
+  Widget _segmented({
+    required String value,
+    required ValueChanged<String> onChanged,
+    required List<(String, IconData, String)> options,
+  }) {
+    return Row(
+      children: [
+        for (var i = 0; i < options.length; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Expanded(child: _segment(options[i], value == options[i].$1, onChanged)),
+        ],
+      ],
+    );
+  }
+
+  Widget _segment((String, IconData, String) o, bool selected,
+      ValueChanged<String> onChanged) {
+    final (key, icon, label) = o;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Iron.rM),
+        border: Border.all(
+            color: selected ? Iron.accent : Colors.transparent, width: 2),
+        boxShadow: selected ? null : Iron.shadow,
+      ),
+      child: Material(
+        color: selected ? Iron.tint(Iron.accent) : Iron.card,
+        borderRadius: const BorderRadius.all(Iron.rM),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => onChanged(key),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+            child: Column(
+              children: [
+                Icon(icon,
+                    size: 24, color: selected ? Iron.accent : Iron.faint),
+                const SizedBox(height: 6),
+                Text(label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Iron.caption(
+                        color: selected ? Iron.ink : Iron.sub,
+                        weight: FontWeight.w800)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _row({
+    required IconData icon,
+    required Color hue,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            IconBlob(icon, color: hue, size: 38),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Iron.body(15, weight: FontWeight.w700)),
+                  if (subtitle != null)
+                    Text(subtitle, style: Iron.caption(color: Iron.faint)),
+                ],
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _switchRow({
+    required IconData icon,
+    required Color hue,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return _row(
+      icon: icon,
+      hue: hue,
+      title: title,
+      subtitle: subtitle,
+      onTap: () => onChanged(!value),
+      trailing: Switch(value: value, onChanged: onChanged),
     );
   }
 }

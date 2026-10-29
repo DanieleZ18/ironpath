@@ -8,6 +8,7 @@ import '../utils.dart';
 import '../weekly_program.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/weekly_program_card.dart';
+import 'plan_detail.dart';
 import 'session_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -49,56 +50,106 @@ class HomeScreenState extends State<HomeScreen> {
       }
     }
 
+    final done = program == null ? 0 : completedThisWeek(settings, logs);
+    final total = program?.slots.length ?? 0;
+    final Plan? today = program == null
+        ? best
+        : done < total
+            ? program.slots[done]
+            : null;
+
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          Text('IronPath', style: Iron.hero(30)),
-          SizedBox(height: 4),
-          Text(L10n.t('offlinePitch'),
-              style: Iron.caption(color: Iron.faint)),
-          SizedBox(height: 20),
+          // ---- greeting
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(fmtDayHeader(DateTime.now(), zh).toUpperCase(),
+                        style: Iron.eyebrow()),
+                    const SizedBox(height: 4),
+                    Text(L10n.t('homeHello'), style: Iron.hero(28)),
+                  ],
+                ),
+              ),
+              IconBlob(Icons.fitness_center_rounded, size: 48),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // ---- today
+          TodayCard(
+            plan: today,
+            dayIndex: done,
+            done: done,
+            total: total,
+            recommended: program == null,
+            onStart: today == null ? null : () => _startPlan(context, today),
+            onOpen: today == null ? null : () => _openPlan(context, today),
+          ),
+
           if (program != null) ...[
-            WeeklyProgramCard(program: program),
-            SizedBox(height: 20),
+            const SizedBox(height: 16),
+            WeeklyProgramCard(
+              program: program,
+              done: done,
+              onOpen: (p) => _openPlan(context, p),
+            ),
           ],
-          // Day-14 retention hook: last workout
+
+          // ---- last workout (day-14 retention hook)
+          const SizedBox(height: 16),
           IronCard(
+            padding: const EdgeInsets.all(14),
+            radius: Iron.rM,
             child: Row(
               children: [
-                Icon(Icons.history, size: 18, color: Iron.accent),
-                SizedBox(width: 12),
+                IconBlob(Icons.history_rounded, color: Iron.tier(1)),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(L10n.t('lastWorkout'), style: Iron.caption()),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
                         logs.isEmpty
                             ? L10n.t('noWorkoutsYet')
-                            : '${fmtDate(logs.first.startedAt)} · ${logs.first.planTitle(zh)} · ${logs.first.doneSets()}/${logs.first.totalSets()}',
-                        style: Iron.body(14),
+                            : logs.first.planTitle(zh),
+                        style: Iron.body(15, weight: FontWeight.w700),
                       ),
+                      if (logs.isNotEmpty)
+                        Text(
+                            '${fmtDate(logs.first.startedAt)} · ${logs.first.doneSets()}/${logs.first.totalSets()} ${L10n.t('sets')}',
+                            style: Iron.caption(color: Iron.faint)),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(height: 20),
-          Text(L10n.t('quickStart'),
-              style: Iron.body(17, weight: FontWeight.w600)),
-          const SizedBox(height: 10),
-          ...summaries.map((s) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: TierCard(
-                  summary: s,
-                  onStart: () => _startPlan(context, s.bestPlan),
-                  onOpenLibrary: widget.goLibrary,
-                  recommended: best != null && s.tier == best.tier,
-                ),
-              )),
+
+          // ---- browse by tier
+          const SizedBox(height: 22),
+          SectionTitle(
+            L10n.t('browseByLevel'),
+            trailing: TextButton(
+                onPressed: widget.goLibrary, child: Text(L10n.t('viewAll'))),
+          ),
+          for (final s in summaries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: TierCard(
+                summary: s,
+                onStart: () => _startPlan(context, s.bestPlan),
+                onOpenLibrary: () => _openPlan(context, s.bestPlan),
+                recommended: best != null && s.tier == best.tier,
+              ),
+            ),
           if (!adFree) ...[
             const SizedBox(height: 4),
             const _BannerPlaceholder(),
@@ -115,6 +166,14 @@ class HomeScreenState extends State<HomeScreen> {
         ))
         .then((_) => refresh());
   }
+
+  void _openPlan(BuildContext context, Plan plan) {
+    Navigator.of(context)
+        .push(MaterialPageRoute(
+          builder: (_) => PlanDetailPage(plan: plan),
+        ))
+        .then((_) => refresh());
+  }
 }
 
 class _BannerPlaceholder extends StatelessWidget {
@@ -123,11 +182,11 @@ class _BannerPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
+      height: 52,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Iron.card,
-        borderRadius: BorderRadius.all(Iron.rM),
+        color: Iron.cardHi,
+        borderRadius: const BorderRadius.all(Iron.rM),
       ),
       child: Text('AdMob banner', style: Iron.caption(color: Iron.faint)),
     );

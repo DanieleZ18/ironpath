@@ -5,7 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 
-/// Editor for custom plans — matte tiles, quiet controls, mint on actions.
+/// Editor for custom plans — one soft card per exercise, pill steppers.
 
 class PlanEditorPage extends StatefulWidget {
   final Plan? existing;
@@ -69,7 +69,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          style: Iron.body(15),
+          style: Iron.body(16, weight: FontWeight.w700),
           decoration: const InputDecoration(hintText: '8-12 / 30-45s'),
         ),
         actions: [
@@ -77,6 +77,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(L10n.t('cancel'))),
           FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
               child: Text(L10n.t('save'))),
         ],
@@ -119,6 +120,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
       builtin: false,
       daysMin: widget.existing?.daysMin ?? 2,
       daysMax: widget.existing?.daysMax ?? 5,
+      idealDays: widget.existing?.idealDays ?? const [],
       items: List.of(_items),
     );
     Store.instance.customPlans.removeWhere((p) => p.id == id);
@@ -142,24 +144,49 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
             ? L10n.t('newPlan')
             : L10n.t('editPlan')),
         actions: [
-          IconButton(icon: Icon(Icons.check), onPressed: _save),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.check_rounded, size: 20),
+              label: Text(L10n.t('save')),
+            ),
+          ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
         children: [
           TextField(
             controller: _titleCtrl,
-            style: Iron.body(15),
-            decoration: InputDecoration(labelText: L10n.t('planName')),
+            style: Iron.hero(20),
+            decoration: InputDecoration(
+              labelText: L10n.t('planName'),
+              prefixIcon: Icon(Icons.edit_note_rounded, color: Iron.accent),
+            ),
           ),
-          const SizedBox(height: 14),
-          for (var i = 0; i < _items.length; i++) _itemCard(context, i, zh),
-          const SizedBox(height: 6),
-          OutlinedButton.icon(
-            onPressed: _addExercise,
-            icon: Icon(Icons.add, size: 18),
-            label: Text(L10n.t('addItem')),
+          const SizedBox(height: 18),
+          for (var i = 0; i < _items.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _itemCard(context, i, zh),
+            ),
+          const SizedBox(height: 4),
+          IronCard(
+            onTap: _addExercise,
+            color: Iron.tint(Iron.accent),
+            radius: Iron.rM,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_circle_rounded, color: Iron.accent),
+                const SizedBox(width: 8),
+                Text(L10n.t('addItem'),
+                    style: Iron.body(15,
+                        weight: FontWeight.w800, color: Iron.accent)),
+              ],
+            ),
           ),
         ],
       ),
@@ -169,74 +196,87 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
   Widget _itemCard(BuildContext context, int i, bool zh) {
     final item = _items[i];
     final ex = Store.instance.exerciseById(item.exerciseId);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Iron.card,
-          borderRadius: BorderRadius.all(Iron.rM),
-        ),
-        padding: const EdgeInsets.fromLTRB(14, 4, 10, 10),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => _replaceExercise(i),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(ex?.name(zh) ?? item.exerciseId,
-                          style: Iron.body(15, weight: FontWeight.w600)),
+    return IronCard(
+      radius: Iron.rM,
+      padding: const EdgeInsets.fromLTRB(12, 10, 4, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconBlob(exerciseIcon(ex?.category ?? ''), size: 40),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _replaceExercise(i),
+                  borderRadius: const BorderRadius.all(Iron.rS),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(ex?.name(zh) ?? item.exerciseId,
+                              style:
+                                  Iron.body(15, weight: FontWeight.w800)),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.swap_horiz_rounded,
+                            size: 16, color: Iron.faint),
+                      ],
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.arrow_upward,
-                      size: 17, color: Iron.sub),
-                  onPressed: i == 0 ? null : () => _move(i, -1),
-                ),
-                IconButton(
-                  icon: Icon(Icons.arrow_downward,
-                      size: 17, color: Iron.sub),
-                  onPressed:
-                      i == _items.length - 1 ? null : () => _move(i, 1),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, size: 17, color: Iron.sub),
-                  onPressed: () => setState(() => _items.removeAt(i)),
-                ),
-              ],
-            ),
-            Row(
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                onPressed: i == 0 ? null : () => _move(i, -1),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                onPressed:
+                    i == _items.length - 1 ? null : () => _move(i, 1),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () => setState(() => _items.removeAt(i)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _stepper(
                   label: '${L10n.t('sets')} ${item.sets}',
                   onMinus: item.sets > 1
-                      ? () => setState(() => _items[i] =
-                          item.copyWith(sets: item.sets - 1))
+                      ? () => setState(() =>
+                          _items[i] = item.copyWith(sets: item.sets - 1))
                       : null,
                   onPlus: item.sets < 10
-                      ? () => setState(() => _items[i] =
-                          item.copyWith(sets: item.sets + 1))
+                      ? () => setState(() =>
+                          _items[i] = item.copyWith(sets: item.sets + 1))
                       : null,
                 ),
-                SizedBox(width: 8),
-                InkWell(
-                  onTap: () => _editReps(i),
-                  borderRadius: const BorderRadius.all(Iron.rS),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Iron.cardHi,
-                      borderRadius: BorderRadius.all(Iron.rS),
+                Material(
+                  color: Iron.cardHi,
+                  shape: const StadiumBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => _editReps(i),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 9),
+                      child: Text('${L10n.t('reps')} ${item.reps}',
+                          style: Iron.caption(color: Iron.ink)),
                     ),
-                    child: Text('${L10n.t('reps')}: ${item.reps}',
-                        style: Iron.caption()),
                   ),
                 ),
-                const Spacer(),
                 _stepper(
                   label:
                       '${L10n.t('rest')} ${item.restSeconds}${L10n.t('seconds')}',
@@ -251,31 +291,35 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
+  /// Pill-shaped − value + control.
   Widget _stepper(
       {required String label, VoidCallback? onMinus, VoidCallback? onPlus}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label, style: Iron.caption()),
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          onPressed: onMinus,
-          icon: Icon(Icons.remove_circle_outline,
-              size: 18, color: Iron.sub),
-        ),
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          onPressed: onPlus,
-          icon: Icon(Icons.add_circle_outline,
-              size: 18, color: Iron.accent),
-        ),
-      ],
+    Widget btn(IconData icon, VoidCallback? onTap) => InkResponse(
+          onTap: onTap,
+          radius: 18,
+          child: Padding(
+            padding: const EdgeInsets.all(7),
+            child: Icon(icon,
+                size: 18, color: onTap == null ? Iron.line : Iron.accent),
+          ),
+        );
+    return Container(
+      decoration:
+          ShapeDecoration(shape: const StadiumBorder(), color: Iron.cardHi),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          btn(Icons.remove_rounded, onMinus),
+          Text(label, style: Iron.caption(color: Iron.ink)),
+          btn(Icons.add_rounded, onPlus),
+        ],
+      ),
     );
   }
 }
@@ -309,19 +353,19 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
             child: TextField(
               onChanged: (v) => setState(() => _query = v),
-              style: Iron.body(14),
+              style: Iron.body(15, weight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: L10n.t('search'),
-                prefixIcon:
-                    Icon(Icons.search, size: 18, color: Iron.sub),
+                prefixIcon: Icon(Icons.search_rounded, color: Iron.sub),
               ),
             ),
           ),
           Expanded(
             child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
               children: [
                 for (final category in [
                   'bodyweight',
@@ -343,30 +387,66 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
       BuildContext context, String category, List<Exercise> matches, bool zh) {
     final inCat = matches.where((e) => e.category == category).toList();
     if (inCat.isEmpty) return [];
+    final userEq = Store.instance.settings.userEquipment;
     return [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-        child: Text(L10n.t(category),
-            style: Iron.caption(color: Iron.accent)
-                .copyWith(fontWeight: FontWeight.w600)),
+        padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
+        child: Row(
+          children: [
+            Icon(exerciseIcon(category), size: 18, color: Iron.accent),
+            const SizedBox(width: 6),
+            Text(L10n.t(category),
+                style: Iron.body(15, weight: FontWeight.w800)),
+            const SizedBox(width: 6),
+            Text('${inCat.length}', style: Iron.caption(color: Iron.faint)),
+          ],
+        ),
       ),
       for (final e in inCat)
-        ListTile(
-          dense: true,
-          enabled: true,
-          title: Text(zh ? e.nameZh : e.nameEn, style: Iron.body(14)),
-          subtitle: Text(
-              (e.availableFor(Store.instance.settings.userEquipment)
-                      ? ''
-                      : '${L10n.tf('needsEquipment', L10n.t(e.requiredEquipment() == 'dumbbell' ? 'dumbbell' : 'obEqGym'))} · ') +
-                  (zh
-                      ? e.muscles.map((m) => L10n.muscle(m)).join(' · ')
-                      : '${e.muscles.map((m) => L10n.muscle(m)).join(' · ')} · ${e.nameZh}'),
-              style: Iron.caption(
-                  color: e.availableFor(Store.instance.settings.userEquipment)
-                      ? Iron.faint
-                      : Iron.sub)),
-          onTap: () => Navigator.pop(context, e.id),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: IronCard(
+            radius: Iron.rM,
+            raised: false,
+            padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+            onTap: () => Navigator.pop(context, e.id),
+            child: Row(
+              children: [
+                IconBlob(exerciseIcon(e.category),
+                    size: 40,
+                    color: e.availableFor(userEq) ? Iron.accent : Iron.faint),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(zh ? e.nameZh : e.nameEn,
+                          style: Iron.body(15, weight: FontWeight.w700)),
+                      Text(
+                        zh
+                            ? e.muscles.map((m) => L10n.muscle(m)).join(' · ')
+                            : '${e.muscles.map((m) => L10n.muscle(m)).join(' · ')} · ${e.nameZh}',
+                        style: Iron.caption(color: Iron.faint),
+                      ),
+                      if (!e.availableFor(userEq))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: IronPill(
+                            L10n.tf(
+                                'needsEquipment',
+                                L10n.t(e.requiredEquipment() == 'dumbbell'
+                                    ? 'dumbbell'
+                                    : 'obEqGym')),
+                            icon: Icons.lock_outline_rounded,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.add_circle_outline_rounded, color: Iron.accent),
+              ],
+            ),
+          ),
         ),
     ];
   }

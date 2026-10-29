@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// Design tokens, dark + light. Restraint rules:
-// - one quiet accent (sage green), muted enough to sit still on screen
-// - hierarchy from gray values + font weight, never from color
-// - big radius, almost no borders
+// Design tokens, light + dark — "soft & friendly" (v4, 2026-10-29).
+// - rounded everything: 24px cards, 20px buttons, pill chips
+// - colour carries meaning: each tier owns a hue (blue / violet / coral)
+//   shown as soft tinted blocks; one green accent marks actions + progress
+// - Nunito (bundled, rounded terminals) for Latin + numerals; CJK falls
+//   back to the system font
+// - every text colour clears 4.5:1 on its background in both themes
 
 class _Palette {
   final Color bg, card, cardHi, ink, sub, faint, accent, onAccent, line;
   final Color tier1, tier2, tier3;
+  final Color danger;
+  final double tintAmount; // how much hue goes into a tinted block
   final Brightness overlayBrightness; // system chrome icon brightness
 
   const _Palette({
@@ -24,6 +29,8 @@ class _Palette {
     required this.tier1,
     required this.tier2,
     required this.tier3,
+    required this.danger,
+    required this.tintAmount,
     required this.overlayBrightness,
   });
 }
@@ -35,9 +42,9 @@ class Iron {
 
   /// 'system' | 'dark' | 'light'
   static String appearance = 'system';
-  static bool _dark = true;
+  static bool _dark = false;
 
-  static void setAppearance(String setting, {bool platformDark = true}) {
+  static void setAppearance(String setting, {bool platformDark = false}) {
     appearance = setting;
     _dark = switch (setting) {
       'dark' => true,
@@ -48,38 +55,44 @@ class Iron {
     notifier.value++;
   }
 
-  // ---- dark palette (fresh green, halfway between neon and sage) -------
-  static const _darkPalette = _Palette(
-    bg: Color(0xFF000000),
-    card: Color(0xFF17181C),
-    cardHi: Color(0xFF212226),
-    ink: Color(0xFFF2F2F7),
-    sub: Color(0xFFA6A6AD), // slightly brighter than before
-    faint: Color(0xFF63636B),
-    accent: Color(0xFF4EBB8A), // fresh green — between neon #30D158 and sage
-    onAccent: Color(0xFF0A1812),
-    line: Color(0x14F2F2F7),
-    tier1: Color(0xFF5FB3D9),
-    tier2: Color(0xFFA48FE0),
-    tier3: Color(0xFFD97B8C),
-    overlayBrightness: Brightness.light, // light icons on dark bg
+  static const fontFamily = 'Nunito';
+
+  // ---- light palette (warm cream, deep friendly hues) -------------------
+  static const _lightPalette = _Palette(
+    bg: Color(0xFFF7F4EF),
+    card: Color(0xFFFFFFFF),
+    cardHi: Color(0xFFF1ECE4),
+    ink: Color(0xFF2D2A35),
+    sub: Color(0xFF6A6675),
+    faint: Color(0xFF75717F),
+    accent: Color(0xFF17795A),
+    onAccent: Color(0xFFFFFFFF),
+    line: Color(0x1A2D2A35),
+    tier1: Color(0xFF2A63B8),
+    tier2: Color(0xFF6A4CC7),
+    tier3: Color(0xFFB5473A),
+    danger: Color(0xFFB5473A),
+    tintAmount: 0.12,
+    overlayBrightness: Brightness.dark, // dark icons on light bg
   );
 
-  // ---- light palette (warm paper + lively-but-not-neon accent) ----------
-  static const _lightPalette = _Palette(
-    bg: Color(0xFFFAF9F6),
-    card: Color(0xFFFFFFFF),
-    cardHi: Color(0xFFF0EFEA),
-    ink: Color(0xFF1B1B1E),
-    sub: Color(0xFF5F5F66),
-    faint: Color(0xFF9B9BA1),
-    accent: Color(0xFF2E9E6E), // livelier sage for white-bg contrast
-    onAccent: Color(0xFFFFFFFF),
-    line: Color(0x14000000),
-    tier1: Color(0xFF4A92C6),
-    tier2: Color(0xFF8477C8),
-    tier3: Color(0xFFCC7180),
-    overlayBrightness: Brightness.dark, // dark icons on light bg
+  // ---- dark palette (soft charcoal, pastel hues) -------------------------
+  static const _darkPalette = _Palette(
+    bg: Color(0xFF17161C),
+    card: Color(0xFF221F29),
+    cardHi: Color(0xFF2C2934),
+    ink: Color(0xFFF4F1F8),
+    sub: Color(0xFFB0ABBD),
+    faint: Color(0xFF8E8A9C),
+    accent: Color(0xFF5ACFA2),
+    onAccent: Color(0xFF0E2A20),
+    line: Color(0x1AF4F1F8),
+    tier1: Color(0xFF82B4F7),
+    tier2: Color(0xFFB39EF5),
+    tier3: Color(0xFFF79D8E),
+    danger: Color(0xFFF79D8E),
+    tintAmount: 0.18,
+    overlayBrightness: Brightness.light, // light icons on dark bg
   );
 
   static _Palette get _p => _dark ? _darkPalette : _lightPalette;
@@ -95,71 +108,116 @@ class Iron {
   static Color get accent => _p.accent;
   static Color get onAccent => _p.onAccent;
   static Color get line => _p.line;
+  static Color get danger => _p.danger;
 
   static Map<int, Color> get tierColor => {1: _p.tier1, 2: _p.tier2, 3: _p.tier3};
+
+  /// Tier hue, accent for anything outside 1-3 (custom plans).
+  static Color tier(int t) => tierColor[t] ?? accent;
+
+  /// Soft block colour: [c] mixed into the card surface. Text in [c] on a
+  /// tint stays above 4.5:1 for every palette hue.
+  static Color tint(Color c) => Color.lerp(card, c, _p.tintAmount)!;
 
   static SystemUiOverlayStyle get overlay => SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: _p.overlayBrightness,
-        systemNavigationBarColor: bg,
+        systemNavigationBarColor: card,
         systemNavigationBarIconBrightness: _p.overlayBrightness,
       );
 
+  /// Soft drop shadow for raised cards; none in dark mode (surfaces step up
+  /// in lightness instead).
+  static List<BoxShadow>? get shadow => _dark
+      ? null
+      : [
+          BoxShadow(
+              color: const Color(0xFF2D2A35).withValues(alpha: 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 6)),
+        ];
+
   // ---- geometry (shared across both palettes) --------------------------
-  static const rL = Radius.circular(16);
-  static const rM = Radius.circular(12);
-  static const rS = Radius.circular(10);
-  static const rBtn = Radius.circular(14);
+  static const rXL = Radius.circular(28);
+  static const rL = Radius.circular(24);
+  static const rM = Radius.circular(18);
+  static const rS = Radius.circular(12);
+  static const rBtn = Radius.circular(20);
+  static const rPill = Radius.circular(999);
 
   // ---- text ------------------------------------------------------------
   static TextStyle hero(double size,
-          {Color? color, FontWeight weight = FontWeight.w700}) =>
+          {Color? color, FontWeight weight = FontWeight.w800}) =>
       TextStyle(
+          fontFamily: fontFamily,
           fontSize: size,
           color: color ?? ink,
           fontWeight: weight,
-          height: 1.1,
-          letterSpacing: -0.4);
+          height: 1.15,
+          letterSpacing: -0.3);
 
   static TextStyle body(double size,
-          {Color? color, FontWeight weight = FontWeight.normal}) =>
+          {Color? color, FontWeight weight = FontWeight.w400}) =>
       TextStyle(
+          fontFamily: fontFamily,
           fontSize: size,
           color: color ?? ink,
           fontWeight: weight,
           height: 1.4);
 
-  static TextStyle caption({Color? color}) =>
-      TextStyle(fontSize: 13, color: color ?? sub, height: 1.35);
+  static TextStyle caption({Color? color, FontWeight weight = FontWeight.w600}) =>
+      TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 13,
+          color: color ?? sub,
+          fontWeight: weight,
+          height: 1.35);
+
+  /// Small uppercase-ish label above a block ("THIS WEEK").
+  static TextStyle eyebrow({Color? color}) => TextStyle(
+      fontFamily: fontFamily,
+      fontSize: 12,
+      color: color ?? faint,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.6,
+      height: 1.3);
 
   static ThemeData theme() {
     final p = _p;
+    final brightness = _dark ? Brightness.dark : Brightness.light;
     return ThemeData(
       useMaterial3: true,
-      brightness: _dark ? Brightness.dark : Brightness.light,
+      brightness: brightness,
+      fontFamily: fontFamily,
       scaffoldBackgroundColor: p.bg,
       colorScheme: ColorScheme(
-        brightness: _dark ? Brightness.dark : Brightness.light,
+        brightness: brightness,
         primary: p.accent,
         onPrimary: p.onAccent,
         surface: p.bg,
         onSurface: p.ink,
+        surfaceContainerHighest: p.cardHi,
         outline: p.line,
         secondary: p.sub,
         onSecondary: p.onAccent,
-        error: const Color(0xFFB4534A),
-        onError: Colors.white,
+        error: p.danger,
+        onError: p.onAccent,
       ),
       dividerColor: p.line,
       hintColor: p.faint,
       splashFactory: InkSparkle.splashFactory,
       appBarTheme: AppBarTheme(
         backgroundColor: p.bg,
+        surfaceTintColor: Colors.transparent,
         foregroundColor: p.ink,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-            fontSize: 20, fontWeight: FontWeight.w600, color: p.ink),
+            fontFamily: fontFamily,
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+            color: p.ink),
         iconTheme: IconThemeData(color: p.ink),
         systemOverlayStyle: overlay,
       ),
@@ -173,11 +231,15 @@ class Iron {
         style: FilledButton.styleFrom(
           backgroundColor: p.accent,
           foregroundColor: p.onAccent,
-          minimumSize: const Size.fromHeight(52),
+          disabledBackgroundColor: p.cardHi,
+          disabledForegroundColor: p.faint,
+          minimumSize: const Size.fromHeight(56),
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(rBtn)),
-          textStyle:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 16,
+              fontWeight: FontWeight.w800),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -185,19 +247,27 @@ class Iron {
           foregroundColor: p.ink,
           backgroundColor: p.cardHi,
           side: BorderSide.none,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(52),
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(rBtn)),
-          textStyle:
-              const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 15,
+              fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: p.sub,
-          textStyle:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          foregroundColor: p.accent,
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 14,
+              fontWeight: FontWeight.w700),
         ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: p.sub),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: p.accent,
@@ -206,130 +276,337 @@ class Iron {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: p.cardHi,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(rM), borderSide: BorderSide.none),
         enabledBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(rM), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
             borderRadius: const BorderRadius.all(rM),
-            borderSide: BorderSide(color: p.accent, width: 1.5)),
-        labelStyle: TextStyle(color: p.sub, fontSize: 14),
+            borderSide: BorderSide(color: p.accent, width: 2)),
+        labelStyle: TextStyle(
+            fontFamily: fontFamily,
+            color: p.sub,
+            fontSize: 14,
+            fontWeight: FontWeight.w600),
+        hintStyle: TextStyle(fontFamily: fontFamily, color: p.faint),
+        helperStyle: TextStyle(
+            fontFamily: fontFamily,
+            color: p.sub,
+            fontSize: 12,
+            fontWeight: FontWeight.w600),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: p.cardHi,
         side: BorderSide.none,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rS)),
-        labelStyle: TextStyle(color: p.sub, fontSize: 12),
+        shape: const StadiumBorder(),
+        labelStyle: TextStyle(
+            fontFamily: fontFamily,
+            color: p.sub,
+            fontSize: 12,
+            fontWeight: FontWeight.w700),
       ),
       listTileTheme: ListTileThemeData(
         textColor: p.ink,
         iconColor: p.sub,
-        subtitleTextStyle: TextStyle(color: p.sub, fontSize: 13),
+        subtitleTextStyle:
+            TextStyle(fontFamily: fontFamily, color: p.sub, fontSize: 13),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: p.cardHi,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rL)),
-        titleTextStyle:
-            TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: p.ink),
+        backgroundColor: p.card,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
+        titleTextStyle: TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+            color: p.ink),
+        contentTextStyle:
+            TextStyle(fontFamily: fontFamily, fontSize: 14, color: p.sub),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: p.card,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: p.cardHi,
-        contentTextStyle: TextStyle(color: p.ink),
+        backgroundColor: p.ink,
+        behavior: SnackBarBehavior.floating,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rM)),
+        contentTextStyle: TextStyle(
+            fontFamily: fontFamily,
+            color: p.bg,
+            fontWeight: FontWeight.w600),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? p.onAccent : p.faint),
+        trackColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? p.accent : p.cardHi),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: p.bg,
-        indicatorColor: p.accent.withValues(alpha: 0.16),
+        backgroundColor: p.card,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        height: 68,
+        indicatorColor: tint(p.accent),
+        indicatorShape: const StadiumBorder(),
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+            fontFamily: fontFamily,
             fontSize: 12,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w800,
             color: states.contains(WidgetState.selected) ? p.ink : p.faint)),
         iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
             color:
                 states.contains(WidgetState.selected) ? p.accent : p.faint,
-            size: 22)),
-      ),
-      radioTheme: RadioThemeData(
-        fillColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected)
-                ? p.accent
-                : p.sub),
+            size: 24)),
       ),
     );
   }
 }
 
-/// Full-width accent action block, 52px.
+// ---------------------------------------------------------------------------
+// Shared components. Screens compose these instead of hand-rolling boxes.
+// ---------------------------------------------------------------------------
 
+/// Full-width primary action, 56px, rounded 20.
 class IronButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+  final Color? color; // defaults to the accent
 
-  const IronButton({super.key, required this.label, this.onPressed, this.icon});
+  const IronButton(
+      {super.key, required this.label, this.onPressed, this.icon, this.color});
 
   @override
   Widget build(BuildContext context) {
+    final style = color == null
+        ? null
+        : FilledButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Iron.isDark ? Iron.bg : Colors.white);
+    if (icon == null) {
+      return FilledButton(
+          style: style, onPressed: onPressed, child: Text(label));
+    }
     return FilledButton.icon(
+      style: style,
       onPressed: onPressed,
-      icon: icon == null ? const SizedBox.shrink() : Icon(icon, size: 20),
+      icon: Icon(icon, size: 22),
       label: Text(label),
     );
   }
 }
 
-/// Quiet matte card.
-
+/// Rounded surface. White (or charcoal) by default; pass [color] for a
+/// tinted block. Tappable when [onTap] is set.
 class IronCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
+  final Color? color;
+  final VoidCallback? onTap;
+  final Radius radius;
+  final bool raised; // soft shadow in light mode
 
-  const IronCard(
-      {super.key,
-      required this.child,
-      this.padding = const EdgeInsets.all(16)});
+  const IronCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(18),
+    this.color,
+    this.onTap,
+    this.radius = Iron.rL,
+    this.raised = true,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
+    final r = BorderRadius.all(radius);
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Iron.card,
-        borderRadius: const BorderRadius.all(Iron.rL),
-        boxShadow: Iron.isDark
-            ? null
-            : [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4)),
-              ],
+        borderRadius: r,
+        boxShadow: raised && color == null ? Iron.shadow : null,
       ),
-      child: child,
+      child: Material(
+        color: color ?? Iron.card,
+        borderRadius: r,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small rounded label. Tinted background in [color]'s hue, text in
+/// [color]; neutral grey when no colour is given.
+class IronPill extends StatelessWidget {
+  final String label;
+  final Color? color;
+  final IconData? icon;
+  final bool solid; // filled with the hue itself (strong emphasis)
+  final VoidCallback? onTap;
+
+  const IronPill(this.label,
+      {super.key, this.color, this.icon, this.solid = false, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = color;
+    final bg = hue == null
+        ? Iron.cardHi
+        : solid
+            ? hue
+            : Iron.tint(hue);
+    final fg = hue == null
+        ? Iron.sub
+        : solid
+            ? (Iron.isDark ? Iron.bg : Colors.white)
+            : hue;
+    final body = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: fg),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(label,
+                overflow: TextOverflow.ellipsis,
+                style: Iron.caption(color: fg, weight: FontWeight.w800)
+                    .copyWith(fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+    return Material(
+      color: bg,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: onTap == null ? body : InkWell(onTap: onTap, child: body),
+    );
+  }
+}
+
+/// Rounded square holding an icon on a soft tint — the friendly stand-in
+/// for exercise illustrations and list leading glyphs.
+class IconBlob extends StatelessWidget {
+  final IconData icon;
+  final Color? color;
+  final double size;
+  final bool onTint; // sitting on a tinted block: use the card surface
+
+  const IconBlob(this.icon,
+      {super.key, this.color, this.size = 44, this.onTint = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = color ?? Iron.accent;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: onTint ? Iron.card : Iron.tint(hue),
+        borderRadius: BorderRadius.all(Radius.circular(size * 0.36)),
+      ),
+      child: Icon(icon, size: size * 0.5, color: hue),
+    );
+  }
+}
+
+/// Section heading with an optional trailing action.
+class SectionTitle extends StatelessWidget {
+  final String text;
+  final Widget? trailing;
+  final EdgeInsets padding;
+
+  const SectionTitle(this.text,
+      {super.key,
+      this.trailing,
+      this.padding = const EdgeInsets.fromLTRB(4, 8, 4, 10)});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding,
+      child: Row(
+        children: [
+          Expanded(child: Text(text, style: Iron.hero(19))),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
+/// ● ● ○ ○ — one dot per set (or per weekly session).
+class SetDots extends StatelessWidget {
+  final int done;
+  final int total;
+  final Color? color;
+  final double size;
+
+  const SetDots(
+      {super.key,
+      required this.done,
+      required this.total,
+      this.color,
+      this.size = 12});
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = color ?? Iron.accent;
+    return Wrap(
+      spacing: size * 0.5,
+      runSpacing: size * 0.5,
+      children: [
+        for (var i = 0; i < total; i++)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i < done ? hue : Colors.transparent,
+              border: Border.all(
+                  color: i < done ? hue : hue.withValues(alpha: 0.35),
+                  width: 2),
+            ),
+          ),
+      ],
     );
   }
 }
 
 /// Segmented progress: one rounded segment per exercise.
-
 class BarbellProgress extends StatelessWidget {
   final int current; // 1-based
   final int total;
+  final Color? color;
 
-  const BarbellProgress({super.key, required this.current, required this.total});
+  const BarbellProgress(
+      {super.key, required this.current, required this.total, this.color});
 
   @override
   Widget build(BuildContext context) {
+    final hue = color ?? Iron.accent;
     return Row(
       children: [
         for (var i = 0; i < total; i++) ...[
-          if (i > 0) const SizedBox(width: 6),
+          if (i > 0) const SizedBox(width: 5),
           Expanded(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              height: 4,
+              height: 8,
               decoration: BoxDecoration(
-                color: i < current ? Iron.accent : Iron.cardHi,
-                borderRadius: const BorderRadius.all(Radius.circular(2)),
+                color: i < current ? hue : Iron.tint(hue),
+                borderRadius: const BorderRadius.all(Iron.rPill),
               ),
             ),
           ),
@@ -338,3 +615,167 @@ class BarbellProgress extends StatelessWidget {
     );
   }
 }
+
+/// Thick rounded ring for the rest timer.
+class RestRing extends StatelessWidget {
+  final double value; // 0..1 remaining
+  final double size;
+  final Widget child;
+
+  const RestRing(
+      {super.key, required this.value, required this.child, this.size = 250});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // soft disc behind the ring
+          Container(
+            width: size - 40,
+            height: size - 40,
+            decoration:
+                BoxDecoration(color: Iron.card, shape: BoxShape.circle,
+                    boxShadow: Iron.shadow),
+          ),
+          SizedBox(
+            width: size,
+            height: size,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(end: value.clamp(0, 1)),
+              duration: const Duration(milliseconds: 400),
+              builder: (context, v, _) => CircularProgressIndicator(
+                value: v,
+                strokeWidth: 16,
+                strokeCap: StrokeCap.round,
+                backgroundColor: Iron.tint(Iron.accent),
+                valueColor: AlwaysStoppedAnimation(Iron.accent),
+              ),
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Large selectable tile (onboarding answers, settings choices).
+class ChoiceTile extends StatelessWidget {
+  final String label;
+  final String? subtitle;
+  final IconData? icon;
+  final Color? color; // hue for the icon blob and selected state
+  final bool selected;
+  final VoidCallback onTap;
+
+  const ChoiceTile({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.subtitle,
+    this.icon,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = color ?? Iron.accent;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Iron.rM),
+        border: Border.all(
+            color: selected ? hue : Colors.transparent, width: 2),
+        boxShadow: selected ? null : Iron.shadow,
+      ),
+      child: Material(
+        color: selected ? Iron.tint(hue) : Iron.card,
+        borderRadius: const BorderRadius.all(Iron.rM),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  IconBlob(icon!, color: hue, size: 40),
+                  const SizedBox(width: 14),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(label,
+                          style: Iron.body(16, weight: FontWeight.w700)),
+                      if (subtitle != null)
+                        Text(subtitle!, style: Iron.caption()),
+                    ],
+                  ),
+                ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: selected
+                      ? Icon(Icons.check_circle_rounded,
+                          key: const ValueKey(true), size: 24, color: hue)
+                      : Icon(Icons.circle_outlined,
+                          key: const ValueKey(false),
+                          size: 24,
+                          color: Iron.line),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small stat block: big number, caption under it.
+class StatTile extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color? color;
+
+  const StatTile(
+      {super.key, required this.value, required this.label, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = color ?? Iron.accent;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Iron.tint(hue),
+        borderRadius: const BorderRadius.all(Iron.rM),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, style: Iron.hero(24, color: hue)),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: Iron.caption()),
+        ],
+      ),
+    );
+  }
+}
+
+/// Category glyph for an exercise (until illustrations land).
+IconData exerciseIcon(String category) => switch (category) {
+      'dumbbell' => Icons.fitness_center_rounded,
+      'barbell' => Icons.fitness_center_rounded,
+      'machine' => Icons.event_seat_rounded,
+      'cable' => Icons.cable_rounded,
+      _ => Icons.accessibility_new_rounded,
+    };

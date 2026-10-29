@@ -32,23 +32,40 @@ dumbbell bench; tier 3 stays bodyweight+dumbbell so dumbbell-only users keep a
 complete track at every tier. Training tips (`lib/data/tips.dart`, 9 bilingual
 entries) rotate on the rest screen; a recovery tip shows on the finish screen.
 
-## Design — dual theme, muted (2026-08-31, v3)
+## Design — soft & friendly (2026-10-29, v4)
 
 Two palettes sharing one token API (`lib/theme.dart`, `Iron` class — screens
-never hardcode colors). Switch via Settings → Appearance (system/dark/light);
+never hardcode colors). Switch via Settings → Appearance (auto/light/dark);
 persisted in settings, applied at launch and live.
 
-**Dark**: pure-black `#000`, matte cards `#17181C`, fresh-green accent
-`#4EBB8A` (tuned after neon `#30D158` was too loud and sage `#7FAE92` too
-pale), tier dots `#5FB3D9/#A48FE0/#D97B8C`.
+**Colour carries meaning.** Each tier owns a hue — beginner blue, intermediate
+violet, advanced coral — shown as soft tinted blocks (`Iron.tint(hue)`), and
+the plan's hue follows it into plan detail and the session player. One green
+accent marks actions and progress; custom plans use the accent. Every text
+colour clears 4.5:1 on its background in both themes.
 
-**Light**: warm paper `#FAF9F6` bg, white cards + soft 5% shadow, accent
-`#2E9E6E`, tier dots `#4A92C6/#8477C8/#CC7180`.
+**Light**: warm cream `#F7F4EF` bg, white cards + soft shadow, ink `#2D2A35`,
+accent `#17795A`, tiers `#2A63B8/#6A4CC7/#B5473A`, tints at 12%.
 
-Shared geometry: radius 16/14/12/10, hairline borders only where needed,
-system fonts only, hierarchy from weight+size. Signatures: segmented mint
-progress bar per exercise; rest clock = thin accent ring + light-weight
-72px `M:SS` digits.
+**Dark**: soft charcoal `#17161C` (not pure black), cards `#221F29`, accent
+`#5ACFA2`, tiers `#82B4F7/#B39EF5/#F79D8E`, tints at 18%.
+
+**Type**: Nunito (rounded terminals, tabular digits) bundled in
+`assets/fonts/` — Latin subset, 4 weights, ~130 KB, OFL-1.1 (registered on
+the licenses page). CJK falls back to the system font. Hierarchy from weight
+(400/600/700/800) + size.
+
+**Geometry**: radius 28/24/18/12, 56px pill-ish buttons, stadium chips.
+
+**Shared components** (`lib/theme.dart`): `IronCard` (white or tinted,
+tappable), `IronButton`, `IronPill`, `IconBlob` (icon on a soft tint — the
+stand-in for exercise illustrations), `SetDots` (● ● ○ ○), `BarbellProgress`,
+`RestRing` (thick 16px ring), `ChoiceTile`, `StatTile`, `SectionTitle`.
+Screens compose these instead of hand-rolling boxes.
+
+Signatures: home hero "today's workout" card in the tier hue with week dots;
+session set card with dots per set and ±2.5 kg weight buttons; rest clock =
+thick green ring around a 64px `M:SS`; finish screen with stat tiles.
 
 ## Status (2026-08-30)
 
@@ -67,7 +84,8 @@ progress bar per exercise; rest clock = thin accent ring + light-weight
 
 ```
 lib/
-  main.dart                 app entry, dark M3 theme
+  main.dart                 app entry, theme + font license registration
+  theme.dart                design tokens + shared components (see Design)
   models.dart               Exercise / Plan / PlanItem / SessionLog / SetLog / AppSettings
   store.dart                local-only persistence (SharedPreferences JSON blobs)
   l10n.dart                 hand-rolled zh/en dictionary (upgrade path: gen-l10n)
@@ -87,7 +105,8 @@ lib/
     exercise_detail_screen.dart
     history_screen.dart
     settings_screen.dart    language, reminder time (stub), disclaimer
-  widgets/plan_card.dart    tier cards + plan cards
+  widgets/plan_card.dart    tier cards + plan cards, tier labels/icons
+  widgets/weekly_program_card.dart  home "today" hero + weekly day list
 ```
 
 ## Conventions

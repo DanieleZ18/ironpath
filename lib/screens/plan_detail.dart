@@ -44,6 +44,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(L10n.t('cancel'))),
           FilledButton(
+              style: FilledButton.styleFrom(
+                  backgroundColor: Iron.danger,
+                  minimumSize: const Size(0, 44)),
               onPressed: () => Navigator.pop(ctx, true),
               child: Text(L10n.t('deletePlan'))),
         ],
@@ -56,80 +59,92 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     }
   }
 
+  void _start(Plan p) {
+    Navigator.of(context)
+        .push(MaterialPageRoute(
+          builder: (_) => SessionScreen(plan: p),
+        ))
+        .then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final zh = L10n.zh;
     final p = plan;
+    final hue = Iron.tier(p.builtin ? p.tier : 0);
+    final missing = unavailableLabel(p, Store.instance.settings.userEquipment);
     return Scaffold(
       backgroundColor: Iron.bg,
       appBar: AppBar(
-        title: Text(p.title(zh)),
         actions: [
           if (!p.builtin)
             IconButton(
-              icon: Icon(Icons.delete_outline, size: 20),
+              icon: const Icon(Icons.delete_outline_rounded),
               tooltip: L10n.t('deletePlan'),
               onPressed: _deletePlan,
             ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         children: [
-          if (p.desc(zh).isNotEmpty) ...[
-            Text(p.desc(zh), style: Iron.caption()),
-            const SizedBox(height: 8),
-            Text(freqLabel(p),
-                style: Iron.caption(color: Iron.accent)
-                    .copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-          ],
-          if (unavailableLabel(p, Store.instance.settings.userEquipment)
-              .isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Iron.cardHi,
-                  borderRadius: const BorderRadius.all(Iron.rS),
+          // ---- hero block in the tier's hue
+          IronCard(
+            color: Iron.tint(hue),
+            radius: Iron.rXL,
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IronPill(p.builtin ? tierLabel(p.tier) : L10n.t('myPlans'),
+                    color: hue,
+                    icon: tierIcon(p.builtin ? p.tier : 0),
+                    solid: true),
+                const SizedBox(height: 14),
+                Text(p.title(zh), style: Iron.hero(28)),
+                if (p.desc(zh).isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(p.desc(zh), style: Iron.body(14, color: Iron.sub)),
+                ],
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    IronPill(L10n.tf('estDuration', p.estimatedMinutes()),
+                        color: hue, icon: Icons.schedule_rounded),
+                    IronPill(L10n.tf('exercisesCount', p.items.length),
+                        color: hue, icon: Icons.format_list_numbered_rounded),
+                    if (p.builtin)
+                      IronPill(freqLabel(p),
+                          color: hue, icon: Icons.calendar_month_rounded),
+                  ],
                 ),
-                child: Text(
-                  unavailableLabel(
-                      p, Store.instance.settings.userEquipment),
-                  style: Iron.caption(color: Iron.sub),
-                ),
-              ),
+              ],
             ),
-          if (Store.instance.settings.ageBand == 'older' && p.tier >= 2) ...[
-            IronCard(
-              padding: const EdgeInsets.all(12),
-              child: Text(L10n.t('olderDeloadHint'),
-                  style: Iron.caption(color: Iron.sub)),
-            ),
-            const SizedBox(height: 14),
-          ],
-          for (var i = 0; i < p.items.length; i++) _itemTile(context, i),
-          const SizedBox(height: 16),
-          IronButton(
-            label: L10n.t('startWorkout'),
-            icon: Icons.play_arrow,
-            onPressed: () {
-              Navigator.of(context)
-                  .push(MaterialPageRoute(
-                    builder: (_) => SessionScreen(plan: p),
-                  ))
-                  .then((_) {
-                if (mounted) setState(() {});
-              });
-            },
           ),
-          const SizedBox(height: 10),
+          if (missing.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _notice(Icons.info_outline_rounded, missing, Iron.tier(3)),
+          ],
+          if (Store.instance.settings.ageBand == 'older' && p.tier >= 2) ...[
+            const SizedBox(height: 12),
+            _notice(Icons.self_improvement_rounded, L10n.t('olderDeloadHint'),
+                Iron.tier(2)),
+          ],
+          const SizedBox(height: 20),
+          for (var i = 0; i < p.items.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _itemTile(context, i, hue),
+            ),
+          const SizedBox(height: 4),
           if (p.builtin)
             OutlinedButton.icon(
               onPressed: _copyPlan,
-              icon: const Icon(Icons.copy, size: 17),
+              icon: const Icon(Icons.copy_rounded, size: 18),
               label: Text(L10n.t('copyPlan')),
             )
           else
@@ -140,9 +155,36 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 ));
                 if (mounted) setState(() {});
               },
-              icon: Icon(Icons.edit, size: 17),
+              icon: const Icon(Icons.edit_rounded, size: 18),
               label: Text(L10n.t('editPlan')),
             ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+        child: IronButton(
+          label: L10n.t('startWorkout'),
+          icon: Icons.play_arrow_rounded,
+          color: hue,
+          onPressed: () => _start(p),
+        ),
+      ),
+    );
+  }
+
+  Widget _notice(IconData icon, String text, Color hue) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Iron.tint(hue),
+        borderRadius: const BorderRadius.all(Iron.rM),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: hue),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: Iron.body(13, color: Iron.ink))),
         ],
       ),
     );
@@ -167,43 +209,13 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final altId = subs.substituteFor(ex.id, issues);
     final altEx = altId == null ? null : Store.instance.exerciseById(altId);
     return [
-      Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Row(
-          children: [
-            Flexible(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Iron.accent.withValues(alpha: 0.12),
-                  borderRadius: const BorderRadius.all(Iron.rS),
-                ),
-                child: Text(L10n.tf('warnIssue', label),
-                    style: Iron.caption(color: Iron.sub)),
-              ),
-            ),
-            if (altEx != null) ...[
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () => _applySwap(index, altId!),
-                borderRadius: const BorderRadius.all(Iron.rS),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Iron.cardHi,
-                    borderRadius: const BorderRadius.all(Iron.rS),
-                  ),
-                  child: Text(L10n.tf('swapTo', altEx.name(L10n.zh)),
-                      style: Iron.caption(color: Iron.accent)
-                          .copyWith(fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+      IronPill(L10n.tf('warnIssue', label),
+          color: Iron.danger, icon: Icons.warning_amber_rounded),
+      if (altEx != null)
+        IronPill(L10n.tf('swapTo', altEx.name(L10n.zh)),
+            color: Iron.accent,
+            icon: Icons.swap_horiz_rounded,
+            onTap: () => _applySwap(index, altId!)),
     ];
   }
 
@@ -231,76 +243,77 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     );
   }
 
-  Widget _itemTile(BuildContext context, int i) {
+  Widget _itemTile(BuildContext context, int i, Color hue) {
     final zh = L10n.zh;
     final item = plan.items[i];
     final ex = Store.instance.exerciseById(item.exerciseId);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Material(
-        color: Iron.card,
-        borderRadius: const BorderRadius.all(Iron.rM),
-        child: InkWell(
-          onTap: ex == null
-              ? null
-              : () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => ExerciseDetailPage(exercise: ex),
-                  ));
-                },
-          borderRadius: const BorderRadius.all(Iron.rM),
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 24,
+    final chips = <Widget>[
+      if (ex != null &&
+          !ex.availableFor(Store.instance.settings.userEquipment))
+        IronPill(
+            L10n.tf(
+                'needsEquipment',
+                L10n.t(ex.requiredEquipment() == 'dumbbell'
+                    ? 'dumbbell'
+                    : 'obEqGym')),
+            icon: Icons.lock_outline_rounded),
+      if (ex != null) ..._issueWidgets(context, i, ex),
+    ];
+    return IronCard(
+      radius: Iron.rM,
+      padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+      onTap: ex == null
+          ? null
+          : () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => ExerciseDetailPage(exercise: ex),
+              ));
+            },
+      child: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconBlob(exerciseIcon(ex?.category ?? ''), color: hue, size: 48),
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                      color: hue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Iron.card, width: 2)),
                   child: Text('${i + 1}',
-                      style: Iron.body(13,
-                          color: Iron.faint, weight: FontWeight.w600)),
+                      style: Iron.caption(
+                              color: Iron.isDark ? Iron.bg : Colors.white,
+                              weight: FontWeight.w800)
+                          .copyWith(fontSize: 10, height: 1)),
                 ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(ex?.name(zh) ?? item.exerciseId,
-                          style: Iron.body(14)),
-                      Text(
-                          '${item.sets} × ${item.reps} · ${L10n.t('rest')} ${item.restSeconds}${L10n.t('seconds')}',
-                          style: Iron.caption(color: Iron.faint)),
-                      if (ex != null &&
-                          !ex.availableFor(
-                              Store.instance.settings.userEquipment))
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Iron.cardHi,
-                              borderRadius:
-                                  const BorderRadius.all(Iron.rS),
-                            ),
-                            child: Text(
-                              L10n.tf('needsEquipment',
-                                  L10n.t(ex.requiredEquipment() == 'dumbbell'
-                                      ? 'dumbbell'
-                                      : 'obEqGym')),
-                              style: Iron.caption(color: Iron.sub),
-                            ),
-                          ),
-                        ),
-                      if (ex != null) ..._issueWidgets(context, i, ex),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right,
-                    size: 17, color: Iron.faint),
+              ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(ex?.name(zh) ?? item.exerciseId,
+                    style: Iron.body(15, weight: FontWeight.w800)),
+                Text(
+                    '${item.sets} × ${item.reps} · ${L10n.t('rest')} ${item.restSeconds}${L10n.t('seconds')}',
+                    style: Iron.caption()),
+                if (chips.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(spacing: 6, runSpacing: 6, children: chips),
+                ],
               ],
             ),
           ),
-        ),
+          Icon(Icons.chevron_right_rounded, color: Iron.faint),
+        ],
       ),
     );
   }

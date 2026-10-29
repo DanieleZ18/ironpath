@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +12,11 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // bundled font ships under OFL-1.1; surface it on the licenses page
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(
+        ['Nunito'], await rootBundle.loadString('assets/fonts/OFL.txt'));
+  });
   await Store.instance.load();
   // pass the REAL system locale — otherwise 'system' silently resolves to
   // English for every non-English phone at startup
