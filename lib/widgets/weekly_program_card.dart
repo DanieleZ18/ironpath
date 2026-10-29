@@ -188,7 +188,7 @@ class WeeklyProgramCard extends StatelessWidget {
                   color: isDone
                       ? Iron.accent
                       : suggested
-                          ? hue
+                          ? Iron.inkOf(hue)
                           : Iron.cardHi,
                   shape: BoxShape.circle,
                 ),

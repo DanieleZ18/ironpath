@@ -32,23 +32,32 @@ dumbbell bench; tier 3 stays bodyweight+dumbbell so dumbbell-only users keep a
 complete track at every tier. Training tips (`lib/data/tips.dart`, 9 bilingual
 entries) rotate on the rest screen; a recovery tip shows on the finish screen.
 
-## Design — soft & friendly (2026-10-29, v4)
+## Design — soft & friendly, Morandi palette (2026-10-29, v4.1)
 
 Two palettes sharing one token API (`lib/theme.dart`, `Iron` class — screens
 never hardcode colors). Switch via Settings → Appearance (auto/light/dark);
 persisted in settings, applied at launch and live.
 
-**Colour carries meaning.** Each tier owns a hue — beginner blue, intermediate
-violet, advanced coral — shown as soft tinted blocks (`Iron.tint(hue)`), and
-the plan's hue follows it into plan detail and the session player. One green
-accent marks actions and progress; custom plans use the accent. Every text
-colour clears 4.5:1 on its background in both themes.
+**Colour carries meaning, quietly.** Each tier owns a dusty hue — beginner
+mist blue, intermediate grey violet, advanced clay rose — shown as soft tinted
+blocks (`Iron.tint(hue)`), and the plan's hue follows it into plan detail and
+the session player. One sage accent marks actions and progress; custom plans
+use the accent. The hues are *fill* tones (dots, rings, blocks, glyphs):
+wherever one is used as text or behind white text, `Iron.inkOf(hue)` derives a
+deeper shade of the same hue that clears 4.5:1 — the text helpers
+(`Iron.body/caption/hero/eyebrow`) apply it automatically.
 
-**Light**: warm cream `#F7F4EF` bg, white cards + soft shadow, ink `#2D2A35`,
-accent `#17795A`, tiers `#2A63B8/#6A4CC7/#B5473A`, tints at 12%.
+**Light**: grey-beige paper `#F4F2EE`, white cards + soft shadow, ink
+`#2E302E`, sage `#5E7F6A`, tiers `#6F8BA6/#8A7AA0/#B07A6A`, tints at 14%.
 
-**Dark**: soft charcoal `#17161C` (not pure black), cards `#221F29`, accent
-`#5ACFA2`, tiers `#82B4F7/#B39EF5/#F79D8E`, tints at 18%.
+**Dark**: grey charcoal `#191A19`, cards `#232523`, sage `#8FB09A`, tiers
+`#9DB3C9/#B4A8C8/#D0A595`, tints at 18%.
+
+**Exercise glyphs** (`lib/widgets/muscle_glyph.dart`): until illustrations
+land, each exercise shows a small body figure with its muscles highlighted —
+primary muscle full strength (decides front/back view), secondary lighter.
+Below 80px the figure zooms to the upper or lower half of the body so list
+rows stay legible.
 
 **Type**: Nunito (rounded terminals, tabular digits) bundled in
 `assets/fonts/` — Latin subset, 4 weights, ~130 KB, OFL-1.1 (registered on
@@ -58,8 +67,7 @@ the licenses page). CJK falls back to the system font. Hierarchy from weight
 **Geometry**: radius 28/24/18/12, 56px pill-ish buttons, stadium chips.
 
 **Shared components** (`lib/theme.dart`): `IronCard` (white or tinted,
-tappable), `IronButton`, `IronPill`, `IconBlob` (icon on a soft tint — the
-stand-in for exercise illustrations), `SetDots` (● ● ○ ○), `BarbellProgress`,
+tappable), `IronButton`, `IronPill`, `IconBlob` (icon on a soft tint), `SetDots` (● ● ○ ○), `BarbellProgress`,
 `RestRing` (thick 16px ring), `ChoiceTile`, `StatTile`, `SectionTitle`.
 Screens compose these instead of hand-rolling boxes.
 

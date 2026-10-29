@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../widgets/muscle_glyph.dart';
 
 class ExerciseDetailPage extends StatelessWidget {
   final Exercise exercise;
@@ -28,8 +29,8 @@ class ExerciseDetailPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
-                  child: IconBlob(exerciseIcon(ex.category),
-                      color: hue, size: 96, onTint: true),
+                  child: MuscleGlyph(
+                      muscles: ex.muscles, color: hue, size: 110, onTint: true),
                 ),
                 const SizedBox(height: 18),
                 Text(ex.name(zh), style: Iron.hero(28)),

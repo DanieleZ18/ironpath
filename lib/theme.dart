@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// Design tokens, light + dark — "soft & friendly" (v4, 2026-10-29).
+// Design tokens, light + dark — "soft & friendly", Morandi (v4.1, 2026-10-29).
 // - rounded everything: 24px cards, 20px buttons, pill chips
-// - colour carries meaning: each tier owns a hue (blue / violet / coral)
-//   shown as soft tinted blocks; one green accent marks actions + progress
+// - colour carries meaning, quietly: each tier owns a dusty hue (mist blue /
+//   grey violet / clay rose) shown as soft tinted blocks; one sage accent
+//   marks actions + progress
+// - hues are FILL tones (dots, rings, blocks, glyphs). Wherever a hue is
+//   used for text or behind text, [Iron.inkOf] derives a deeper shade of the
+//   same hue that reads at 4.5:1 — so the palette can stay muted
 // - Nunito (bundled, rounded terminals) for Latin + numerals; CJK falls
 //   back to the system font
-// - every text colour clears 4.5:1 on its background in both themes
 
 class _Palette {
   final Color bg, card, cardHi, ink, sub, faint, accent, onAccent, line;
@@ -57,40 +60,40 @@ class Iron {
 
   static const fontFamily = 'Nunito';
 
-  // ---- light palette (warm cream, deep friendly hues) -------------------
+  // ---- light palette (grey-beige paper, dusty hues) --------------------
   static const _lightPalette = _Palette(
-    bg: Color(0xFFF7F4EF),
+    bg: Color(0xFFF4F2EE),
     card: Color(0xFFFFFFFF),
-    cardHi: Color(0xFFF1ECE4),
-    ink: Color(0xFF2D2A35),
-    sub: Color(0xFF6A6675),
-    faint: Color(0xFF75717F),
-    accent: Color(0xFF17795A),
+    cardHi: Color(0xFFECE9E3),
+    ink: Color(0xFF2E302E),
+    sub: Color(0xFF61635E),
+    faint: Color(0xFF6F716B),
+    accent: Color(0xFF5E7F6A), // sage
     onAccent: Color(0xFFFFFFFF),
-    line: Color(0x1A2D2A35),
-    tier1: Color(0xFF2A63B8),
-    tier2: Color(0xFF6A4CC7),
-    tier3: Color(0xFFB5473A),
-    danger: Color(0xFFB5473A),
-    tintAmount: 0.12,
+    line: Color(0x1A2E302E),
+    tier1: Color(0xFF6F8BA6), // mist blue
+    tier2: Color(0xFF8A7AA0), // grey violet
+    tier3: Color(0xFFB07A6A), // clay rose
+    danger: Color(0xFFB07A6A),
+    tintAmount: 0.14,
     overlayBrightness: Brightness.dark, // dark icons on light bg
   );
 
-  // ---- dark palette (soft charcoal, pastel hues) -------------------------
+  // ---- dark palette (grey charcoal, lifted dusty hues) -------------------
   static const _darkPalette = _Palette(
-    bg: Color(0xFF17161C),
-    card: Color(0xFF221F29),
-    cardHi: Color(0xFF2C2934),
-    ink: Color(0xFFF4F1F8),
-    sub: Color(0xFFB0ABBD),
-    faint: Color(0xFF8E8A9C),
-    accent: Color(0xFF5ACFA2),
-    onAccent: Color(0xFF0E2A20),
-    line: Color(0x1AF4F1F8),
-    tier1: Color(0xFF82B4F7),
-    tier2: Color(0xFFB39EF5),
-    tier3: Color(0xFFF79D8E),
-    danger: Color(0xFFF79D8E),
+    bg: Color(0xFF191A19),
+    card: Color(0xFF232523),
+    cardHi: Color(0xFF2D302D),
+    ink: Color(0xFFEDECE8),
+    sub: Color(0xFFB2B1AB),
+    faint: Color(0xFF8E8D87),
+    accent: Color(0xFF8FB09A),
+    onAccent: Color(0xFF172019),
+    line: Color(0x1AEDECE8),
+    tier1: Color(0xFF9DB3C9),
+    tier2: Color(0xFFB4A8C8),
+    tier3: Color(0xFFD0A595),
+    danger: Color(0xFFD0A595),
     tintAmount: 0.18,
     overlayBrightness: Brightness.light, // light icons on dark bg
   );
@@ -118,6 +121,40 @@ class Iron {
   /// Soft block colour: [c] mixed into the card surface. Text in [c] on a
   /// tint stays above 4.5:1 for every palette hue.
   static Color tint(Color c) => Color.lerp(card, c, _p.tintAmount)!;
+
+  static double _contrast(Color a, Color b) {
+    final la = a.computeLuminance(), lb = b.computeLuminance();
+    return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
+  }
+
+  static final Map<(int, bool), Color> _inkCache = {};
+
+  /// Readable shade of [hue] for text (or as a fill behind white text):
+  /// the same hue, darkened (light mode) or lightened (dark mode) just
+  /// enough to clear 4.5:1 against its own tint, the page and the card.
+  static Color inkOf(Color hue) {
+    return _inkCache.putIfAbsent((hue.toARGB32(), _dark), () {
+      final hsl = HSLColor.fromColor(hue);
+      bool ok(Color c) =>
+          _contrast(c, tint(hue)) >= 4.6 &&
+          _contrast(c, bg) >= 4.6 &&
+          _contrast(c, card) >= 4.6;
+      var c = hue;
+      for (var i = 0; i < 40 && !ok(c); i++) {
+        final l = (hsl.lightness + (_dark ? 1 : -1) * 0.02 * (i + 1))
+            .clamp(0.0, 1.0);
+        c = hsl.withLightness(l).toColor();
+      }
+      return c;
+    });
+  }
+
+  static bool _isHue(Color c) =>
+      c == accent || c == danger || c == _p.tier1 || c == _p.tier2 || c == _p.tier3;
+
+  /// Text colours that are palette hues become their readable shade.
+  static Color _text(Color? c, Color fallback) =>
+      c == null ? fallback : (_isHue(c) ? inkOf(c) : c);
 
   static SystemUiOverlayStyle get overlay => SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -151,7 +188,7 @@ class Iron {
       TextStyle(
           fontFamily: fontFamily,
           fontSize: size,
-          color: color ?? ink,
+          color: _text(color, ink),
           fontWeight: weight,
           height: 1.15,
           letterSpacing: -0.3);
@@ -161,7 +198,7 @@ class Iron {
       TextStyle(
           fontFamily: fontFamily,
           fontSize: size,
-          color: color ?? ink,
+          color: _text(color, ink),
           fontWeight: weight,
           height: 1.4);
 
@@ -169,7 +206,7 @@ class Iron {
       TextStyle(
           fontFamily: fontFamily,
           fontSize: 13,
-          color: color ?? sub,
+          color: _text(color, sub),
           fontWeight: weight,
           height: 1.35);
 
@@ -177,7 +214,7 @@ class Iron {
   static TextStyle eyebrow({Color? color}) => TextStyle(
       fontFamily: fontFamily,
       fontSize: 12,
-      color: color ?? faint,
+      color: _text(color, faint),
       fontWeight: FontWeight.w800,
       letterSpacing: 0.6,
       height: 1.3);
@@ -192,7 +229,7 @@ class Iron {
       scaffoldBackgroundColor: p.bg,
       colorScheme: ColorScheme(
         brightness: brightness,
-        primary: p.accent,
+        primary: inkOf(p.accent),
         onPrimary: p.onAccent,
         surface: p.bg,
         onSurface: p.ink,
@@ -229,7 +266,7 @@ class Iron {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: p.accent,
+          backgroundColor: inkOf(p.accent),
           foregroundColor: p.onAccent,
           disabledBackgroundColor: p.cardHi,
           disabledForegroundColor: p.faint,
@@ -258,7 +295,7 @@ class Iron {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: p.accent,
+          foregroundColor: inkOf(p.accent),
           shape: const StadiumBorder(),
           textStyle: const TextStyle(
               fontFamily: fontFamily,
@@ -385,7 +422,7 @@ class IronButton extends StatelessWidget {
     final style = color == null
         ? null
         : FilledButton.styleFrom(
-            backgroundColor: color,
+            backgroundColor: Iron.inkOf(color!),
             foregroundColor: Iron.isDark ? Iron.bg : Colors.white);
     if (icon == null) {
       return FilledButton(
@@ -459,13 +496,13 @@ class IronPill extends StatelessWidget {
     final bg = hue == null
         ? Iron.cardHi
         : solid
-            ? hue
+            ? Iron.inkOf(hue)
             : Iron.tint(hue);
     final fg = hue == null
         ? Iron.sub
         : solid
             ? (Iron.isDark ? Iron.bg : Colors.white)
-            : hue;
+            : Iron.inkOf(hue);
     final body = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: Row(

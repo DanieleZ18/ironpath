@@ -5,6 +5,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/muscle_glyph.dart';
 import 'exercise_detail_screen.dart';
 import 'plan_editor.dart';
 import 'session_screen.dart';
@@ -45,7 +46,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               child: Text(L10n.t('cancel'))),
           FilledButton(
               style: FilledButton.styleFrom(
-                  backgroundColor: Iron.danger,
+                  backgroundColor: Iron.inkOf(Iron.danger),
                   minimumSize: const Size(0, 44)),
               onPressed: () => Navigator.pop(ctx, true),
               child: Text(L10n.t('deletePlan'))),
@@ -274,7 +275,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              IconBlob(exerciseIcon(ex?.category ?? ''), color: hue, size: 48),
+              MuscleGlyph(muscles: ex?.muscles ?? const [], color: hue, size: 48),
               Positioned(
                 right: -4,
                 top: -4,
@@ -283,7 +284,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   height: 20,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                      color: hue,
+                      color: Iron.inkOf(hue),
                       shape: BoxShape.circle,
                       border: Border.all(color: Iron.card, width: 2)),
                   child: Text('${i + 1}',

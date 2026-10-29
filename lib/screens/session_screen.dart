@@ -8,6 +8,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/muscle_glyph.dart';
 import '../utils.dart';
 import '../data/tips.dart';
 import 'exercise_detail_screen.dart';
@@ -223,7 +224,7 @@ class _SessionScreenState extends State<SessionScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: Iron.danger,
+                backgroundColor: Iron.inkOf(Iron.danger),
                 minimumSize: const Size(0, 44)),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(L10n.t('quit')),
@@ -311,12 +312,16 @@ class _SessionScreenState extends State<SessionScreen> {
               children: [
                 Row(
                   children: [
-                    IconBlob(exerciseIcon(ex?.category ?? ''),
-                        color: hue, size: 56, onTint: true),
+                    MuscleGlyph(
+                        muscles: ex?.muscles ?? const [],
+                        color: hue,
+                        size: 56,
+                        onTint: true),
                     const Spacer(),
                     if (ex != null)
                       TextButton.icon(
-                        style: TextButton.styleFrom(foregroundColor: hue),
+                        style: TextButton.styleFrom(
+                            foregroundColor: Iron.inkOf(hue)),
                         onPressed: () {
                           Navigator.of(context).push(MaterialPageRoute(
                             builder: (_) => ExerciseDetailPage(exercise: ex),

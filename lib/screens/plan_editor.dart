@@ -4,6 +4,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/muscle_glyph.dart';
 
 /// Editor for custom plans — one soft card per exercise, pill steppers.
 
@@ -204,7 +205,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
         children: [
           Row(
             children: [
-              IconBlob(exerciseIcon(ex?.category ?? ''), size: 40),
+              MuscleGlyph(muscles: ex?.muscles ?? const [], size: 40),
               const SizedBox(width: 12),
               Expanded(
                 child: InkWell(
@@ -412,7 +413,8 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
             onTap: () => Navigator.pop(context, e.id),
             child: Row(
               children: [
-                IconBlob(exerciseIcon(e.category),
+                MuscleGlyph(
+                    muscles: e.muscles,
                     size: 40,
                     color: e.availableFor(userEq) ? Iron.accent : Iron.faint),
                 const SizedBox(width: 12),
