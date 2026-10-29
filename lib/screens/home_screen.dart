@@ -4,6 +4,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/ios_chrome.dart';
 import '../utils.dart';
 import '../weekly_program.dart';
 import '../widgets/plan_card.dart';
@@ -59,105 +60,100 @@ class HomeScreenState extends State<HomeScreen> {
             ? program.slots[done]
             : null;
 
-    return SafeArea(
-      child: ListView(
-        controller: widget.scrollController,
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        children: [
-          // ---- greeting
-          Row(
+    return CustomScrollView(
+      controller: widget.scrollController,
+      slivers: [
+        largeTitleBar(L10n.t('homeHello'), trailing: null),
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset(context)),
+          sliver: SliverList.list(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // ---- date under the large title
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
+                child: Text(fmtDayHeader(DateTime.now(), zh).toUpperCase(),
+                    style: Iron.eyebrow()),
+              ),
+
+              // ---- today
+              TodayCard(
+                plan: today,
+                dayIndex: done,
+                done: done,
+                total: total,
+                recommended: program == null,
+                onStart:
+                    today == null ? null : () => _startPlan(context, today),
+                onOpen: today == null ? null : () => _openPlan(context, today),
+              ),
+
+              if (program != null) ...[
+                const SizedBox(height: 16),
+                WeeklyProgramCard(
+                  program: program,
+                  done: done,
+                  onOpen: (p) => _openPlan(context, p),
+                ),
+              ],
+
+              // ---- last workout (day-14 retention hook)
+              const SizedBox(height: 16),
+              IronCard(
+                padding: const EdgeInsets.all(14),
+                radius: Iron.rM,
+                child: Row(
                   children: [
-                    Text(fmtDayHeader(DateTime.now(), zh).toUpperCase(),
-                        style: Iron.eyebrow()),
-                    const SizedBox(height: 4),
-                    Text(L10n.t('homeHello'), style: Iron.hero(28)),
+                    IconBlob(Icons.history_rounded, color: Iron.tier(1)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(L10n.t('lastWorkout'), style: Iron.caption()),
+                          const SizedBox(height: 2),
+                          Text(
+                            logs.isEmpty
+                                ? L10n.t('noWorkoutsYet')
+                                : logs.first.planTitle(zh),
+                            style: Iron.body(15, weight: FontWeight.w700),
+                          ),
+                          if (logs.isNotEmpty)
+                            Text(
+                                '${fmtDate(logs.first.startedAt)} · ${logs.first.doneSets()}/${logs.first.totalSets()} ${L10n.t('sets')}',
+                                style: Iron.caption(color: Iron.faint)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-              IconBlob(Icons.fitness_center_rounded, size: 48),
-            ],
-          ),
-          const SizedBox(height: 20),
 
-          // ---- today
-          TodayCard(
-            plan: today,
-            dayIndex: done,
-            done: done,
-            total: total,
-            recommended: program == null,
-            onStart: today == null ? null : () => _startPlan(context, today),
-            onOpen: today == null ? null : () => _openPlan(context, today),
-          ),
-
-          if (program != null) ...[
-            const SizedBox(height: 16),
-            WeeklyProgramCard(
-              program: program,
-              done: done,
-              onOpen: (p) => _openPlan(context, p),
-            ),
-          ],
-
-          // ---- last workout (day-14 retention hook)
-          const SizedBox(height: 16),
-          IronCard(
-            padding: const EdgeInsets.all(14),
-            radius: Iron.rM,
-            child: Row(
-              children: [
-                IconBlob(Icons.history_rounded, color: Iron.tier(1)),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(L10n.t('lastWorkout'), style: Iron.caption()),
-                      const SizedBox(height: 2),
-                      Text(
-                        logs.isEmpty
-                            ? L10n.t('noWorkoutsYet')
-                            : logs.first.planTitle(zh),
-                        style: Iron.body(15, weight: FontWeight.w700),
-                      ),
-                      if (logs.isNotEmpty)
-                        Text(
-                            '${fmtDate(logs.first.startedAt)} · ${logs.first.doneSets()}/${logs.first.totalSets()} ${L10n.t('sets')}',
-                            style: Iron.caption(color: Iron.faint)),
-                    ],
+              // ---- browse by tier
+              const SizedBox(height: 22),
+              SectionTitle(
+                L10n.t('browseByLevel'),
+                trailing: TextButton(
+                    onPressed: widget.goLibrary,
+                    child: Text(L10n.t('viewAll'))),
+              ),
+              for (final s in summaries)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TierCard(
+                    summary: s,
+                    onStart: () => _startPlan(context, s.bestPlan),
+                    onOpenLibrary: () => _openPlan(context, s.bestPlan),
+                    recommended: best != null && s.tier == best.tier,
                   ),
                 ),
+              if (!adFree) ...[
+                const SizedBox(height: 4),
+                const _BannerPlaceholder(),
               ],
-            ),
+            ],
           ),
-
-          // ---- browse by tier
-          const SizedBox(height: 22),
-          SectionTitle(
-            L10n.t('browseByLevel'),
-            trailing: TextButton(
-                onPressed: widget.goLibrary, child: Text(L10n.t('viewAll'))),
-          ),
-          for (final s in summaries)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: TierCard(
-                summary: s,
-                onStart: () => _startPlan(context, s.bestPlan),
-                onOpenLibrary: () => _openPlan(context, s.bestPlan),
-                recommended: best != null && s.tier == best.tier,
-              ),
-            ),
-          if (!adFree) ...[
-            const SizedBox(height: 4),
-            const _BannerPlaceholder(),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 

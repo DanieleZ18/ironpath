@@ -66,11 +66,27 @@ the licenses page). CJK falls back to the system font. Hierarchy from weight
 
 **Geometry**: radius 28/24/18/12, 56px pill-ish buttons, stadium chips.
 
-**Motion**: pages use the platform transition (Android predictive back /
-fade-forwards, iOS swipe-back), tabs cross-fade with a slight drift (220ms),
-onboarding questions slide in the direction of travel, session phases fade
-and rise (280ms), the rest ring sweeps continuously. Theme switches apply in
-one frame (`themeAnimationDuration: zero`) because widgets read the palette
+**iOS-style interaction** (2026-10-29, `lib/widgets/ios_chrome.dart`; look
+stays Morandi + Nunito, only structure and gestures follow iOS):
+- tab pages: collapsing large titles (`largeTitleBar`, Cupertino sliver nav
+  bar) and a translucent frosted tab bar (`IronTabBar`, `extendBody`)
+- pushed pages (`IronPage`): transparent nav bar that frosts once content
+  scrolls under it; detail titles fade in after the hero scrolls away
+- every page slides in from the right and can be dragged back from the left
+  edge on all platforms (`CupertinoPageTransitionsBuilder`); the session
+  screen's PopScope blocks the swipe mid-workout
+- card sheets that push the page behind back (`showIronSheet`, drag to
+  dismiss): exercise picker, exercise details
+- action sheets for destructive choices (quit workout, delete plan, plan
+  "…" menu); iOS alert for editing reps
+- sliding segmented controls, iOS switches, wheel time picker in Settings
+- history: swipe left to delete, with undo; library: long-press a plan for
+  a context menu (start / details / copy / edit / delete)
+
+**Motion**: tabs cross-fade with a slight drift (220ms), onboarding
+questions slide in the direction of travel, session phases fade and rise
+(280ms), the rest ring sweeps continuously. Theme switches apply in one
+frame (`themeAnimationDuration: zero`) because widgets read the palette
 directly.
 
 **Shared components** (`lib/theme.dart`): `IronCard` (white or tinted,

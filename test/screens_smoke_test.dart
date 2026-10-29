@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,8 +39,8 @@ void main() {
 
         await tester.pumpWidget(app(const RootShell()));
         await tester.pumpAndSettle();
-        for (final tab in [Icons.list_outlined, Icons.history,
-            Icons.settings_outlined, Icons.home_outlined]) {
+        for (final tab in [CupertinoIcons.square_list, CupertinoIcons.clock,
+            CupertinoIcons.gear, CupertinoIcons.house]) {
           await tester.tap(find.byIcon(tab).last);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -87,7 +88,7 @@ void main() {
     final pos = tester.state<ScrollableState>(list).position;
     expect(pos.pixels, greaterThan(0));
 
-    await tester.tap(find.byIcon(Icons.home).last); // selected home icon
+    await tester.tap(find.byIcon(CupertinoIcons.house_fill)); // active tab
     await tester.pumpAndSettle();
     expect(pos.pixels, 0);
   });

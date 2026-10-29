@@ -3,79 +3,106 @@ import 'package:flutter/material.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../widgets/ios_chrome.dart';
 import '../widgets/muscle_glyph.dart';
 
-class ExerciseDetailPage extends StatelessWidget {
+/// Exercise details as an iOS card sheet over the current page; drag down
+/// or tap "Done" to close.
+Future<void> showExerciseDetail(BuildContext context, Exercise exercise) =>
+    showIronSheet<void>(
+      context,
+      (context, controller) =>
+          ExerciseDetailView(exercise: exercise, controller: controller),
+    );
+
+class ExerciseDetailView extends StatelessWidget {
   final Exercise exercise;
-  const ExerciseDetailPage({super.key, required this.exercise});
+  final ScrollController? controller;
+  const ExerciseDetailView(
+      {super.key, required this.exercise, this.controller});
 
   @override
   Widget build(BuildContext context) {
     final zh = L10n.zh;
     final ex = exercise;
     final hue = Iron.tier(ex.difficulty);
-    return Scaffold(
-      backgroundColor: Iron.bg,
-      appBar: AppBar(),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-        children: [
-          // Placeholder until AI illustrations land (assets/images/<id>.png).
-          IronCard(
-            color: Iron.tint(hue),
-            radius: Iron.rXL,
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: MuscleGlyph(
-                      muscles: ex.muscles, color: hue, size: 110, onTint: true),
-                ),
-                const SizedBox(height: 18),
-                Text(ex.name(zh), style: Iron.hero(28)),
-                if (zh) Text(ex.nameEn, style: Iron.caption(color: Iron.faint)),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+    return Column(
+      children: [
+        SheetHeader(
+          title: L10n.t('description'),
+          trailing: BarTextButton(L10n.t('done'),
+              bold: true, onPressed: () => Navigator.of(context).pop()),
+        ),
+        Expanded(
+          child: ListView(
+            controller: controller,
+            padding: EdgeInsets.fromLTRB(
+                20, 4, 20, 28 + MediaQuery.paddingOf(context).bottom),
+            children: [
+              // Placeholder until AI illustrations land (assets/images/<id>.png).
+              IronCard(
+                color: Iron.tint(hue),
+                radius: Iron.rXL,
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IronPill(L10n.t(ex.category),
-                        color: hue, icon: exerciseIcon(ex.category), solid: true),
-                    for (final m in ex.muscles)
-                      IronPill(L10n.muscle(m), color: hue),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Text(L10n.t('difficulty'), style: Iron.caption()),
-                    const SizedBox(width: 8),
-                    SetDots(done: ex.difficulty, total: 3, color: hue),
-                    const Spacer(),
-                    Text(
-                      '${ex.defSets} × ${ex.defReps} · ${ex.defRest}${L10n.t('seconds')}',
-                      style: Iron.caption(color: hue),
+                    Center(
+                      child: MuscleGlyph(
+                          muscles: ex.muscles,
+                          color: hue,
+                          size: 110,
+                          onTint: true),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(ex.name(zh), style: Iron.hero(28)),
+                    if (zh)
+                      Text(ex.nameEn, style: Iron.caption(color: Iron.faint)),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        IronPill(L10n.t(ex.category),
+                            color: hue,
+                            icon: exerciseIcon(ex.category),
+                            solid: true),
+                        for (final m in ex.muscles)
+                          IronPill(L10n.muscle(m), color: hue),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Text(L10n.t('difficulty'), style: Iron.caption()),
+                        const SizedBox(width: 8),
+                        SetDots(done: ex.difficulty, total: 3, color: hue),
+                        const Spacer(),
+                        Text(
+                          '${ex.defSets} × ${ex.defReps} · ${ex.defRest}${L10n.t('seconds')}',
+                          style: Iron.caption(color: hue),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 14),
+              _section(Icons.menu_book_rounded, L10n.t('description'),
+                  [ex.desc(zh)], Iron.accent),
+              _section(Icons.check_circle_rounded, L10n.t('formCues'),
+                  ex.cues(zh), Iron.accent,
+                  numbered: true),
+              _section(Icons.error_outline_rounded, L10n.t('commonMistakes'),
+                  ex.mistakes(zh), Iron.danger),
+              _section(Icons.trending_up_rounded, L10n.t('progression'),
+                  [ex.prog(zh)], Iron.tier(3)),
+              _section(Icons.trending_down_rounded, L10n.t('regression'),
+                  [ex.reg(zh)], Iron.tier(1)),
+            ],
           ),
-          const SizedBox(height: 14),
-          _section(Icons.menu_book_rounded, L10n.t('description'),
-              [ex.desc(zh)], Iron.accent),
-          _section(Icons.check_circle_rounded, L10n.t('formCues'),
-              ex.cues(zh), Iron.accent,
-              numbered: true),
-          _section(Icons.error_outline_rounded, L10n.t('commonMistakes'),
-              ex.mistakes(zh), Iron.danger),
-          _section(Icons.trending_up_rounded, L10n.t('progression'),
-              [ex.prog(zh)], Iron.tier(3)),
-          _section(Icons.trending_down_rounded, L10n.t('regression'),
-              [ex.reg(zh)], Iron.tier(1)),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

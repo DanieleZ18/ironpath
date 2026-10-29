@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -244,16 +244,49 @@ class Iron {
       dividerColor: p.line,
       hintColor: p.faint,
       splashFactory: InkSparkle.splashFactory,
-      // Android: predictive back (fade-forwards when not gesturing); Apple:
-      // native swipe-back slide; everything else: fade-forwards
+      // iOS-style navigation everywhere: pages slide in from the right and
+      // can be dragged back from the left edge on every platform
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
       }),
+      // Cupertino widgets (nav bars, sheets, pickers, segmented controls)
+      // take our palette and Nunito instead of SF + system blue
+      cupertinoOverrideTheme: CupertinoThemeData(
+        brightness: brightness,
+        primaryColor: inkOf(p.accent),
+        scaffoldBackgroundColor: p.bg,
+        barBackgroundColor: p.bg.withValues(alpha: 0.8),
+        textTheme: CupertinoTextThemeData(
+          primaryColor: inkOf(p.accent),
+          textStyle: TextStyle(
+              fontFamily: fontFamily, fontSize: 17, color: p.ink),
+          navTitleTextStyle: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: p.ink),
+          navLargeTitleTextStyle: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
+              color: p.ink),
+          actionTextStyle: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: inkOf(p.accent)),
+          dateTimePickerTextStyle: TextStyle(
+              fontFamily: fontFamily, fontSize: 22, color: p.ink),
+          pickerTextStyle: TextStyle(
+              fontFamily: fontFamily, fontSize: 21, color: p.ink),
+        ),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: p.bg,
         surfaceTintColor: Colors.transparent,

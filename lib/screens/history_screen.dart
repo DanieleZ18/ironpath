@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/ios_chrome.dart';
 import '../utils.dart';
 import '../weekly_program.dart' show completedThisWeek;
 
@@ -27,8 +29,6 @@ class HistoryScreenState extends State<HistoryScreen> {
     // header widgets first, then one lazily built card per log — history
     // grows without bound, so only visible cards are built
     final header = <Widget>[
-      Text(L10n.t('tabHistory'), style: Iron.hero(28)),
-      const SizedBox(height: 16),
       if (logs.isEmpty)
         _empty()
       else ...[
@@ -55,24 +55,82 @@ class HistoryScreenState extends State<HistoryScreen> {
         const SizedBox(height: 18),
       ],
     ];
-    return SafeArea(
-      child: ListView.builder(
-        controller: widget.scrollController,
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        itemCount: header.length + logs.length,
-        itemBuilder: (context, i) => i < header.length
-            ? header[i]
-            : Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _logCard(logs[i - header.length], zh),
-              ),
-      ),
+    return CustomScrollView(
+      controller: widget.scrollController,
+      slivers: [
+        largeTitleBar(L10n.t('tabHistory')),
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset(context)),
+          sliver: SliverList.builder(
+            itemCount: header.length + logs.length,
+            itemBuilder: (context, i) => i < header.length
+                ? header[i]
+                : Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _swipeToDelete(logs[i - header.length], zh),
+                  ),
+          ),
+        ),
+      ],
     );
+  }
+
+  /// iOS-style swipe left to delete, with an undo snackbar instead of a
+  /// confirmation dialog.
+  Widget _swipeToDelete(SessionLog log, bool zh) {
+    return Dismissible(
+      key: ValueKey(log.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 22),
+        decoration: BoxDecoration(
+          color: Iron.inkOf(Iron.danger),
+          borderRadius: const BorderRadius.all(Iron.rM),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(CupertinoIcons.delete_solid,
+                color: Iron.isDark ? Iron.bg : Colors.white, size: 20),
+            const SizedBox(width: 6),
+            Text(L10n.t('delete'),
+                style: Iron.body(15,
+                    weight: FontWeight.w800,
+                    color: Iron.isDark ? Iron.bg : Colors.white)),
+          ],
+        ),
+      ),
+      onDismissed: (_) => _delete(log),
+      child: _logCard(log, zh),
+    );
+  }
+
+  void _delete(SessionLog log) {
+    final logs = Store.instance.logs;
+    final index = logs.indexOf(log);
+    setState(() => logs.remove(log));
+    Store.instance.save();
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Text(L10n.t('logDeleted')),
+      action: SnackBarAction(
+        label: L10n.t('undo'),
+        textColor:
+            Iron.isDark ? Iron.inkOf(Iron.accent) : Iron.tint(Iron.accent),
+        onPressed: () {
+          if (!mounted) return;
+          setState(() => logs.insert(index.clamp(0, logs.length), log));
+          Store.instance.save();
+        },
+      ),
+    ));
   }
 
   Widget _empty() {
     return Padding(
-      padding: const EdgeInsets.only(top: 60),
+      padding: const EdgeInsets.only(top: 40),
       child: Column(
         children: [
           IconBlob(Icons.event_note_rounded, size: 96, color: Iron.tier(1)),

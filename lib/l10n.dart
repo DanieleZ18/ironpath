@@ -177,6 +177,12 @@ const Map<String, Map<String, String>> _dict = {
     'emptyHistoryTitle': 'Your first workout goes here',
     'exerciseProgress': 'Exercise {n}',
     'target': 'Target',
+    'delete': 'Delete',
+    'undo': 'Undo',
+    'logDeleted': 'Workout deleted',
+    'done': 'Done',
+    'more': 'More',
+    'viewDetails': 'View details',
   },
   'zh': {
     'appTitle': 'IronPath',
@@ -319,6 +325,12 @@ const Map<String, Map<String, String>> _dict = {
     'emptyHistoryTitle': '第一次训练会出现在这里',
     'exerciseProgress': '动作 {n}',
     'target': '目标',
+    'delete': '删除',
+    'undo': '撤销',
+    'logDeleted': '已删除这次训练',
+    'done': '完成',
+    'more': '更多',
+    'viewDetails': '查看详情',
   },
 };
 

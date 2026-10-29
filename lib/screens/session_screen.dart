@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -8,6 +9,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/ios_chrome.dart';
 import '../widgets/muscle_glyph.dart';
 import '../utils.dart';
 import '../data/tips.dart';
@@ -157,10 +159,9 @@ class _SessionScreenState extends State<SessionScreen> {
 
   /// Nudge the weight field by [delta] kg (never below zero).
   void _bumpWeight(double delta) {
-    final cur =
-        double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.')) ??
-            _lastWeightShown ??
-            0;
+    final cur = double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.')) ??
+        _lastWeightShown ??
+        0;
     final next = (cur + delta).clamp(0, 999).toDouble();
     setState(() => _weightCtrl.text = fmtWeight(next));
   }
@@ -212,25 +213,12 @@ class _SessionScreenState extends State<SessionScreen> {
   }
 
   Future<bool> _confirmQuit() async {
-    final res = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(L10n.t('giveUp')),
-        content: Text(L10n.t('giveUpBody')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(L10n.t('stay')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: Iron.inkOf(Iron.danger),
-                minimumSize: const Size(0, 44)),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(L10n.t('quit')),
-          ),
-        ],
-      ),
+    final res = await showIronActionSheet<bool>(
+      context,
+      title: L10n.t('giveUp'),
+      message: L10n.t('giveUpBody'),
+      actions: [SheetAction(L10n.t('quit'), true, destructive: true)],
+      cancelLabel: L10n.t('stay'),
     );
     return res == true;
   }
@@ -245,22 +233,21 @@ class _SessionScreenState extends State<SessionScreen> {
         final quit = await _confirmQuit();
         if (quit && context.mounted) Navigator.of(context).pop();
       },
-      child: Scaffold(
-        backgroundColor: Iron.bg,
-        appBar: AppBar(
-          automaticallyImplyLeading: _phase == _Phase.finished,
-          leading: _phase == _Phase.finished
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-          title: Text(
-            _phase == _Phase.finished ? '' : plan.title(L10n.zh),
-            style: Iron.body(16, weight: FontWeight.w800),
-          ),
-        ),
-        body: AnimatedSwitcher(
+      child: IronPage(
+        title: _phase == _Phase.finished ? '' : plan.title(L10n.zh),
+        titleAlways: true,
+        // close (✕) while training — it asks before quitting; nothing once
+        // finished, the finish button leads home
+        leading: _phase == _Phase.finished
+            ? const SizedBox.shrink()
+            : CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                minimumSize: const Size(44, 44),
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: Icon(CupertinoIcons.xmark,
+                    size: 22, color: Iron.inkOf(Iron.accent)),
+              ),
+        builder: (context, insets) => AnimatedSwitcher(
           duration: const Duration(milliseconds: 280),
           switchInCurve: Curves.easeOutCubic,
           switchOutCurve: Curves.easeInCubic,
@@ -271,9 +258,8 @@ class _SessionScreenState extends State<SessionScreen> {
             child: ScaleTransition(
               scale: Tween(begin: 0.97, end: 1.0).animate(anim),
               child: SlideTransition(
-                position:
-                    Tween(begin: const Offset(0, 0.02), end: Offset.zero)
-                        .animate(anim),
+                position: Tween(begin: const Offset(0, 0.02), end: Offset.zero)
+                    .animate(anim),
                 child: child,
               ),
             ),
@@ -308,8 +294,7 @@ class _SessionScreenState extends State<SessionScreen> {
                       .toUpperCase(),
                   style: Iron.eyebrow(color: hue)),
               const Spacer(),
-              Text(
-                  '${(100 * _itemIdx / plan.items.length).round()}%',
+              Text('${(100 * _itemIdx / plan.items.length).round()}%',
                   style: Iron.eyebrow()),
             ],
           ),
@@ -339,9 +324,7 @@ class _SessionScreenState extends State<SessionScreen> {
                         style: TextButton.styleFrom(
                             foregroundColor: Iron.inkOf(hue)),
                         onPressed: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => ExerciseDetailPage(exercise: ex),
-                          ));
+                          showExerciseDetail(context, ex);
                         },
                         icon: const Icon(Icons.menu_book_rounded, size: 18),
                         label: Text(L10n.t('description')),
@@ -447,8 +430,7 @@ class _SessionScreenState extends State<SessionScreen> {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: SizedBox(
-            width: 48, height: 48, child: Icon(icon, color: _hue)),
+        child: SizedBox(width: 48, height: 48, child: Icon(icon, color: _hue)),
       ),
     );
   }
@@ -503,8 +485,8 @@ class _SessionScreenState extends State<SessionScreen> {
                               children: [
                                 Text(L10n.t('nextUp'), style: Iron.caption()),
                                 Text(nextLabel,
-                                    style: Iron.body(15,
-                                        weight: FontWeight.w800)),
+                                    style:
+                                        Iron.body(15, weight: FontWeight.w800)),
                               ],
                             ),
                           ),
@@ -602,8 +584,7 @@ class _SessionScreenState extends State<SessionScreen> {
           Row(
             children: [
               Expanded(
-                  child: StatTile(
-                      value: '$total', label: L10n.t('totalSets'))),
+                  child: StatTile(value: '$total', label: L10n.t('totalSets'))),
               const SizedBox(width: 10),
               Expanded(
                   child: StatTile(

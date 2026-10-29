@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../data/substitutions.dart' as subs;
@@ -5,6 +6,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/ios_chrome.dart';
 import '../widgets/muscle_glyph.dart';
 import 'exercise_detail_screen.dart';
 import 'plan_editor.dart';
@@ -34,24 +36,13 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     );
   }
 
+  /// iOS pattern: the destructive action sheet is the confirmation.
   Future<void> _deletePlan() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(L10n.t('deletePlan')),
-        content: Text(L10n.t('deleteConfirm')),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(L10n.t('cancel'))),
-          FilledButton(
-              style: FilledButton.styleFrom(
-                  backgroundColor: Iron.inkOf(Iron.danger),
-                  minimumSize: const Size(0, 44)),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(L10n.t('deletePlan'))),
-        ],
-      ),
+    final ok = await showIronActionSheet<bool>(
+      context,
+      message: L10n.t('deleteConfirm'),
+      actions: [SheetAction(L10n.t('deletePlan'), true, destructive: true)],
+      cancelLabel: L10n.t('cancel'),
     );
     if (ok == true && mounted) {
       Store.instance.customPlans.removeWhere((p) => p.id == plan.id);
@@ -60,11 +51,46 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     }
   }
 
+  Future<void> _edit(Plan p) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => PlanEditorPage(existing: p),
+    ));
+    if (mounted) setState(() {});
+  }
+
+  /// "…" in the nav bar: the plan's secondary actions in an action sheet.
+  Future<void> _more(Plan p) async {
+    final choice = await showIronActionSheet<String>(
+      context,
+      title: p.title(L10n.zh),
+      actions: [
+        if (p.builtin)
+          SheetAction(L10n.t('copyPlan'), 'copy')
+        else ...[
+          SheetAction(L10n.t('editPlan'), 'edit'),
+          SheetAction(L10n.t('deletePlan'), 'delete', destructive: true),
+        ],
+      ],
+      cancelLabel: L10n.t('cancel'),
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case 'copy':
+        _copyPlan();
+      case 'edit':
+        await _edit(p);
+      case 'delete':
+        Store.instance.customPlans.removeWhere((x) => x.id == p.id);
+        await Store.instance.save();
+        if (mounted) Navigator.of(context).pop();
+    }
+  }
+
   void _start(Plan p) {
     Navigator.of(context)
         .push(MaterialPageRoute(
-          builder: (_) => SessionScreen(plan: p),
-        ))
+      builder: (_) => SessionScreen(plan: p),
+    ))
         .then((_) {
       if (mounted) setState(() {});
     });
@@ -76,20 +102,22 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final p = plan;
     final hue = Iron.tier(p.builtin ? p.tier : 0);
     final missing = unavailableLabel(p, Store.instance.settings.userEquipment);
-    return Scaffold(
-      backgroundColor: Iron.bg,
-      appBar: AppBar(
-        actions: [
-          if (!p.builtin)
-            IconButton(
-              icon: const Icon(Icons.delete_outline_rounded),
-              tooltip: L10n.t('deletePlan'),
-              onPressed: _deletePlan,
-            ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+    return IronPage(
+      title: p.title(zh),
+      // the hero card carries the big title; the bar's small one fades in
+      // once that has scrolled away
+      revealTitleAt: 70,
+      actions: [
+        CupertinoButton(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          minimumSize: const Size(44, 44),
+          onPressed: () => _more(p),
+          child: Icon(CupertinoIcons.ellipsis_circle,
+              size: 26, color: Iron.inkOf(Iron.accent)),
+        ),
+      ],
+      builder: (context, insets) => ListView(
+        padding: EdgeInsets.fromLTRB(20, insets.top + 4, 20, 24),
         children: [
           // ---- hero block in the tier's hue
           IronCard(
@@ -150,24 +178,31 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
             )
           else
             OutlinedButton.icon(
-              onPressed: () async {
-                await Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => PlanEditorPage(existing: p),
-                ));
-                if (mounted) setState(() {});
-              },
+              onPressed: () => _edit(p),
               icon: const Icon(Icons.edit_rounded, size: 18),
               label: Text(L10n.t('editPlan')),
             ),
+          if (!p.builtin) ...[
+            const SizedBox(height: 10),
+            CupertinoButton(
+              onPressed: _deletePlan,
+              child: Text(L10n.t('deletePlan'),
+                  style: Iron.body(16,
+                      color: Iron.danger, weight: FontWeight.w700)),
+            ),
+          ],
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-        child: IronButton(
-          label: L10n.t('startWorkout'),
-          icon: Icons.play_arrow_rounded,
-          color: hue,
-          onPressed: () => _start(p),
+      bottomBar: Frosted(
+        border: Border(top: BorderSide(color: Iron.line, width: 0.5)),
+        child: SafeArea(
+          minimum: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+          child: IronButton(
+            label: L10n.t('startWorkout'),
+            icon: Icons.play_arrow_rounded,
+            color: hue,
+            onPressed: () => _start(p),
+          ),
         ),
       ),
     );
@@ -249,8 +284,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final item = plan.items[i];
     final ex = Store.instance.exerciseById(item.exerciseId);
     final chips = <Widget>[
-      if (ex != null &&
-          !ex.availableFor(Store.instance.settings.userEquipment))
+      if (ex != null && !ex.availableFor(Store.instance.settings.userEquipment))
         IronPill(
             L10n.tf(
                 'needsEquipment',
@@ -266,16 +300,15 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       onTap: ex == null
           ? null
           : () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => ExerciseDetailPage(exercise: ex),
-              ));
+              showExerciseDetail(context, ex);
             },
       child: Row(
         children: [
           Stack(
             clipBehavior: Clip.none,
             children: [
-              MuscleGlyph(muscles: ex?.muscles ?? const [], color: hue, size: 48),
+              MuscleGlyph(
+                  muscles: ex?.muscles ?? const [], color: hue, size: 48),
               Positioned(
                 right: -4,
                 top: -4,

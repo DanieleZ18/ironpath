@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../l10n.dart';
+import '../widgets/ios_chrome.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'library_screen.dart';
@@ -62,32 +64,23 @@ class _RootShellState extends State<RootShell> {
       SettingsScreen(scrollController: _scroll[3]),
     ];
     return Scaffold(
+      // content scrolls under the translucent tab bar
+      extendBody: true,
       body: Stack(
         children: [
           for (var i = 0; i < tabs.length; i++)
             _FadeThroughTab(active: i == _tab, child: tabs[i]),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: _select,
-        destinations: [
-          NavigationDestination(
-              icon: const Icon(Icons.home_outlined),
-              selectedIcon: const Icon(Icons.home),
-              label: t('tabHome')),
-          NavigationDestination(
-              icon: const Icon(Icons.list_outlined),
-              selectedIcon: const Icon(Icons.list),
-              label: t('tabLibrary')),
-          NavigationDestination(
-              icon: const Icon(Icons.history),
-              selectedIcon: const Icon(Icons.history),
-              label: t('tabHistory')),
-          NavigationDestination(
-              icon: const Icon(Icons.settings_outlined),
-              selectedIcon: const Icon(Icons.settings),
-              label: t('tabSettings')),
+      bottomNavigationBar: IronTabBar(
+        index: _tab,
+        onTap: _select,
+        items: [
+          (CupertinoIcons.house, CupertinoIcons.house_fill, t('tabHome')),
+          (CupertinoIcons.square_list, CupertinoIcons.square_list_fill,
+              t('tabLibrary')),
+          (CupertinoIcons.clock, CupertinoIcons.clock_fill, t('tabHistory')),
+          (CupertinoIcons.gear, CupertinoIcons.gear_solid, t('tabSettings')),
         ],
       ),
     );

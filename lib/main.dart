@@ -49,6 +49,9 @@ class GymApp extends StatelessWidget {
             // our widgets read the palette directly, so a 200ms theme lerp
             // would animate only half the screen — switch in one frame
             themeAnimationDuration: Duration.zero,
+            // iOS shows black behind a page that a card sheet pushes back
+            builder: (context, child) =>
+                ColoredBox(color: Colors.black, child: child),
             home: Store.instance.settings.onboardingDone
                 ? const RootShell()
                 : const OnboardingPage(),

@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/ios_chrome.dart';
 import '../widgets/muscle_glyph.dart';
 
 /// Editor for custom plans — one soft card per exercise, pill steppers.
@@ -36,9 +38,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
   }
 
   Future<void> _addExercise() async {
-    final id = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const ExercisePickerPage()),
-    );
+    final id = await pickExercise(context);
     if (id == null) return;
     final ex = Store.instance.exerciseById(id);
     setState(() {
@@ -52,9 +52,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
   }
 
   Future<void> _replaceExercise(int index) async {
-    final id = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const ExercisePickerPage()),
-    );
+    final id = await pickExercise(context);
     if (id == null) return;
     setState(() {
       _items[index] = _items[index].copyWith(exerciseId: id);
@@ -63,24 +61,37 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
 
   Future<void> _editReps(int index) async {
     final ctrl = TextEditingController(text: _items[index].reps);
-    final result = await showDialog<String>(
+    final result = await showCupertinoDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(L10n.t('reps')),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          style: Iron.body(16, weight: FontWeight.w700),
-          decoration: const InputDecoration(hintText: '8-12 / 30-45s'),
+      barrierDismissible: true,
+      builder: (ctx) => CupertinoAlertDialog(
+        title:
+            Text(L10n.t('reps'), style: Iron.body(17, weight: FontWeight.w800)),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: CupertinoTextField(
+            controller: ctrl,
+            autofocus: true,
+            placeholder: '8-12 / 30-45s',
+            style: Iron.body(16, weight: FontWeight.w700),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Iron.card,
+              borderRadius: const BorderRadius.all(Iron.rS),
+            ),
+          ),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(L10n.t('cancel'))),
-          FilledButton(
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+              child: Text(L10n.t('cancel'),
+                  style: Iron.body(17, color: Iron.accent))),
+          CupertinoDialogAction(
+              isDefaultAction: true,
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: Text(L10n.t('save'))),
+              child: Text(L10n.t('save'),
+                  style: Iron.body(17,
+                      color: Iron.accent, weight: FontWeight.w800))),
         ],
       ),
     );
@@ -131,32 +142,19 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
   }
 
   void _snack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
   Widget build(BuildContext context) {
     final zh = L10n.zh;
-    return Scaffold(
-      backgroundColor: Iron.bg,
-      appBar: AppBar(
-        title: Text(widget.existing == null
-            ? L10n.t('newPlan')
-            : L10n.t('editPlan')),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              onPressed: _save,
-              icon: const Icon(Icons.check_rounded, size: 20),
-              label: Text(L10n.t('save')),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+    return IronPage(
+      title: widget.existing == null ? L10n.t('newPlan') : L10n.t('editPlan'),
+      titleAlways: true,
+      actions: [BarTextButton(L10n.t('save'), bold: true, onPressed: _save)],
+      builder: (context, insets) => ListView(
+        padding:
+            EdgeInsets.fromLTRB(20, insets.top + 8, 20, 28 + insets.bottom),
         children: [
           TextField(
             controller: _titleCtrl,
@@ -217,8 +215,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
                       children: [
                         Flexible(
                           child: Text(ex?.name(zh) ?? item.exerciseId,
-                              style:
-                                  Iron.body(15, weight: FontWeight.w800)),
+                              style: Iron.body(15, weight: FontWeight.w800)),
                         ),
                         const SizedBox(width: 4),
                         Icon(Icons.swap_horiz_rounded,
@@ -236,8 +233,7 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                onPressed:
-                    i == _items.length - 1 ? null : () => _move(i, 1),
+                onPressed: i == _items.length - 1 ? null : () => _move(i, 1),
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
@@ -256,12 +252,12 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
                 _stepper(
                   label: '${L10n.t('sets')} ${item.sets}',
                   onMinus: item.sets > 1
-                      ? () => setState(() =>
-                          _items[i] = item.copyWith(sets: item.sets - 1))
+                      ? () => setState(
+                          () => _items[i] = item.copyWith(sets: item.sets - 1))
                       : null,
                   onPlus: item.sets < 10
-                      ? () => setState(() =>
-                          _items[i] = item.copyWith(sets: item.sets + 1))
+                      ? () => setState(
+                          () => _items[i] = item.copyWith(sets: item.sets + 1))
                       : null,
                 ),
                 Material(
@@ -282,12 +278,12 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
                   label:
                       '${L10n.t('rest')} ${item.restSeconds}${L10n.t('seconds')}',
                   onMinus: item.restSeconds > 15
-                      ? () => setState(() => _items[i] = item.copyWith(
-                          restSeconds: item.restSeconds - 15))
+                      ? () => setState(() => _items[i] =
+                          item.copyWith(restSeconds: item.restSeconds - 15))
                       : null,
                   onPlus: item.restSeconds < 300
-                      ? () => setState(() => _items[i] = item.copyWith(
-                          restSeconds: item.restSeconds + 15))
+                      ? () => setState(() => _items[i] =
+                          item.copyWith(restSeconds: item.restSeconds + 15))
                       : null,
                 ),
               ],
@@ -325,16 +321,22 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
   }
 }
 
-/// Searchable exercise chooser; pops with the picked exercise id.
+/// Searchable exercise chooser as an iOS card sheet; resolves to the picked
+/// exercise id, or null when dismissed.
+Future<String?> pickExercise(BuildContext context) => showIronSheet<String>(
+      context,
+      (context, controller) => ExercisePickerSheet(controller: controller),
+    );
 
-class ExercisePickerPage extends StatefulWidget {
-  const ExercisePickerPage({super.key});
+class ExercisePickerSheet extends StatefulWidget {
+  final ScrollController? controller;
+  const ExercisePickerSheet({super.key, this.controller});
 
   @override
-  State<ExercisePickerPage> createState() => _ExercisePickerPageState();
+  State<ExercisePickerSheet> createState() => _ExercisePickerSheetState();
 }
 
-class _ExercisePickerPageState extends State<ExercisePickerPage> {
+class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
   String _query = '';
 
   @override
@@ -348,39 +350,42 @@ class _ExercisePickerPageState extends State<ExercisePickerPage> {
           e.muscles.any((m) => L10n.muscle(m).toLowerCase().contains(q));
     }).toList();
 
-    return Scaffold(
-      backgroundColor: Iron.bg,
-      appBar: AppBar(title: Text(L10n.t('pickExercise'))),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-            child: TextField(
-              onChanged: (v) => setState(() => _query = v),
-              style: Iron.body(15, weight: FontWeight.w600),
-              decoration: InputDecoration(
-                hintText: L10n.t('search'),
-                prefixIcon: Icon(Icons.search_rounded, color: Iron.sub),
-              ),
-            ),
+    return Column(
+      children: [
+        SheetHeader(
+          title: L10n.t('pickExercise'),
+          leading: BarTextButton(L10n.t('cancel'),
+              onPressed: () => Navigator.of(context).pop()),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: CupertinoSearchTextField(
+            placeholder: L10n.t('search'),
+            style: Iron.body(16, weight: FontWeight.w600),
+            placeholderStyle: Iron.body(16, color: Iron.faint),
+            backgroundColor: Iron.cardHi,
+            borderRadius: const BorderRadius.all(Iron.rS),
+            onChanged: (v) => setState(() => _query = v),
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              children: [
-                for (final category in [
-                  'bodyweight',
-                  'dumbbell',
-                  'barbell',
-                  'machine',
-                  'cable'
-                ])
-                  ..._section(context, category, matches, zh),
-              ],
-            ),
+        ),
+        Expanded(
+          child: ListView(
+            controller: widget.controller,
+            padding: EdgeInsets.fromLTRB(
+                20, 0, 20, 24 + MediaQuery.paddingOf(context).bottom),
+            children: [
+              for (final category in [
+                'bodyweight',
+                'dumbbell',
+                'barbell',
+                'machine',
+                'cable'
+              ])
+                ..._section(context, category, matches, zh),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
