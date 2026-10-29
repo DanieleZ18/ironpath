@@ -98,7 +98,7 @@ WeeklyProgram? deriveWeeklyProgram(AppSettings s) {
   }
   if (best == null) return null;
 
-  final isoWeek = _isoWeekNumber(DateTime.now());
+  final isoWeek = isoWeekNumber(DateTime.now());
   final odd = isoWeek % 2 == 1;
 
   // pair families alternate the two sessions
@@ -147,19 +147,21 @@ WeeklyProgram? deriveWeeklyProgram(AppSettings s) {
       oddStart: odd);
 }
 
-int _isoWeekNumber(DateTime date) {
-  final d = DateTime(date.year, date.month, date.day);
-  // ISO week: week of the first Thursday of the year
-  final firstThursday =
-      DateTime(d.year, 1, 1).add(Duration(days: (4 - DateTime(d.year, 1, 1).weekday) % 7));
-  return ((d.difference(firstThursday).inDays) / 7).floor() + 1;
+/// ISO-8601 week number (weeks start Monday; week 1 holds the year's first
+/// Thursday). Computed in UTC so DST shifts never skew the day count.
+int isoWeekNumber(DateTime date) {
+  // the Thursday of this date's week decides which year the week belongs to
+  final thursday =
+      DateTime.utc(date.year, date.month, date.day + 4 - date.weekday);
+  final jan1 = DateTime.utc(thursday.year, 1, 1);
+  return thursday.difference(jan1).inDays ~/ 7 + 1;
 }
 
 /// Sessions logged since the start of the current week (Monday).
-int completedThisWeek(AppSettings s, List<SessionLog> logs) {
-  final now = DateTime.now();
-  final weekStart = DateTime(now.year, now.month, now.day)
-      .subtract(Duration(days: now.weekday - 1));
+int completedThisWeek(AppSettings s, List<SessionLog> logs, {DateTime? now}) {
+  final n = now ?? DateTime.now();
+  // calendar arithmetic, not Duration: stays at local midnight across DST
+  final weekStart = DateTime(n.year, n.month, n.day - (n.weekday - 1));
   return logs
       .where((l) => !l.startedAt.isBefore(weekStart))
       .length;

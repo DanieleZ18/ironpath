@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/exercises_seed.dart';
 import '../data/plans_seed.dart';
 import '../l10n.dart';
 import '../models.dart';
@@ -29,7 +30,15 @@ String freqLabel(Plan plan) => L10n.tf(
 String unavailableLabel(Plan plan, String? userEquipment) {
   final n = unavailableCount(plan, userEquipment);
   if (n == 0) return '';
-  final eqName = L10n.t('dumbbell');
+  // name the heaviest requirement among the missing moves: any gym-only
+  // exercise means dumbbells alone won't cover the plan
+  final needsGym = plan.items.any((it) {
+    final ex = exerciseMap[it.exerciseId];
+    return ex != null &&
+        !ex.availableFor(userEquipment) &&
+        ex.requiredEquipment() == 'gym';
+  });
+  final eqName = L10n.t(needsGym ? 'obEqGym' : 'dumbbell');
   return L10n.tf('unavailableCount', n).replaceFirst('{eq}', eqName);
 }
 

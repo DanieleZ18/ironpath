@@ -4,6 +4,7 @@ import 'package:gym_app/data/exercises_seed.dart';
 import 'package:gym_app/data/plans_seed.dart';
 import 'package:gym_app/models.dart';
 import 'package:gym_app/weekly_program.dart';
+import 'package:gym_app/widgets/plan_card.dart';
 
 void main() {
   test('exercise seed is internally consistent', () {
@@ -87,6 +88,71 @@ void main() {
 
     test('skipped onboarding → null', () {
       expect(deriveWeeklyProgram(AppSettings()), isNull);
+    });
+  });
+
+  group('ISO week number', () {
+    test('changes on Monday, not Thursday', () {
+      // 2026-10-26 (Mon) .. 2026-11-01 (Sun) is ISO week 44
+      for (var d = 26; d <= 32; d++) {
+        expect(isoWeekNumber(DateTime(2026, 10, d)), 44, reason: 'day $d');
+      }
+      expect(isoWeekNumber(DateTime(2026, 10, 25)), 43);
+      expect(isoWeekNumber(DateTime(2026, 11, 2)), 45);
+    });
+
+    test('year boundaries', () {
+      expect(isoWeekNumber(DateTime(2025, 12, 29)), 1); // belongs to 2026
+      expect(isoWeekNumber(DateTime(2026, 1, 1)), 1);
+      expect(isoWeekNumber(DateTime(2026, 12, 31)), 53);
+      expect(isoWeekNumber(DateTime(2027, 1, 1)), 53); // still 2026's week
+      expect(isoWeekNumber(DateTime(2027, 1, 4)), 1);
+    });
+  });
+
+  test('completedThisWeek counts from Monday 00:00', () {
+    SessionLog log(DateTime at) => SessionLog(
+        id: '$at',
+        planId: 'p',
+        planTitleEn: 'p',
+        planTitleZh: 'p',
+        startedAt: at,
+        durationSeconds: 60,
+        items: const []);
+    final logs = [
+      log(DateTime(2026, 10, 29, 8)), // Thu
+      log(DateTime(2026, 10, 26, 0, 0)), // Mon midnight
+      log(DateTime(2026, 10, 25, 23, 59)), // previous Sun
+    ];
+    expect(
+        completedThisWeek(AppSettings(), logs,
+            now: DateTime(2026, 10, 29, 20)),
+        2);
+  });
+
+  group('unavailable label names the right equipment', () {
+    final gymPlan =
+        builtinPlans.firstWhere((p) => p.id == 'builtin_beginner_gym_a');
+
+    test('dumbbell owner on a gym plan → gym, not dumbbell', () {
+      final label = unavailableLabel(gymPlan, 'dumbbell');
+      expect(label, contains('gym'));
+      expect(label, isNot(contains('Dumbbell')));
+    });
+
+    test('bodyweight-only user on a dumbbell-only plan → dumbbell', () {
+      final dbPlan = builtinPlans.firstWhere((p) =>
+          p.items.isNotEmpty &&
+          p.items.every((it) =>
+              exerciseMap[it.exerciseId]!.requiredEquipment() != 'gym') &&
+          p.items.any((it) =>
+              exerciseMap[it.exerciseId]!.requiredEquipment() ==
+              'dumbbell'));
+      expect(unavailableLabel(dbPlan, 'none'), contains('Dumbbell'));
+    });
+
+    test('full gym → no label', () {
+      expect(unavailableLabel(gymPlan, 'gym'), isEmpty);
     });
   });
 }

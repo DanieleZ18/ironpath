@@ -35,6 +35,7 @@ class _SessionScreenState extends State<SessionScreen> {
   int _restTotal = 0;
   int _restCount = 0; // which rest we're on — rotates the tip
   Timer? _timer;
+  int _durationSeconds = 0; // frozen at finish, matches the saved log
   final List<ItemLog> _log = [];
 
   Plan get plan => widget.plan;
@@ -47,13 +48,15 @@ class _SessionScreenState extends State<SessionScreen> {
   @override
   void initState() {
     super.initState();
-    WakelockPlus.enable(); // screen stays on for the whole workout
-    _prefillWeight();
     if (plan.items.isEmpty) {
+      // nothing to play: leave before touching plan.items[0]
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.of(context).pop();
       });
+      return;
     }
+    WakelockPlus.enable(); // screen stays on for the whole workout
+    _prefillWeight();
   }
 
   @override
@@ -112,7 +115,14 @@ class _SessionScreenState extends State<SessionScreen> {
       ],
     );
     _weightCtrl.clear();
-    _startRest(_effectiveRest);
+    final lastSet =
+        _setIdx + 1 >= _item.sets && _itemIdx + 1 >= plan.items.length;
+    if (lastSet) {
+      // no rest after the final set: log right away so a quit can't lose it
+      _finish();
+    } else {
+      _startRest(_effectiveRest);
+    }
   }
 
   void _startRest(int seconds) {
@@ -180,7 +190,10 @@ class _SessionScreenState extends State<SessionScreen> {
     );
     Store.instance.logs.insert(0, log);
     Store.instance.save();
-    setState(() => _phase = _Phase.finished);
+    setState(() {
+      _durationSeconds = log.durationSeconds;
+      _phase = _Phase.finished;
+    });
   }
 
   Future<bool> _confirmQuit() async {
@@ -206,6 +219,7 @@ class _SessionScreenState extends State<SessionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (plan.items.isEmpty) return Scaffold(backgroundColor: Iron.bg);
     return PopScope(
       canPop: _phase == _Phase.finished,
       onPopInvokedWithResult: (didPop, result) async {
@@ -445,7 +459,7 @@ class _SessionScreenState extends State<SessionScreen> {
               Text(L10n.t('sessionFinished'), style: Iron.hero(28)),
               SizedBox(height: 8),
               Text(
-                  '${L10n.t('totalSets')}: $total · ${L10n.t('duration')}: ${fmtDuration(DateTime.now().difference(_startedAt).inSeconds)}',
+                  '${L10n.t('totalSets')}: $total · ${L10n.t('duration')}: ${fmtDuration(_durationSeconds)}',
                   style: Iron.caption()),
               SizedBox(height: 10),
               Padding(
