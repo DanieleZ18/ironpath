@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -243,6 +244,16 @@ class Iron {
       dividerColor: p.line,
       hintColor: p.faint,
       splashFactory: InkSparkle.splashFactory,
+      // Android: predictive back (fade-forwards when not gesturing); Apple:
+      // native swipe-back slide; everything else: fade-forwards
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
+      }),
       appBarTheme: AppBarTheme(
         backgroundColor: p.bg,
         surfaceTintColor: Colors.transparent,
@@ -681,9 +692,12 @@ class RestRing extends StatelessWidget {
           SizedBox(
             width: size,
             height: size,
+            // the timer ticks once a second; a linear 1s tween per tick makes
+            // the ring sweep continuously instead of jumping
             child: TweenAnimationBuilder<double>(
               tween: Tween(end: value.clamp(0, 1)),
-              duration: const Duration(milliseconds: 400),
+              duration: const Duration(seconds: 1),
+              curve: Curves.linear,
               builder: (context, v, _) => CircularProgressIndicator(
                 value: v,
                 strokeWidth: 16,

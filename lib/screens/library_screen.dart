@@ -9,7 +9,8 @@ import 'plan_detail.dart';
 import 'plan_editor.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  final ScrollController? scrollController;
+  const LibraryScreen({super.key, this.scrollController});
 
   @override
   State<LibraryScreen> createState() => LibraryScreenState();
@@ -39,6 +40,7 @@ class LibraryScreenState extends State<LibraryScreen> {
     final custom = Store.instance.customPlans;
     return SafeArea(
       child: ListView(
+        controller: widget.scrollController,
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
           Text(L10n.t('tabLibrary'), style: Iron.hero(28)),

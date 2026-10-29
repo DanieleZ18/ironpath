@@ -13,7 +13,8 @@ import 'session_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback goLibrary;
-  const HomeScreen({super.key, required this.goLibrary});
+  final ScrollController? scrollController;
+  const HomeScreen({super.key, required this.goLibrary, this.scrollController});
 
   @override
   State<HomeScreen> createState() => HomeScreenState();
@@ -60,6 +61,7 @@ class HomeScreenState extends State<HomeScreen> {
 
     return SafeArea(
       child: ListView(
+        controller: widget.scrollController,
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
           // ---- greeting

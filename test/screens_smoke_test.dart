@@ -69,4 +69,49 @@ void main() {
     expect(Store.instance.settings.userDays, 6);
     expect(Store.instance.settings.userEquipment, 'dumbbell');
   });
+
+  testWidgets('re-tapping the active tab scrolls it back to the top',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await seed();
+    L10n.setLang('en');
+    Iron.setAppearance('light');
+
+    await tester.pumpWidget(app(const RootShell()));
+    await tester.pumpAndSettle();
+    final list = find.byType(Scrollable).first;
+    await tester.drag(list, const Offset(0, -600));
+    await tester.pumpAndSettle();
+    final pos = tester.state<ScrollableState>(list).position;
+    expect(pos.pixels, greaterThan(0));
+
+    await tester.tap(find.byIcon(Icons.home).last); // selected home icon
+    await tester.pumpAndSettle();
+    expect(pos.pixels, 0);
+  });
+
+  testWidgets('onboarding back button returns to the previous question',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({});
+    await Store.instance.load();
+    L10n.setLang('en');
+    Iron.setAppearance('light');
+
+    await tester.pumpWidget(app(const OnboardingPage(reentry: true)));
+    await tester.tap(find.text('Beginner'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+    expect(find.text('6 days'), findsOneWidget);
+
+    await tester.tap(find.text('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('6 days'), findsNothing);
+    expect(find.text('Beginner'), findsOneWidget);
+  });
 }

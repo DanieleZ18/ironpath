@@ -22,6 +22,7 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   static const _pages = 5;
   int _page = 0;
+  bool _forward = true; // direction of the last step, for the transition
   int? _tier;
   int? _days;
   String? _equipment;
@@ -118,120 +119,165 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   const SizedBox(width: 10),
                   Text('IronPath', style: Iron.hero(20)),
                   const Spacer(),
-                  TextButton(
-                      onPressed: _skip, child: Text(L10n.t('obSkip'))),
+                  TextButton(onPressed: _skip, child: Text(L10n.t('obSkip'))),
                 ],
               ),
               const SizedBox(height: 14),
               BarbellProgress(current: _page + 1, total: _pages),
               const SizedBox(height: 26),
-              IconBlob(questionIcons[_page], color: qHue, size: 64),
-              const SizedBox(height: 16),
-              Text(L10n.t('obWelcome'), style: Iron.caption()),
-              const SizedBox(height: 6),
-              Text(L10n.t(questions[_page]), style: Iron.hero(26)),
-              const SizedBox(height: 18),
               Expanded(
-                child: ListView(
-                  children: [
-                    ...switch (_page) {
-                      0 => [
-                          for (final tier in [1, 2, 3])
-                            _option(
-                              label: L10n.t(switch (tier) {
-                                1 => 'beginner',
-                                2 => 'intermediate',
-                                _ => 'advanced',
-                              }),
-                              icon: tierIcon(tier),
-                              color: Iron.tier(tier),
-                              selected: _tier == tier,
-                              onTap: () => setState(() => _tier = tier),
-                            ),
-                        ],
-                      1 => [
-                          for (final d in [2, 3, 4, 5, 6])
-                            _option(
-                              label: L10n.t('obDays$d'),
-                              icon: Icons.event_available_rounded,
-                              color: Iron.tier(1),
-                              selected: _days == d,
-                              onTap: () => setState(() => _days = d),
-                            ),
-                        ],
-                      2 => [
-                          _option(
-                            label: L10n.t('obEqNone'),
-                            icon: Icons.accessibility_new_rounded,
-                            color: Iron.tier(2),
-                            selected: _equipment == 'none',
-                            onTap: () => setState(() => _equipment = 'none'),
-                          ),
-                          _option(
-                            label: L10n.t('obEqDumbbell'),
-                            icon: Icons.fitness_center_rounded,
-                            color: Iron.tier(2),
-                            selected: _equipment == 'dumbbell',
-                            onTap: () =>
-                                setState(() => _equipment = 'dumbbell'),
-                          ),
-                          _option(
-                            label: L10n.t('obEqGym'),
-                            icon: Icons.storefront_rounded,
-                            color: Iron.tier(2),
-                            selected: _equipment == 'gym',
-                            onTap: () => setState(() => _equipment = 'gym'),
-                          ),
-                        ],
-                      3 => [
-                          for (final band in ['young', 'mid', 'older'])
-                            _option(
-                              label: L10n.t(switch (band) {
-                                'young' => 'obAgeYoung',
-                                'mid' => 'obAgeMid',
-                                _ => 'obAgeOlder',
-                              }),
-                              icon: switch (band) {
-                                'young' => Icons.directions_run_rounded,
-                                'mid' => Icons.self_improvement_rounded,
-                                _ => Icons.elderly_rounded,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  // slide in the direction of travel: forward → from the
+                  // right, back → from the left; the old page drifts away
+                  transitionBuilder: (child, anim) {
+                    final incoming = child.key == ValueKey(_page);
+                    final dx = (incoming ? 1 : -1) * (_forward ? 1 : -1) * 0.08;
+                    return FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween(begin: Offset(dx, 0), end: Offset.zero)
+                            .animate(anim),
+                        child: child,
+                      ),
+                    );
+                  },
+                  layoutBuilder: (current, previous) => Stack(
+                    alignment: Alignment.topLeft,
+                    children: [...previous, if (current != null) current],
+                  ),
+                  child: KeyedSubtree(
+                    key: ValueKey(_page),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        IconBlob(questionIcons[_page], color: qHue, size: 64),
+                        const SizedBox(height: 16),
+                        Text(L10n.t('obWelcome'), style: Iron.caption()),
+                        const SizedBox(height: 6),
+                        Text(L10n.t(questions[_page]), style: Iron.hero(26)),
+                        const SizedBox(height: 18),
+                        Expanded(
+                          child: ListView(
+                            children: [
+                              ...switch (_page) {
+                                0 => [
+                                    for (final tier in [1, 2, 3])
+                                      _option(
+                                        label: L10n.t(switch (tier) {
+                                          1 => 'beginner',
+                                          2 => 'intermediate',
+                                          _ => 'advanced',
+                                        }),
+                                        icon: tierIcon(tier),
+                                        color: Iron.tier(tier),
+                                        selected: _tier == tier,
+                                        onTap: () =>
+                                            setState(() => _tier = tier),
+                                      ),
+                                  ],
+                                1 => [
+                                    for (final d in [2, 3, 4, 5, 6])
+                                      _option(
+                                        label: L10n.t('obDays$d'),
+                                        icon: Icons.event_available_rounded,
+                                        color: Iron.tier(1),
+                                        selected: _days == d,
+                                        onTap: () => setState(() => _days = d),
+                                      ),
+                                  ],
+                                2 => [
+                                    _option(
+                                      label: L10n.t('obEqNone'),
+                                      icon: Icons.accessibility_new_rounded,
+                                      color: Iron.tier(2),
+                                      selected: _equipment == 'none',
+                                      onTap: () =>
+                                          setState(() => _equipment = 'none'),
+                                    ),
+                                    _option(
+                                      label: L10n.t('obEqDumbbell'),
+                                      icon: Icons.fitness_center_rounded,
+                                      color: Iron.tier(2),
+                                      selected: _equipment == 'dumbbell',
+                                      onTap: () => setState(
+                                          () => _equipment = 'dumbbell'),
+                                    ),
+                                    _option(
+                                      label: L10n.t('obEqGym'),
+                                      icon: Icons.storefront_rounded,
+                                      color: Iron.tier(2),
+                                      selected: _equipment == 'gym',
+                                      onTap: () =>
+                                          setState(() => _equipment = 'gym'),
+                                    ),
+                                  ],
+                                3 => [
+                                    for (final band in [
+                                      'young',
+                                      'mid',
+                                      'older'
+                                    ])
+                                      _option(
+                                        label: L10n.t(switch (band) {
+                                          'young' => 'obAgeYoung',
+                                          'mid' => 'obAgeMid',
+                                          _ => 'obAgeOlder',
+                                        }),
+                                        icon: switch (band) {
+                                          'young' =>
+                                            Icons.directions_run_rounded,
+                                          'mid' =>
+                                            Icons.self_improvement_rounded,
+                                          _ => Icons.elderly_rounded,
+                                        },
+                                        color: Iron.tier(3),
+                                        selected: _ageBand == band,
+                                        onTap: () =>
+                                            setState(() => _ageBand = band),
+                                      ),
+                                  ],
+                                _ => [
+                                    _option(
+                                      label: L10n.t('issueNone'),
+                                      icon: Icons.sentiment_satisfied_rounded,
+                                      color: Iron.accent,
+                                      selected: _issues.isEmpty,
+                                      onTap: () => setState(() => _issues = []),
+                                    ),
+                                    for (final issue in [
+                                      'knee',
+                                      'shoulder',
+                                      'lower_back'
+                                    ])
+                                      _option(
+                                        label: L10n.t(switch (issue) {
+                                          'knee' => 'issueKnee',
+                                          'shoulder' => 'issueShoulder',
+                                          _ => 'issueLowerBack',
+                                        }),
+                                        icon: switch (issue) {
+                                          'knee' =>
+                                            Icons.directions_walk_rounded,
+                                          'shoulder' =>
+                                            Icons.accessibility_rounded,
+                                          _ => Icons
+                                              .airline_seat_recline_normal_rounded,
+                                        },
+                                        color: Iron.danger,
+                                        selected: _issues.contains(issue),
+                                        onTap: () => _toggleIssue(issue),
+                                      ),
+                                  ],
                               },
-                              color: Iron.tier(3),
-                              selected: _ageBand == band,
-                              onTap: () => setState(() => _ageBand = band),
-                            ),
-                        ],
-                      _ => [
-                          _option(
-                            label: L10n.t('issueNone'),
-                            icon: Icons.sentiment_satisfied_rounded,
-                            color: Iron.accent,
-                            selected: _issues.isEmpty,
-                            onTap: () => setState(() => _issues = []),
+                            ],
                           ),
-                          for (final issue in [
-                            'knee',
-                            'shoulder',
-                            'lower_back'
-                          ])
-                            _option(
-                              label: L10n.t(switch (issue) {
-                                'knee' => 'issueKnee',
-                                'shoulder' => 'issueShoulder',
-                                _ => 'issueLowerBack',
-                              }),
-                              icon: switch (issue) {
-                                'knee' => Icons.directions_walk_rounded,
-                                'shoulder' => Icons.accessibility_rounded,
-                                _ => Icons.airline_seat_recline_normal_rounded,
-                              },
-                              color: Iron.danger,
-                              selected: _issues.contains(issue),
-                              onTap: () => _toggleIssue(issue),
-                            ),
-                        ],
-                    },
-                  ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -242,7 +288,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(56)),
-                        onPressed: () => setState(() => _page--),
+                        onPressed: () => setState(() {
+                          _forward = false;
+                          _page--;
+                        }),
                         child: Text(L10n.t('back')),
                       ),
                     ),
@@ -251,8 +300,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   Expanded(
                     flex: 2,
                     child: IronButton(
-                      label:
-                          onLastPage ? L10n.t('obStart') : L10n.t('obNext'),
+                      label: onLastPage ? L10n.t('obStart') : L10n.t('obNext'),
                       icon: onLastPage
                           ? Icons.rocket_launch_rounded
                           : Icons.arrow_forward_rounded,
@@ -261,7 +309,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               if (onLastPage) {
                                 _finish();
                               } else {
-                                setState(() => _page++);
+                                setState(() {
+                                  _forward = true;
+                                  _page++;
+                                });
                               }
                             }
                           : null,

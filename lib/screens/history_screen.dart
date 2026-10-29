@@ -8,7 +8,8 @@ import '../utils.dart';
 import '../weekly_program.dart' show completedThisWeek;
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  final ScrollController? scrollController;
+  const HistoryScreen({super.key, this.scrollController});
 
   @override
   State<HistoryScreen> createState() => HistoryScreenState();
@@ -23,45 +24,48 @@ class HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     final zh = L10n.zh;
     final logs = Store.instance.logs;
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        children: [
-          Text(L10n.t('tabHistory'), style: Iron.hero(28)),
-          const SizedBox(height: 16),
-          if (logs.isEmpty)
-            _empty()
-          else ...[
-            Row(
-              children: [
-                Expanded(
-                    child: StatTile(
-                        value: '${logs.length}',
-                        label: L10n.t('statSessions'))),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: StatTile(
-                        value:
-                            '${completedThisWeek(Store.instance.settings, logs)}',
-                        label: L10n.t('statThisWeek'),
-                        color: Iron.tier(1))),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: StatTile(
-                        value:
-                            '${logs.fold<int>(0, (a, l) => a + l.doneSets())}',
-                        label: L10n.t('statSets'),
-                        color: Iron.tier(2))),
-              ],
-            ),
-            const SizedBox(height: 18),
-            for (final log in logs)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _logCard(log, zh),
-              ),
+    // header widgets first, then one lazily built card per log — history
+    // grows without bound, so only visible cards are built
+    final header = <Widget>[
+      Text(L10n.t('tabHistory'), style: Iron.hero(28)),
+      const SizedBox(height: 16),
+      if (logs.isEmpty)
+        _empty()
+      else ...[
+        Row(
+          children: [
+            Expanded(
+                child: StatTile(
+                    value: '${logs.length}', label: L10n.t('statSessions'))),
+            const SizedBox(width: 10),
+            Expanded(
+                child: StatTile(
+                    value:
+                        '${completedThisWeek(Store.instance.settings, logs)}',
+                    label: L10n.t('statThisWeek'),
+                    color: Iron.tier(1))),
+            const SizedBox(width: 10),
+            Expanded(
+                child: StatTile(
+                    value: '${logs.fold<int>(0, (a, l) => a + l.doneSets())}',
+                    label: L10n.t('statSets'),
+                    color: Iron.tier(2))),
           ],
-        ],
+        ),
+        const SizedBox(height: 18),
+      ],
+    ];
+    return SafeArea(
+      child: ListView.builder(
+        controller: widget.scrollController,
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        itemCount: header.length + logs.length,
+        itemBuilder: (context, i) => i < header.length
+            ? header[i]
+            : Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _logCard(logs[i - header.length], zh),
+              ),
       ),
     );
   }
@@ -112,7 +116,8 @@ class HistoryScreenState extends State<HistoryScreen> {
                 spacing: 6,
                 runSpacing: 4,
                 children: [
-                  IronPill(fmtTime(log.startedAt), icon: Icons.schedule_rounded),
+                  IronPill(fmtTime(log.startedAt),
+                      icon: Icons.schedule_rounded),
                   IronPill(fmtDuration(log.durationSeconds),
                       icon: Icons.timer_outlined),
                   IronPill('${log.doneSets()}/${log.totalSets()}',

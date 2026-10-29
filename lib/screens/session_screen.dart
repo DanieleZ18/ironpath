@@ -261,7 +261,23 @@ class _SessionScreenState extends State<SessionScreen> {
           ),
         ),
         body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
+          duration: const Duration(milliseconds: 280),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          // fade + a slight rise/scale: each set and rest feels like a card
+          // being dealt, without moving far enough to distract
+          transitionBuilder: (child, anim) => FadeTransition(
+            opacity: anim,
+            child: ScaleTransition(
+              scale: Tween(begin: 0.97, end: 1.0).animate(anim),
+              child: SlideTransition(
+                position:
+                    Tween(begin: const Offset(0, 0.02), end: Offset.zero)
+                        .animate(anim),
+                child: child,
+              ),
+            ),
+          ),
           child: KeyedSubtree(
             key: ValueKey('$_phase-$_itemIdx-$_setIdx'),
             child: switch (_phase) {

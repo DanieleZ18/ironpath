@@ -7,7 +7,8 @@ import '../utils.dart';
 import 'onboarding_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final ScrollController? scrollController;
+  const SettingsScreen({super.key, this.scrollController});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -55,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final s = Store.instance.settings;
     return SafeArea(
       child: ListView(
+        controller: widget.scrollController,
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
           Text(L10n.t('tabSettings'), style: Iron.hero(28)),

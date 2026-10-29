@@ -66,6 +66,13 @@ the licenses page). CJK falls back to the system font. Hierarchy from weight
 
 **Geometry**: radius 28/24/18/12, 56px pill-ish buttons, stadium chips.
 
+**Motion**: pages use the platform transition (Android predictive back /
+fade-forwards, iOS swipe-back), tabs cross-fade with a slight drift (220ms),
+onboarding questions slide in the direction of travel, session phases fade
+and rise (280ms), the rest ring sweeps continuously. Theme switches apply in
+one frame (`themeAnimationDuration: zero`) because widgets read the palette
+directly.
+
 **Shared components** (`lib/theme.dart`): `IronCard` (white or tinted,
 tappable), `IronButton`, `IronPill`, `IconBlob` (icon on a soft tint), `SetDots` (● ● ○ ○), `BarbellProgress`,
 `RestRing` (thick 16px ring), `ChoiceTile`, `StatTile`, `SectionTitle`.
@@ -208,7 +215,9 @@ earlier sets, falling back to the most recent logged weight from history
 - If a build fails with Kotlin cache errors after an aborted build:
   `cd android && gradlew.bat --stop`, kill stray `KotlinCompileDaemon` processes
   (see them with `jps -l`), then `flutter clean`.
-- Tab screens (home/library/history) live in one IndexedStack and must be
-  refreshed manually when data changes elsewhere — see `RootShell`'s
-  `onDestinationSelected` and the `.then((_) => refresh())` pattern after
-  pushing the session screen.
+- Tab screens (home/library/history/settings) all stay alive in one Stack
+  (`RootShell`, cross-faded by `_FadeThroughTab`) and must be refreshed
+  manually when data changes elsewhere — see `RootShell._select` and the
+  `.then((_) => refresh())` pattern after pushing the session screen.
+  Re-tapping the active tab scrolls it to the top (one ScrollController per
+  tab).

@@ -46,6 +46,9 @@ class GymApp extends StatelessWidget {
             title: L10n.t('appTitle'),
             debugShowCheckedModeBanner: false,
             theme: Iron.theme(),
+            // our widgets read the palette directly, so a 200ms theme lerp
+            // would animate only half the screen — switch in one frame
+            themeAnimationDuration: Duration.zero,
             home: Store.instance.settings.onboardingDone
                 ? const RootShell()
                 : const OnboardingPage(),
