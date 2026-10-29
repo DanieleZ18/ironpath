@@ -39,9 +39,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Store.instance.save();
   }
 
-  /// iOS wheel time picker in a bottom popup; commits on "Done".
+  /// Reminder time: iOS wheel in a bottom popup on Apple devices (commits
+  /// on "Done"), the Material clock dialog elsewhere.
   Future<void> _pickReminderTime() async {
     final s = Store.instance.settings;
+    if (!isApple(context)) {
+      final t = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay(hour: s.reminderHour, minute: s.reminderMinute),
+        // 24-hour clock, matching how the time is shown in the row
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        ),
+      );
+      if (t == null) return;
+      setState(() {
+        s.reminderHour = t.hour;
+        s.reminderMinute = t.minute;
+      });
+      Store.instance.save();
+      return;
+    }
     var picked = DateTime(2000, 1, 1, s.reminderHour, s.reminderMinute);
     final ok = await showCupertinoModalPopup<bool>(
       context: context,
@@ -240,12 +259,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _divider() => Divider(
       height: 1, thickness: 1, indent: 64, endIndent: 16, color: Iron.line);
 
-  /// iOS sliding segmented control: icon + label per option.
+  /// One-of-three choice: iOS sliding segmented control on Apple devices,
+  /// Material segmented button elsewhere.
   Widget _segmented({
     required String value,
     required ValueChanged<String> onChanged,
     required List<(String, IconData, String)> options,
   }) {
+    if (!isApple(context)) {
+      return SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<String>(
+          showSelectedIcon: false,
+          selected: {value},
+          onSelectionChanged: (sel) => onChanged(sel.first),
+          segments: [
+            for (final (key, icon, label) in options)
+              ButtonSegment(
+                value: key,
+                icon: Icon(icon, size: 16),
+                label:
+                    Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+          ],
+        ),
+      );
+    }
     return SizedBox(
       width: double.infinity,
       child: CupertinoSlidingSegmentedControl<String>(
@@ -332,8 +371,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: title,
       subtitle: subtitle,
       onTap: () => onChanged(!value),
-      trailing: CupertinoSwitch(
-          value: value, activeTrackColor: Iron.accent, onChanged: onChanged),
+      trailing: isApple(context)
+          ? CupertinoSwitch(
+              value: value, activeTrackColor: Iron.accent, onChanged: onChanged)
+          : Switch(value: value, onChanged: onChanged),
     );
   }
 }

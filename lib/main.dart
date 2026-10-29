@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n.dart';
 import 'screens/onboarding_screen.dart';
@@ -46,6 +47,11 @@ class GymApp extends StatelessWidget {
             title: L10n.t('appTitle'),
             debugShowCheckedModeBanner: false,
             theme: Iron.theme(),
+            // system widgets (time picker, menus, tooltips, Cupertino
+            // pickers) follow the app language, not just our own strings
+            locale: Locale(L10n.zh ? 'zh' : 'en'),
+            supportedLocales: const [Locale('en'), Locale('zh')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
             // our widgets read the palette directly, so a 200ms theme lerp
             // would animate only half the screen — switch in one frame
             themeAnimationDuration: Duration.zero,

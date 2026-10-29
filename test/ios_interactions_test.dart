@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,12 @@ import 'package:gym_app/theme.dart';
 void main() {
   Widget app(Widget home) => MaterialApp(theme: Iron.theme(), home: home);
 
+  // adaptive components: Cupertino on Apple, Material elsewhere — run the
+  // interaction tests on both
+  final platforms =
+      TargetPlatformVariant({TargetPlatform.android, TargetPlatform.iOS});
+  bool apple() => defaultTargetPlatform == TargetPlatform.iOS;
+
   Future<void> setUpPhone(WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -25,7 +32,8 @@ void main() {
     Iron.setAppearance('light');
   }
 
-  testWidgets('history: swipe left deletes, undo restores', (tester) async {
+  testWidgets('history: swipe left deletes, undo restores', variant: platforms,
+      (tester) async {
     await setUpPhone(tester);
     Store.instance.logs = [
       SessionLog(
@@ -58,14 +66,20 @@ void main() {
   });
 
   testWidgets('editor: exercise picker sheet adds the picked exercise',
-      (tester) async {
+      variant: platforms, (tester) async {
     await setUpPhone(tester);
     await tester.pumpWidget(app(const PlanEditorPage()));
     await tester.tap(find.text('Add exercise'));
     await tester.pumpAndSettle();
     expect(find.text('Pick an exercise'), findsOneWidget);
 
-    await tester.enterText(find.byType(CupertinoSearchTextField), 'inverted');
+    expect(find.byType(apple() ? CupertinoSearchTextField : TextField),
+        findsWidgets);
+    await tester.enterText(
+        find.descendant(
+            of: find.byType(ExercisePickerSheet),
+            matching: find.byType(EditableText)),
+        'inverted');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Inverted Row'));
     await tester.pumpAndSettle();
@@ -73,7 +87,7 @@ void main() {
     expect(find.text('Inverted Row'), findsOneWidget); // now in the plan
   });
 
-  testWidgets('plan detail: delete goes through an action sheet',
+  testWidgets('plan detail: delete from the … menu', variant: platforms,
       (tester) async {
     await setUpPhone(tester);
     final plan = Store.instance.builtin.first.copyAsCustom('custom_t',
@@ -89,9 +103,15 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(CupertinoIcons.ellipsis_circle));
+    await tester.tap(find.byIcon(
+        apple() ? CupertinoIcons.ellipsis_circle : Icons.more_vert));
     await tester.pumpAndSettle();
-    expect(find.byType(CupertinoActionSheet), findsOneWidget);
+    // iOS action sheet vs Material overflow menu
+    if (apple()) {
+      expect(find.byType(CupertinoActionSheet), findsOneWidget);
+    } else {
+      expect(find.byType(PopupMenuItem<String>), findsNWidgets(2));
+    }
     await tester.tap(find.text('Delete plan').last);
     await tester.pumpAndSettle();
 

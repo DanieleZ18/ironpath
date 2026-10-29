@@ -114,7 +114,8 @@ class Iron {
   static Color get line => _p.line;
   static Color get danger => _p.danger;
 
-  static Map<int, Color> get tierColor => {1: _p.tier1, 2: _p.tier2, 3: _p.tier3};
+  static Map<int, Color> get tierColor =>
+      {1: _p.tier1, 2: _p.tier2, 3: _p.tier3};
 
   /// Tier hue, accent for anything outside 1-3 (custom plans).
   static Color tier(int t) => tierColor[t] ?? accent;
@@ -125,7 +126,8 @@ class Iron {
 
   static double _contrast(Color a, Color b) {
     final la = a.computeLuminance(), lb = b.computeLuminance();
-    return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
+    return (la > lb ? la + 0.05 : lb + 0.05) /
+        (la > lb ? lb + 0.05 : la + 0.05);
   }
 
   static final Map<(int, bool), Color> _inkCache = {};
@@ -142,8 +144,8 @@ class Iron {
           _contrast(c, card) >= 4.6;
       var c = hue;
       for (var i = 0; i < 40 && !ok(c); i++) {
-        final l = (hsl.lightness + (_dark ? 1 : -1) * 0.02 * (i + 1))
-            .clamp(0.0, 1.0);
+        final l =
+            (hsl.lightness + (_dark ? 1 : -1) * 0.02 * (i + 1)).clamp(0.0, 1.0);
         c = hsl.withLightness(l).toColor();
       }
       return c;
@@ -151,7 +153,11 @@ class Iron {
   }
 
   static bool _isHue(Color c) =>
-      c == accent || c == danger || c == _p.tier1 || c == _p.tier2 || c == _p.tier3;
+      c == accent ||
+      c == danger ||
+      c == _p.tier1 ||
+      c == _p.tier2 ||
+      c == _p.tier3;
 
   /// Text colours that are palette hues become their readable shade.
   static Color _text(Color? c, Color fallback) =>
@@ -203,7 +209,8 @@ class Iron {
           fontWeight: weight,
           height: 1.4);
 
-  static TextStyle caption({Color? color, FontWeight weight = FontWeight.w600}) =>
+  static TextStyle caption(
+          {Color? color, FontWeight weight = FontWeight.w600}) =>
       TextStyle(
           fontFamily: fontFamily,
           fontSize: 13,
@@ -264,8 +271,8 @@ class Iron {
         barBackgroundColor: p.bg.withValues(alpha: 0.8),
         textTheme: CupertinoTextThemeData(
           primaryColor: inkOf(p.accent),
-          textStyle: TextStyle(
-              fontFamily: fontFamily, fontSize: 17, color: p.ink),
+          textStyle:
+              TextStyle(fontFamily: fontFamily, fontSize: 17, color: p.ink),
           navTitleTextStyle: TextStyle(
               fontFamily: fontFamily,
               fontSize: 17,
@@ -282,10 +289,10 @@ class Iron {
               fontSize: 17,
               fontWeight: FontWeight.w600,
               color: inkOf(p.accent)),
-          dateTimePickerTextStyle: TextStyle(
-              fontFamily: fontFamily, fontSize: 22, color: p.ink),
-          pickerTextStyle: TextStyle(
-              fontFamily: fontFamily, fontSize: 21, color: p.ink),
+          dateTimePickerTextStyle:
+              TextStyle(fontFamily: fontFamily, fontSize: 22, color: p.ink),
+          pickerTextStyle:
+              TextStyle(fontFamily: fontFamily, fontSize: 21, color: p.ink),
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -398,7 +405,8 @@ class Iron {
       dialogTheme: DialogThemeData(
         backgroundColor: p.card,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
+        shape:
+            const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
         titleTextStyle: TextStyle(
             fontFamily: fontFamily,
             fontSize: 19,
@@ -409,22 +417,42 @@ class Iron {
       ),
       timePickerTheme: TimePickerThemeData(
         backgroundColor: p.card,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
+        shape:
+            const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: p.ink,
         behavior: SnackBarBehavior.floating,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rM)),
         contentTextStyle: TextStyle(
-            fontFamily: fontFamily,
-            color: p.bg,
-            fontWeight: FontWeight.w600),
+            fontFamily: fontFamily, color: p.bg, fontWeight: FontWeight.w600),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.bg,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: p.faint,
+        showDragHandle: true,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: rXL)),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((s) =>
+              s.contains(WidgetState.selected) ? tint(p.accent) : p.card),
+          foregroundColor: WidgetStateProperty.resolveWith((s) =>
+              s.contains(WidgetState.selected) ? inkOf(p.accent) : p.sub),
+          side: WidgetStateProperty.all(BorderSide(color: p.line)),
+          textStyle: WidgetStateProperty.all(const TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 13,
+              fontWeight: FontWeight.w800)),
+        ),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected) ? p.onAccent : p.faint),
-        trackColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected) ? p.accent : p.cardHi),
+        thumbColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? p.onAccent : p.faint),
+        trackColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? p.accent : p.cardHi),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -440,8 +468,7 @@ class Iron {
             fontWeight: FontWeight.w800,
             color: states.contains(WidgetState.selected) ? p.ink : p.faint)),
         iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
-            color:
-                states.contains(WidgetState.selected) ? p.accent : p.faint,
+            color: states.contains(WidgetState.selected) ? p.accent : p.faint,
             size: 24)),
       ),
     );
@@ -719,9 +746,10 @@ class RestRing extends StatelessWidget {
           Container(
             width: size - 40,
             height: size - 40,
-            decoration:
-                BoxDecoration(color: Iron.card, shape: BoxShape.circle,
-                    boxShadow: Iron.shadow),
+            decoration: BoxDecoration(
+                color: Iron.card,
+                shape: BoxShape.circle,
+                boxShadow: Iron.shadow),
           ),
           SizedBox(
             width: size,
@@ -774,8 +802,8 @@ class ChoiceTile extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.all(Iron.rM),
-        border: Border.all(
-            color: selected ? hue : Colors.transparent, width: 2),
+        border:
+            Border.all(color: selected ? hue : Colors.transparent, width: 2),
         boxShadow: selected ? null : Iron.shadow,
       ),
       child: Material(

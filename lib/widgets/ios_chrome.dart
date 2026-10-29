@@ -8,6 +8,16 @@ import '../theme.dart';
 // iOS-style chrome on top of the IronPath look: frosted bars, collapsing
 // large titles, a translucent tab bar, sheets and action sheets. Colours
 // and type still come from [Iron]; only structure and motion follow iOS.
+// Components whose behaviour differs by platform convention (sheets,
+// action sheets, menus, controls, bar buttons) are adaptive: Cupertino on
+// Apple devices, the Material equivalent on Android and elsewhere.
+
+/// Whether this build should follow Apple conventions. Reads the theme's
+/// platform so tests (and a ThemeData override) can switch it.
+bool isApple(BuildContext context) => switch (Theme.of(context).platform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => true,
+      _ => false,
+    };
 
 /// Blur whatever scrolls underneath and lay a translucent page colour on
 /// top — the iOS "material" behind bars. [visibility] fades it in (0..1).
@@ -141,12 +151,20 @@ class IronTabBar extends StatelessWidget {
   }
 }
 
-/// iOS back chevron (respects PopScope via maybePop).
+/// Back button: iOS chevron on Apple, Material arrow elsewhere (both go
+/// through maybePop, so PopScope still applies).
 class IronBackButton extends StatelessWidget {
   const IronBackButton({super.key});
 
   @override
   Widget build(BuildContext context) {
+    if (!isApple(context)) {
+      return IconButton(
+        icon: Icon(Icons.arrow_back, color: Iron.ink),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        onPressed: () => Navigator.of(context).maybePop(),
+      );
+    }
     return CupertinoButton(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       minimumSize: const Size(44, 44),
@@ -272,6 +290,15 @@ class BarTextButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!isApple(context)) {
+      return TextButton(
+        onPressed: onPressed,
+        child: Text(label,
+            style: Iron.body(15,
+                color: Iron.accent,
+                weight: bold ? FontWeight.w800 : FontWeight.w700)),
+      );
+    }
     return CupertinoButton(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       minimumSize: const Size(44, 44),
@@ -284,13 +311,29 @@ class BarTextButton extends StatelessWidget {
   }
 }
 
-/// iOS card sheet: slides up, the page behind shrinks back, drag down to
-/// dismiss. [builder] gets the sheet's scroll controller so scrolling and
+/// Card sheet. Apple: iOS sheet — the page behind shrinks back, drag down
+/// to dismiss. Elsewhere: Material modal bottom sheet with a drag handle.
+/// [builder] gets the sheet's scroll controller so scrolling and
 /// drag-to-dismiss cooperate.
 Future<T?> showIronSheet<T>(
   BuildContext context,
   Widget Function(BuildContext context, ScrollController controller) builder,
 ) {
+  if (!isApple(context)) {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.92,
+        minChildSize: 0.5,
+        maxChildSize: 0.92,
+        builder: (context, controller) => builder(context, controller),
+      ),
+    );
+  }
   return showCupertinoSheet<T>(
     context: context,
     showDragHandle: true,
@@ -336,8 +379,9 @@ class SheetAction<T> {
       {this.destructive = false, this.isDefault = false});
 }
 
-/// iOS action sheet from the bottom; resolves to the picked value, or null
-/// on cancel / tap outside.
+/// Choice prompt; resolves to the picked value, or null on cancel / tap
+/// outside. Apple: iOS action sheet. Elsewhere: a single action becomes a
+/// Material confirmation dialog, several become a bottom-sheet menu.
 Future<T?> showIronActionSheet<T>(
   BuildContext context, {
   String? title,
@@ -345,6 +389,63 @@ Future<T?> showIronActionSheet<T>(
   required List<SheetAction<T>> actions,
   required String cancelLabel,
 }) {
+  if (!isApple(context)) {
+    if (actions.length == 1) {
+      final a = actions.single;
+      return showDialog<T>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: title == null ? null : Text(title),
+          content: message == null ? null : Text(message),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx), child: Text(cancelLabel)),
+            TextButton(
+              style: TextButton.styleFrom(
+                  foregroundColor: a.destructive
+                      ? Iron.inkOf(Iron.danger)
+                      : Iron.inkOf(Iron.accent)),
+              onPressed: () => Navigator.pop(ctx, a.value),
+              child: Text(a.label),
+            ),
+          ],
+        ),
+      );
+    }
+    return showModalBottomSheet<T>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (title != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child:
+                    Text(title, style: Iron.body(16, weight: FontWeight.w800)),
+              ),
+            if (message != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(message, style: Iron.caption()),
+              ),
+            for (final a in actions)
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                title: Text(a.label,
+                    style: Iron.body(16,
+                        color: a.destructive ? Iron.danger : Iron.ink,
+                        weight: FontWeight.w600)),
+                onTap: () => Navigator.pop(ctx, a.value),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
   return showCupertinoModalPopup<T>(
     context: context,
     builder: (ctx) => CupertinoActionSheet(

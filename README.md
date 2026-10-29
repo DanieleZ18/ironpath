@@ -67,7 +67,13 @@ the licenses page). CJK falls back to the system font. Hierarchy from weight
 **Geometry**: radius 28/24/18/12, 56px pill-ish buttons, stadium chips.
 
 **iOS-style interaction** (2026-10-29, `lib/widgets/ios_chrome.dart`; look
-stays Morandi + Nunito, only structure and gestures follow iOS):
+stays Morandi + Nunito, only structure and gestures follow iOS). Everything
+with a platform convention is adaptive via `isApple(context)`: Apple devices
+get the Cupertino version, Android (and everything else) the Material one —
+bottom sheet instead of iOS card sheet, dialog / overflow / popup menus
+instead of action sheets and the context menu, SegmentedButton, Material
+switch and clock time picker, arrow back / close icons. Large titles, the
+frosted bars and swipe-to-delete are shared.
 - tab pages: collapsing large titles (`largeTitleBar`, Cupertino sliver nav
   bar) and a translucent frosted tab bar (`IronTabBar`, `extendBody`)
 - pushed pages (`IronPage`): transparent nav bar that frosts once content

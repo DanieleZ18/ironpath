@@ -240,13 +240,19 @@ class _SessionScreenState extends State<SessionScreen> {
         // finished, the finish button leads home
         leading: _phase == _Phase.finished
             ? const SizedBox.shrink()
-            : CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                minimumSize: const Size(44, 44),
-                onPressed: () => Navigator.of(context).maybePop(),
-                child: Icon(CupertinoIcons.xmark,
-                    size: 22, color: Iron.inkOf(Iron.accent)),
-              ),
+            : isApple(context)
+                ? CupertinoButton(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    minimumSize: const Size(44, 44),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    child: Icon(CupertinoIcons.xmark,
+                        size: 22, color: Iron.inkOf(Iron.accent)),
+                  )
+                : IconButton(
+                    icon: Icon(Icons.close, color: Iron.ink),
+                    tooltip: L10n.t('quit'),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
         builder: (context, insets) => AnimatedSwitcher(
           duration: const Duration(milliseconds: 280),
           switchInCurve: Curves.easeOutCubic,

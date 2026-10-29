@@ -61,7 +61,35 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
 
   Future<void> _editReps(int index) async {
     final ctrl = TextEditingController(text: _items[index].reps);
-    final result = await showCupertinoDialog<String>(
+    final result = isApple(context)
+        ? await _repsDialogApple(ctrl)
+        : await showDialog<String>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(L10n.t('reps')),
+              content: TextField(
+                controller: ctrl,
+                autofocus: true,
+                style: Iron.body(16, weight: FontWeight.w700),
+                decoration: const InputDecoration(hintText: '8-12 / 30-45s'),
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(L10n.t('cancel'))),
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+                    child: Text(L10n.t('save'))),
+              ],
+            ),
+          );
+    ctrl.dispose();
+    if (result == null || result.isEmpty) return;
+    setState(() => _items[index] = _items[index].copyWith(reps: result));
+  }
+
+  Future<String?> _repsDialogApple(TextEditingController ctrl) {
+    return showCupertinoDialog<String>(
       context: context,
       barrierDismissible: true,
       builder: (ctx) => CupertinoAlertDialog(
@@ -95,9 +123,6 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
         ],
       ),
     );
-    ctrl.dispose();
-    if (result == null || result.isEmpty) return;
-    setState(() => _items[index] = _items[index].copyWith(reps: result));
   }
 
   void _move(int index, int delta) {
@@ -359,14 +384,23 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-          child: CupertinoSearchTextField(
-            placeholder: L10n.t('search'),
-            style: Iron.body(16, weight: FontWeight.w600),
-            placeholderStyle: Iron.body(16, color: Iron.faint),
-            backgroundColor: Iron.cardHi,
-            borderRadius: const BorderRadius.all(Iron.rS),
-            onChanged: (v) => setState(() => _query = v),
-          ),
+          child: isApple(context)
+              ? CupertinoSearchTextField(
+                  placeholder: L10n.t('search'),
+                  style: Iron.body(16, weight: FontWeight.w600),
+                  placeholderStyle: Iron.body(16, color: Iron.faint),
+                  backgroundColor: Iron.cardHi,
+                  borderRadius: const BorderRadius.all(Iron.rS),
+                  onChanged: (v) => setState(() => _query = v),
+                )
+              : TextField(
+                  onChanged: (v) => setState(() => _query = v),
+                  style: Iron.body(15, weight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    hintText: L10n.t('search'),
+                    prefixIcon: Icon(Icons.search_rounded, color: Iron.sub),
+                  ),
+                ),
         ),
         Expanded(
           child: ListView(

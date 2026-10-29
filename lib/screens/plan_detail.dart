@@ -58,21 +58,31 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     if (mounted) setState(() {});
   }
 
-  /// "…" in the nav bar: the plan's secondary actions in an action sheet.
+  /// The plan's secondary actions: (label, value, destructive).
+  List<(String, String, bool)> _moreEntries(Plan p) => [
+        if (p.builtin)
+          (L10n.t('copyPlan'), 'copy', false)
+        else ...[
+          (L10n.t('editPlan'), 'edit', false),
+          (L10n.t('deletePlan'), 'delete', true),
+        ],
+      ];
+
+  /// "…" on Apple devices: the secondary actions in an iOS action sheet.
   Future<void> _more(Plan p) async {
     final choice = await showIronActionSheet<String>(
       context,
       title: p.title(L10n.zh),
       actions: [
-        if (p.builtin)
-          SheetAction(L10n.t('copyPlan'), 'copy')
-        else ...[
-          SheetAction(L10n.t('editPlan'), 'edit'),
-          SheetAction(L10n.t('deletePlan'), 'delete', destructive: true),
-        ],
+        for (final (label, value, destructive) in _moreEntries(p))
+          SheetAction(label, value, destructive: destructive),
       ],
       cancelLabel: L10n.t('cancel'),
     );
+    if (choice != null) await _onMore(p, choice);
+  }
+
+  Future<void> _onMore(Plan p, String choice) async {
     if (!mounted) return;
     switch (choice) {
       case 'copy':
@@ -108,13 +118,31 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       // once that has scrolled away
       revealTitleAt: 70,
       actions: [
-        CupertinoButton(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          minimumSize: const Size(44, 44),
-          onPressed: () => _more(p),
-          child: Icon(CupertinoIcons.ellipsis_circle,
-              size: 26, color: Iron.inkOf(Iron.accent)),
-        ),
+        if (isApple(context))
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            minimumSize: const Size(44, 44),
+            onPressed: () => _more(p),
+            child: Icon(CupertinoIcons.ellipsis_circle,
+                size: 26, color: Iron.inkOf(Iron.accent)),
+          )
+        else
+          // Android: overflow menu dropping down from the ⋮ button
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: Iron.ink),
+            tooltip: L10n.t('more'),
+            onSelected: (choice) => _onMore(p, choice),
+            itemBuilder: (context) => [
+              for (final (label, value, destructive) in _moreEntries(p))
+                PopupMenuItem(
+                  value: value,
+                  child: Text(label,
+                      style: Iron.body(15,
+                          color: destructive ? Iron.danger : Iron.ink,
+                          weight: FontWeight.w600)),
+                ),
+            ],
+          ),
       ],
       builder: (context, insets) => ListView(
         padding: EdgeInsets.fromLTRB(20, insets.top + 4, 20, 24),
@@ -184,7 +212,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
             ),
           if (!p.builtin) ...[
             const SizedBox(height: 10),
-            CupertinoButton(
+            TextButton(
               onPressed: _deletePlan,
               child: Text(L10n.t('deletePlan'),
                   style: Iron.body(16,
