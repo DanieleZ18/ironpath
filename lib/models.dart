@@ -5,7 +5,7 @@ class Exercise {
   final String id;
   final String nameEn;
   final String nameZh;
-  final String category; // 'bodyweight' | 'dumbbell'
+  final String category; // 'bodyweight' | 'dumbbell' | 'barbell' | 'machine' | 'cable'
   final List<String> muscles; // english keys, see L10n.muscle
   final int difficulty; // 1 beginner .. 3 advanced
   final String descEn;
@@ -54,8 +54,8 @@ class Exercise {
   String prog(bool zh) => zh ? progZh : progEn;
   String reg(bool zh) => zh ? regZh : regEn;
 
-  /// Equipment requirement derived from category: current library uses
-  /// 'bodyweight'/'dumbbell'; future machines ('machine'/'barbell'…) need gym.
+  /// Equipment requirement derived from category: 'bodyweight' needs none,
+  /// 'dumbbell' needs dumbbells, barbell/machine/cable need a gym.
   String requiredEquipment() => switch (category) {
         'bodyweight' => 'none',
         'dumbbell' => 'dumbbell',

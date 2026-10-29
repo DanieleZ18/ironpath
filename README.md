@@ -19,7 +19,7 @@ Skipped-onboarding users don't see the card.
 
 ## Library (2026-09-09)
 
-59 exercises (24 bodyweight + 16 dumbbell + 19 gym) and **17 builtin plans**
+101 exercises (40 bodyweight + 28 dumbbell + 33 gym; expanded 2026-10-29 with bodyweight pulling, rear delts, glute/hinge work, core and cable moves) and **17 builtin plans**
 across three tiers. **Beginners train with dumbbells and machines, never
 barbells** (2026-09-09): tier-1 gym track is Beginner · Gym A/B (goblet squat,
 machine chest press, lat pulldown, leg press, DB rows/press/RDL — machines
@@ -99,10 +99,12 @@ lib/
   l10n.dart                 hand-rolled zh/en dictionary (upgrade path: gen-l10n)
   utils.dart                date/duration formatting
   data/
-    exercises_seed.dart     combines both seed files, exposes exerciseMap
-    exercises_seed_bw.dart  24 bodyweight exercises (bilingual, full coaching copy)
-    exercises_seed_db.dart  16 dumbbell exercises
-    plans_seed.dart         7 builtin sessions across 3 tiers
+    exercises_seed.dart     combines the seed files, exposes exerciseMap
+    exercises_seed_bw.dart  40 bodyweight exercises (bilingual, full coaching copy)
+    exercises_seed_db.dart  28 dumbbell exercises
+    exercises_seed_gym.dart 33 barbell / machine / cable exercises
+    substitutions.dart      injury-aware swap map
+    plans_seed.dart         17 builtin sessions across 3 tiers
   screens/
     root.dart               4-tab shell (home / plans / history / settings)
     home_screen.dart        last-workout line + tier quick-start cards
