@@ -72,9 +72,11 @@ stays Morandi + Nunito, only structure and gestures follow iOS):
   bar) and a translucent frosted tab bar (`IronTabBar`, `extendBody`)
 - pushed pages (`IronPage`): transparent nav bar that frosts once content
   scrolls under it; detail titles fade in after the hero scrolls away
-- every page slides in from the right and can be dragged back from the left
-  edge on all platforms (`CupertinoPageTransitionsBuilder`); the session
-  screen's PopScope blocks the swipe mid-workout
+- page transitions are native per platform: iPhone slides in from the
+  right with edge swipe-back (`CupertinoPageTransitionsBuilder`), Android
+  keeps predictive back / fade-forwards (manifest opts into
+  `enableOnBackInvokedCallback`); the session screen's PopScope blocks
+  leaving mid-workout on both
 - card sheets that push the page behind back (`showIronSheet`, drag to
   dismiss): exercise picker, exercise details
 - action sheets for destructive choices (quit workout, delete plan, plan

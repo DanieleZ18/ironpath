@@ -244,15 +244,16 @@ class Iron {
       dividerColor: p.line,
       hintColor: p.faint,
       splashFactory: InkSparkle.splashFactory,
-      // iOS-style navigation everywhere: pages slide in from the right and
-      // can be dragged back from the left edge on every platform
+      // each platform's native page motion: Android gets predictive back
+      // (fade-forwards when not gesturing), Apple devices slide in from the
+      // right with edge swipe-back, everything else fades forwards
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
       }),
       // Cupertino widgets (nav bars, sheets, pickers, segmented controls)
       // take our palette and Nunito instead of SF + system blue

@@ -115,4 +115,12 @@ void main() {
     expect(find.text('6 days'), findsNothing);
     expect(find.text('Beginner'), findsOneWidget);
   });
+
+  test('page transitions: native per platform', () {
+    final builders = Iron.theme().pageTransitionsTheme.builders;
+    expect(builders[TargetPlatform.android],
+        isA<PredictiveBackPageTransitionsBuilder>());
+    expect(builders[TargetPlatform.iOS],
+        isA<CupertinoPageTransitionsBuilder>());
+  });
 }
