@@ -4,7 +4,7 @@ import 'exercises_seed_db.dart';
 import 'exercises_seed_gym.dart';
 
 // The full exercise library: 40 bodyweight + 28 dumbbell + 33 gym = 101 entries.
-// Images: `assets/images/<id>.png`, AI-generated with a locked style prompt.
+// Demos: lib/data/exercise_motions.dart (every id needs one; tested).
 
 const List<Exercise> exercisesSeed = [
   ...bodyweightSeed,

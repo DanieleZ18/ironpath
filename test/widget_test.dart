@@ -169,6 +169,28 @@ void main() {
         2);
   });
 
+  test('sessionsPerWeek buckets by calendar week, oldest first', () {
+    SessionLog log(DateTime at) => SessionLog(
+        id: '$at',
+        planId: 'p',
+        planTitleEn: 'p',
+        planTitleZh: 'p',
+        startedAt: at,
+        durationSeconds: 60,
+        items: const []);
+    final now = DateTime(2026, 10, 29, 20); // Thu
+    final logs = [
+      log(DateTime(2026, 10, 29, 8)), // this week
+      log(DateTime(2026, 10, 26, 0, 0)), // this week's Monday midnight
+      log(DateTime(2026, 10, 25, 23, 59)), // last week (Sun)
+      log(DateTime(2026, 10, 19, 7)), // last week (Mon)
+      log(DateTime(2026, 9, 2, 7)), // 8 weeks back: outside the window
+    ];
+    expect(sessionsPerWeek(logs, now: now), [0, 0, 0, 0, 0, 0, 2, 2]);
+    expect(weekStartOf(now, weeksAgo: 7), DateTime(2026, 9, 7));
+    expect(sessionsPerWeek(const [], now: now, weeks: 3), [0, 0, 0]);
+  });
+
   group('unavailable label names the right equipment', () {
     final gymPlan =
         builtinPlans.firstWhere((p) => p.id == 'builtin_beginner_gym_a');

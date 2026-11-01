@@ -7,7 +7,10 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/ios_chrome.dart';
 import '../utils.dart';
-import '../weekly_program.dart' show completedThisWeek;
+import '../weekly_program.dart'
+    show completedThisWeek, sessionsPerWeek, weekStartOf;
+import '../widgets/bento.dart';
+import '../widgets/weekly_chart.dart';
 
 class HistoryScreen extends StatefulWidget {
   final ScrollController? scrollController;
@@ -28,29 +31,65 @@ class HistoryScreenState extends State<HistoryScreen> {
     final logs = Store.instance.logs;
     // header widgets first, then one lazily built card per log — history
     // grows without bound, so only visible cards are built
+    final settings = Store.instance.settings;
+    final now = DateTime.now();
     final header = <Widget>[
       if (logs.isEmpty)
         _empty()
       else ...[
-        Row(
-          children: [
-            Expanded(
-                child: StatTile(
-                    value: '${logs.length}', label: L10n.t('statSessions'))),
-            const SizedBox(width: 10),
-            Expanded(
-                child: StatTile(
-                    value:
-                        '${completedThisWeek(Store.instance.settings, logs)}',
-                    label: L10n.t('statThisWeek'),
-                    color: Iron.tier(1))),
-            const SizedBox(width: 10),
-            Expanded(
-                child: StatTile(
-                    value: '${logs.fold<int>(0, (a, l) => a + l.doneSets())}',
-                    label: L10n.t('statSets'),
-                    color: Iron.tier(2))),
+        // headline numbers: the running total leads, this week and sets
+        // done stack beside it
+        BentoSplit(
+          lead: BentoTile(
+            hue: Iron.accent,
+            child: BentoStat(
+              icon: Icons.emoji_events_rounded,
+              label: L10n.t('statSessions'),
+              value: '${logs.length}',
+              hue: Iron.accent,
+              size: 40,
+              extra: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(L10n.t('totalTime'),
+                      style: Iron.caption(color: Iron.faint)),
+                  Text(
+                      fmtHoursMinutes(
+                          logs.fold<int>(0, (a, l) => a + l.durationSeconds),
+                          zh),
+                      style: Iron.body(15, weight: FontWeight.w800)),
+                ],
+              ),
+            ),
+          ),
+          stack: [
+            BentoTile(
+              hue: Iron.tier(1),
+              child: BentoStat(
+                icon: Icons.calendar_month_rounded,
+                label: L10n.t('statThisWeek'),
+                value: '${completedThisWeek(settings, logs)}',
+                hue: Iron.tier(1),
+              ),
+            ),
+            BentoTile(
+              hue: Iron.tier(2),
+              child: BentoStat(
+                icon: Icons.check_circle_rounded,
+                label: L10n.t('statSets'),
+                value: '${logs.fold<int>(0, (a, l) => a + l.doneSets())}',
+                hue: Iron.tier(2),
+              ),
+            ),
           ],
+        ),
+        const SizedBox(height: bentoGap),
+        WeeklyChartTile(
+          counts: sessionsPerWeek(logs, now: now),
+          weekStarts: [
+            for (var i = 7; i >= 0; i--) weekStartOf(now, weeksAgo: i)
+          ],
+          goal: settings.userDays,
         ),
         const SizedBox(height: 18),
       ],

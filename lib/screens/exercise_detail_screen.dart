@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../data/exercise_motions.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../widgets/bento.dart';
+import '../widgets/exercise_motion.dart';
 import '../widgets/ios_chrome.dart';
 import '../widgets/muscle_glyph.dart';
+import '../widgets/plan_card.dart' show tierLabel;
 
 /// Exercise details as an iOS card sheet over the current page; drag down
 /// or tap "Done" to close.
@@ -39,53 +43,112 @@ class ExerciseDetailView extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(
                 20, 4, 20, 28 + MediaQuery.paddingOf(context).bottom),
             children: [
-              // Placeholder until AI illustrations land (assets/images/<id>.png).
-              IronCard(
-                color: Iron.tint(hue),
-                radius: Iron.rXL,
-                padding: const EdgeInsets.all(22),
+              // ---- the move itself, looping (a still pose under Reduce
+              // Motion), working muscles lit in the difficulty hue
+              Container(
+                height: 220,
+                padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
+                decoration: BoxDecoration(
+                  color: Iron.tint(hue),
+                  borderRadius: const BorderRadius.all(Iron.rXL),
+                ),
+                child: Semantics(
+                  image: true,
+                  label: L10n.tf('demoOf', ex.name(zh)),
+                  // tap to watch it again
+                  child: ExerciseMotionView(
+                      spec: motionFor(ex.id),
+                      muscles: ex.muscles,
+                      color: hue,
+                      repeats: 4,
+                      replayOnTap: true),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: MuscleGlyph(
-                          muscles: ex.muscles,
-                          color: hue,
-                          size: 110,
-                          onTint: true),
-                    ),
-                    const SizedBox(height: 18),
                     Text(ex.name(zh), style: Iron.hero(28)),
                     if (zh)
                       Text(ex.nameEn, style: Iron.caption(color: Iron.faint)),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        IronPill(L10n.t(ex.category),
-                            color: hue,
-                            icon: exerciseIcon(ex.category),
-                            solid: true),
-                        for (final m in ex.muscles)
-                          IronPill(L10n.muscle(m), color: hue),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(L10n.t('difficulty'), style: Iron.caption()),
-                        const SizedBox(width: 8),
-                        SetDots(done: ex.difficulty, total: 3, color: hue),
-                        const Spacer(),
-                        Text(
-                          '${ex.defSets} × ${ex.defReps} · ${ex.defRest}${L10n.t('seconds')}',
-                          style: Iron.caption(color: hue),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 14),
+              BentoSplit(
+                lead: BentoTile(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BentoLabel(L10n.t('muscles'),
+                          icon: Icons.accessibility_new_rounded),
+                      const SizedBox(height: 10),
+                      const Spacer(),
+                      Center(
+                        child: MuscleGlyph(
+                            muscles: ex.muscles, color: hue, size: 120),
+                      ),
+                      const Spacer(),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final m in ex.muscles)
+                            IronPill(L10n.muscle(m), color: hue),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                stack: [
+                  BentoTile(
+                    hue: hue,
+                    child: BentoStat(
+                      icon: Icons.repeat_rounded,
+                      label: L10n.t('target'),
+                      value: '${ex.defSets} × ${ex.defReps}',
+                      note:
+                          '${L10n.t('rest')} ${ex.defRest}${L10n.t('seconds')}',
+                      hue: hue,
+                      size: 20,
+                    ),
+                  ),
+                  BentoTile(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        BentoLabel(L10n.t('difficulty'),
+                            icon: Icons.signal_cellular_alt_rounded),
+                        const SizedBox(height: 8),
+                        const Spacer(),
+                        Text(tierLabel(ex.difficulty),
+                            style: Iron.body(15, weight: FontWeight.w800)),
+                        const SizedBox(height: 6),
+                        SetDots(
+                            done: ex.difficulty,
+                            total: 3,
+                            color: hue,
+                            size: 10),
+                      ],
+                    ),
+                  ),
+                  BentoTile(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        BentoLabel(L10n.t('equipment'),
+                            icon: exerciseIcon(ex.category)),
+                        const SizedBox(height: 8),
+                        const Spacer(),
+                        Text(L10n.t(ex.category),
+                            style: Iron.body(15, weight: FontWeight.w800)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
               _section(Icons.menu_book_rounded, L10n.t('description'),

@@ -66,11 +66,51 @@ their tints; `inkOf` keeps text ≥4.5:1. `test/theme_test.dart` checks every
 preset and a 15° sweep of custom hues in both appearances. Stored as
 `AppSettings.themeId` / `customHue`.
 
-**Exercise glyphs** (`lib/widgets/muscle_glyph.dart`): until illustrations
-land, each exercise shows a small body figure with its muscles highlighted —
-primary muscle full strength (decides front/back view), secondary lighter.
-Below 80px the figure zooms to the upper or lower half of the body so list
-rows stay legible.
+**Exercise demos** (2026-11-01, `lib/widgets/exercise_motion.dart` +
+`lib/data/exercise_motions.dart`): every one of the 101 exercises is shown
+as a native vector skeletal animation — the SVG / Lottie idea, drawn and
+driven in code, no assets. A rounded figure in the app's palette has a 2D
+rig: poses are authored as where the hips, torso, hands and feet go, and a
+two-bone solver places knees and elbows (bone lengths never change).
+Motions are parametric families (squat, hinge, lunge, press, row, curl,
+plank, crunch, hang…) that exercises pick with their grip, props (bench,
+bar, cable, dumbbells, plate, box, wall, machine pads) and timing; side view
+by default, front or top view where the move happens across the body (with
+foreshortening for limbs aimed at the camera). The working muscles light up
+in the difficulty hue (primary full, secondary softer). A demo plays three
+reps, eases into its key pose and holds — motion that shows the move, then
+settles; under Reduce Motion it is that key pose. Shown in the home hero
+(the session's first move), the exercise sheet (larger, tap to replay) and
+the session set card (tap to open the how-to). `test/exercise_motion_test.dart`
+checks every exercise has its own demo, no joint sinks into the floor at
+any moment, bones keep their length, and it paints in both appearances.
+
+**Exercise glyphs** (`lib/widgets/muscle_glyph.dart`): list rows keep a
+small static body figure with the muscles highlighted — primary muscle full
+strength (decides front/back view), secondary lighter. Below 80px the
+figure zooms to the upper or lower half of the body. Lists never animate.
+
+**Bento layouts** (2026-11-01, `lib/widgets/bento.dart`): screens are built
+from tiles of different sizes that share one 10px gutter — `BentoRow`
+(tiles side by side, all as tall as the tallest) and `BentoSplit` (one tall
+tile beside a stack). A tile's size says how much it matters: one hero per
+screen, supporting facts around it. Fill carries meaning — a tier tint is
+difficulty, the accent tint is progress, the plain card is information —
+and radius steps down from hero (28) to tile (24) to row (18). Rows size to
+their content, so larger text grows the grid instead of clipping it (tested
+at 160%).
+- home: today hero with the first move demonstrated · this week | last
+  workout · weekly plan · recommended level full width, the other two as
+  half tiles
+- plan detail: hero · what it trains (body figure, top muscles) beside
+  duration / volume / equipment
+- exercise sheet: the demo as hero · muscles beside target / difficulty /
+  equipment
+- history: workouts and total time beside this week / sets done, then an
+  8-week chart (`lib/widgets/weekly_chart.dart`): one column per week, this
+  week in the accent and earlier weeks quiet grey, a hairline at the weekly
+  goal from onboarding; tap a column to read its week, screen readers get
+  every value
 
 **Type**: Nunito (rounded terminals, tabular digits) bundled in
 `assets/fonts/` — Latin subset, 4 weights, ~130 KB, OFL-1.1 (registered on
@@ -137,9 +177,10 @@ tappable), `IronButton`, `IronPill`, `IconBlob` (icon on a soft tint), `SetDots`
 `RestRing` (thick 16px ring), `ChoiceTile`, `StatTile`, `SectionTitle`.
 Screens compose these instead of hand-rolling boxes.
 
-Signatures: home hero "today's workout" card in the tier hue with week dots;
-session set card with dots per set and ±2.5 kg weight buttons; rest clock =
-thick green ring around a 64px `M:SS`; finish screen with stat tiles.
+Signatures: home hero "today's workout" card in the tier hue with the
+session's first move demonstrated; session set card with the live demo,
+dots per set and ±2.5 kg weight buttons; rest clock = thick green ring
+around a 64px `M:SS`; finish screen with stat tiles.
 
 ## Status (2026-08-30)
 
@@ -171,27 +212,35 @@ lib/
     exercises_seed_gym.dart 33 barbell / machine / cable exercises
     substitutions.dart      injury-aware swap map
     plans_seed.dart         17 builtin sessions across 3 tiers
+    exercise_motions.dart   the 101 exercise demos as parametric motion families
   screens/
     root.dart               4-tab shell (home / plans / history / settings)
-    home_screen.dart        last-workout line + tier quick-start cards
+    home_screen.dart        bento: today hero, week / last workout, weekly plan, levels
     library_screen.dart     builtin plans by tier + my plans
     plan_detail.dart        plan view, start, duplicate-to-edit, delete
     plan_editor.dart        custom plan editor + searchable exercise picker
     session_screen.dart     THE CORE: exercise -> rest -> finished state machine
-    exercise_detail_screen.dart
-    history_screen.dart
+    exercise_detail_screen.dart  demo hero + bento facts + coaching copy
+    history_screen.dart     bento stats + 8-week chart + swipe-to-delete log
     settings_screen.dart    language, reminder time (stub), disclaimer
   widgets/plan_card.dart    tier cards + plan cards, tier labels/icons
   widgets/weekly_program_card.dart  home "today" hero + weekly day list
+  widgets/exercise_motion.dart      demo rig: pose, IK solver, props, painter
+  widgets/bento.dart        BentoRow / BentoSplit / BentoTile / BentoStat
+  widgets/weekly_chart.dart workouts-per-week chart tile
+  widgets/muscle_glyph.dart static muscle figure for list rows
+  widgets/zoom_route.dart   card → page zoom transition
+  widgets/ios_chrome.dart   adaptive iOS / Material chrome
 ```
 
 ## Conventions
 
 - Exercise names use canonical English (`bench press` is `bench press`); copy is
   written as terse 2-3 sentence blocks so the bilingual cost stays manageable.
-- Exercise images belong at `assets/images/<id>.png` (AI-generated with one
-  locked style prompt, each image reviewed for form accuracy). Until they land,
-  screens show icon placeholders.
+- Every exercise needs a demo in `lib/data/exercise_motions.dart` (a test
+  fails otherwise). Add it to an existing family where one fits; render it
+  at a few moments of the cycle and look at it before shipping — the tests
+  catch broken geometry, not a pose that reads wrong.
 - Builtin plans are `const` seeds; user plans are deep-copied into
   `Store.customPlans` and serialized. Custom plan titles are stored once and
   shown in both languages.

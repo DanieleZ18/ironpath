@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Exercise demos
+- Every exercise (all 101) now shows how it moves: a vector figure
+  animated in code, with the working muscles lit in the difficulty colour.
+  Side, front or top view per move, with the bench, bar, cable, dumbbells
+  or machine it needs.
+- A demo plays three reps, then eases into the move's key position and
+  holds. With Reduce Motion on, it shows that position only.
+- Where they appear: the home hero (the workout's first move), the exercise
+  sheet (larger; tap it to watch again) and the workout's set card (tap it
+  for the full how-to).
+
+### Bento layouts
+- Home, plan detail, the exercise sheet and history are laid out as bento
+  grids: one large tile per screen, with the supporting facts in smaller
+  tiles around it.
+- Home: this week's progress and your last workout side by side; the
+  recommended level full width, the other two levels as half tiles.
+- Plan detail: what the plan trains (body figure and top muscles) next to
+  duration, total sets and the equipment needed.
+- Exercise sheet: muscles next to target sets × reps, difficulty and
+  equipment.
+- History: workouts and total training time next to this week and sets
+  done, plus a chart of workouts per week over the last 8 weeks, with your
+  weekly goal marked. Tap a week to read it.
+- Tiles grow with larger text sizes instead of cutting text off.
+
 ### Colour themes
 - Settings → Theme colour: six presets — Sage (default, unchanged),
   Plates (difficulty colours follow bumper plates: yellow 15 kg, blue
@@ -27,6 +53,10 @@
 - Theme, appearance and language changes cross-fade; the app follows the
   phone's dark mode live.
 - Honours Reduce Motion / Remove animations everywhere.
+
+### Fixes
+- Tab bar labels overflowed the bar at large text sizes; they now stay
+  near their designed size, as on iOS.
 
 ## 0.3.0 — 2026-10-29
 

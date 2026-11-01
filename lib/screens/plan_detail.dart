@@ -6,6 +6,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/bento.dart';
 import '../widgets/ios_chrome.dart';
 import '../widgets/zoom_route.dart';
 import '../widgets/muscle_glyph.dart';
@@ -176,22 +177,46 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   const SizedBox(height: 8),
                   Text(p.desc(zh), style: Iron.body(14, color: Iron.sub)),
                 ],
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    IronPill(L10n.tf('estDuration', p.estimatedMinutes()),
-                        color: hue, icon: Icons.schedule_rounded),
-                    IronPill(L10n.tf('exercisesCount', p.items.length),
-                        color: hue, icon: Icons.format_list_numbered_rounded),
-                    if (p.builtin)
-                      IronPill(freqLabel(p),
-                          color: hue, icon: Icons.calendar_month_rounded),
-                  ],
-                ),
+                if (p.builtin) ...[
+                  const SizedBox(height: 14),
+                  IronPill(freqLabel(p),
+                      color: hue, icon: Icons.calendar_month_rounded),
+                ],
               ],
             ),
+          ),
+          // ---- what it trains, how long, how much, with what
+          const SizedBox(height: bentoGap),
+          BentoSplit(
+            lead: _focusTile(p, hue),
+            stack: [
+              BentoTile(
+                child: BentoStat(
+                  icon: Icons.schedule_rounded,
+                  label: L10n.t('duration'),
+                  value: L10n.tf('estDuration', p.estimatedMinutes()),
+                  size: 20,
+                ),
+              ),
+              BentoTile(
+                child: BentoStat(
+                  icon: Icons.format_list_numbered_rounded,
+                  label: L10n.t('volume'),
+                  value: L10n.tf(
+                      'setsN', p.items.fold<int>(0, (a, i) => a + i.sets)),
+                  note: L10n.tf('exercisesCount', p.items.length),
+                  size: 20,
+                ),
+              ),
+              BentoTile(
+                child: BentoStat(
+                  icon: Icons.fitness_center_rounded,
+                  label: L10n.t('equipment'),
+                  value: _equipmentLabel(p),
+                  size: 20,
+                ),
+              ),
+            ],
           ),
           if (missing.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -245,6 +270,58 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         ),
       ),
     );
+  }
+
+  /// The muscles this plan works, most-trained first: a body figure with
+  /// all of them lit and the top three named.
+  Widget _focusTile(Plan p, Color hue) {
+    final score = <String, int>{};
+    for (final item in p.items) {
+      final ex = Store.instance.exerciseById(item.exerciseId);
+      if (ex == null) continue;
+      for (var i = 0; i < ex.muscles.length; i++) {
+        // the primary muscle counts double
+        score[ex.muscles[i]] = (score[ex.muscles[i]] ?? 0) + (i == 0 ? 2 : 1);
+      }
+    }
+    final ranked = score.keys.toList()
+      ..sort((a, b) => score[b]!.compareTo(score[a]!));
+    return BentoTile(
+      hue: hue,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BentoLabel(L10n.t('muscleFocus'),
+              icon: Icons.accessibility_new_rounded, hue: hue),
+          const SizedBox(height: 10),
+          const Spacer(),
+          Center(
+            child: MuscleGlyph(
+                muscles: ranked, color: hue, size: 128, onTint: true),
+          ),
+          const Spacer(),
+          const SizedBox(height: 10),
+          Text(ranked.take(3).map(L10n.muscle).join(' · '),
+              style: Iron.body(14, weight: FontWeight.w800)),
+        ],
+      ),
+    );
+  }
+
+  /// The most any exercise in the plan needs.
+  String _equipmentLabel(Plan p) {
+    var need = 'none';
+    for (final item in p.items) {
+      final req =
+          Store.instance.exerciseById(item.exerciseId)?.requiredEquipment();
+      if (req == 'gym') need = 'gym';
+      if (req == 'dumbbell' && need == 'none') need = 'dumbbell';
+    }
+    return L10n.t(switch (need) {
+      'gym' => 'equipGym',
+      'dumbbell' => 'equipDumbbell',
+      _ => 'equipNone',
+    });
   }
 
   Widget _notice(IconData icon, String text, Color hue) {

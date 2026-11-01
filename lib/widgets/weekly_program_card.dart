@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../data/exercise_motions.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../motion.dart';
+import '../store.dart';
 import '../theme.dart';
 import '../weekly_program.dart';
+import 'exercise_motion.dart';
 import 'plan_card.dart';
 
 /// Home hero: the session to do next, in its tier's hue, with the week's
@@ -63,49 +66,62 @@ class TodayCard extends StatelessWidget {
       );
     }
     final hue = Iron.tier(p.tier);
+    final first = p.items.isEmpty
+        ? null
+        : Store.instance.exerciseById(p.items.first.exerciseId);
     return Builder(
         builder: (card) => IronCard(
               color: Iron.tint(hue),
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(20),
               radius: Iron.rXL,
               onTap: onOpen == null ? null : () => onOpen!(card),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IronPill(tierLabel(p.tier),
-                          color: hue, icon: tierIcon(p.tier), solid: true),
-                      IronPill(
-                        recommended
-                            ? L10n.t('recommendedForYou')
-                            : '${L10n.tf('dayN', dayIndex + 1)} · ${L10n.t('startHere')}',
-                        color: hue,
-                        icon: recommended
-                            ? Icons.star_rounded
-                            : Icons.today_rounded,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                IronPill(tierLabel(p.tier),
+                                    color: hue,
+                                    icon: tierIcon(p.tier),
+                                    solid: true),
+                                IronPill(
+                                  recommended
+                                      ? L10n.t('recommendedForYou')
+                                      : '${L10n.tf('dayN', dayIndex + 1)} · ${L10n.t('startHere')}',
+                                  color: hue,
+                                  icon: recommended
+                                      ? Icons.star_rounded
+                                      : Icons.today_rounded,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Text(L10n.t('todayPlan'),
+                                style: Iron.eyebrow(color: hue)),
+                            const SizedBox(height: 4),
+                            Text(p.title(zh), style: Iron.hero(24)),
+                            const SizedBox(height: 6),
+                            Text(planMeta(p), style: Iron.caption()),
+                          ],
+                        ),
                       ),
+                      // the first move, demonstrated: what the session
+                      // opens with, moving
+                      if (first != null) ...[
+                        const SizedBox(width: 12),
+                        _FirstMove(exercise: first, hue: hue),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(L10n.t('todayPlan'), style: Iron.eyebrow(color: hue)),
-                  const SizedBox(height: 4),
-                  Text(p.title(zh), style: Iron.hero(26)),
-                  const SizedBox(height: 6),
-                  Text(planMeta(p), style: Iron.caption()),
-                  if (total > 0) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        SetDots(done: done, total: total, color: hue),
-                        const SizedBox(width: 10),
-                        RollingText(L10n.tf('weekProgress', '$done/$total'),
-                            style: Iron.caption(color: hue)),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 18),
                   IronButton(
                     label: L10n.t('startWorkout'),
@@ -116,6 +132,50 @@ class TodayCard extends StatelessWidget {
                 ],
               ),
             ));
+  }
+}
+
+/// The session's first exercise as a looping demo on the card surface,
+/// named underneath.
+class _FirstMove extends StatelessWidget {
+  final Exercise exercise;
+  final Color hue;
+  const _FirstMove({required this.exercise, required this.hue});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = exercise.name(L10n.zh);
+    return SizedBox(
+      width: 112,
+      child: Column(
+        children: [
+          Container(
+            height: 112,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Iron.card,
+              borderRadius: const BorderRadius.all(Iron.rL),
+            ),
+            child: Semantics(
+              image: true,
+              label: L10n.tf('demoOf', name),
+              child: ExerciseMotionView(
+                spec: motionFor(exercise.id),
+                muscles: exercise.muscles,
+                color: hue,
+                onTint: true,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Iron.caption(color: Iron.sub).copyWith(fontSize: 12)),
+        ],
+      ),
+    );
   }
 }
 

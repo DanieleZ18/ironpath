@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../data/exercise_motions.dart';
 import '../l10n.dart';
 import '../motion.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/exercise_motion.dart';
 import '../widgets/ios_chrome.dart';
-import '../widgets/muscle_glyph.dart';
 import '../utils.dart';
 import '../data/tips.dart';
 import 'exercise_detail_screen.dart';
@@ -323,26 +324,7 @@ class _SessionScreenState extends State<SessionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    MuscleGlyph(
-                        muscles: ex?.muscles ?? const [],
-                        color: hue,
-                        size: 56,
-                        onTint: true),
-                    const Spacer(),
-                    if (ex != null)
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                            foregroundColor: Iron.inkOf(hue)),
-                        onPressed: () {
-                          showExerciseDetail(context, ex);
-                        },
-                        icon: const Icon(Icons.menu_book_rounded, size: 18),
-                        label: Text(L10n.t('description')),
-                      ),
-                  ],
-                ),
+                if (ex != null) _demoStage(context, ex, hue),
                 const SizedBox(height: 16),
                 Text(ex?.name(zh) ?? _item.exerciseId, style: Iron.hero(28)),
                 if (zh && ex != null)
@@ -431,6 +413,55 @@ class _SessionScreenState extends State<SessionScreen> {
             onPressed: _completeSet,
           ),
         ],
+      ),
+    );
+  }
+
+  /// The move, demonstrated while you do it. Tapping it opens the full
+  /// how-to sheet (the book badge says so).
+  Widget _demoStage(BuildContext context, Exercise ex, Color hue) {
+    final name = ex.name(L10n.zh);
+    void open() => showExerciseDetail(context, ex);
+    return Semantics(
+      button: true,
+      label: '${L10n.tf('demoOf', name)}. ${L10n.t('description')}',
+      onTap: open,
+      excludeSemantics: true,
+      child: IronCard(
+        radius: Iron.rL,
+        padding: EdgeInsets.zero,
+        raised: false,
+        onTap: open,
+        child: SizedBox(
+          height: 150,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 12, 10, 8),
+                  child: ExerciseMotionView(
+                    spec: motionFor(ex.id),
+                    muscles: ex.muscles,
+                    color: hue,
+                    onTint: true,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                      color: Iron.tint(hue), shape: BoxShape.circle),
+                  child: Icon(Icons.menu_book_rounded,
+                      size: 16, color: Iron.inkOf(hue)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

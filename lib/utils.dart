@@ -33,3 +33,14 @@ String fmtMonthShort(DateTime d, bool zh) =>
 
 /// Clock time only: "19:05".
 String fmtTime(DateTime d) => '${pad2(d.hour)}:${pad2(d.minute)}';
+
+/// Compact day label for chart axes: "10/27" (both languages).
+String fmtMonthDay(DateTime d) => '${d.month}/${d.day}';
+
+/// Training time as hours and minutes: "3 h 20 min" / "3小时20分".
+String fmtHoursMinutes(int seconds, bool zh) {
+  final h = seconds ~/ 3600;
+  final m = (seconds % 3600) ~/ 60;
+  if (zh) return h == 0 ? '$m分钟' : '$h小时$m分';
+  return h == 0 ? '$m min' : '$h h $m min';
+}

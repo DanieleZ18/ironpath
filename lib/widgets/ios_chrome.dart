@@ -107,13 +107,18 @@ class IronTabBar extends StatelessWidget {
       border: Border(top: _hairline),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 54,
-          child: Row(
-            children: [
-              for (var i = 0; i < items.length; i++)
-                Expanded(child: _item(i, Motion.reduced(context))),
-            ],
+        // tab labels stay near their designed size, as on iOS: the bar is
+        // a fixed 54 pt and the label is a hint under the icon
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.15,
+          child: SizedBox(
+            height: 54,
+            child: Row(
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  Expanded(child: _item(i, Motion.reduced(context))),
+              ],
+            ),
           ),
         ),
       ),

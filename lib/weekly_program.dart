@@ -159,10 +159,32 @@ int isoWeekNumber(DateTime date) {
 
 /// Sessions logged since the start of the current week (Monday).
 int completedThisWeek(AppSettings s, List<SessionLog> logs, {DateTime? now}) {
+  final weekStart = weekStartOf(now ?? DateTime.now());
+  return logs.where((l) => !l.startedAt.isBefore(weekStart)).length;
+}
+
+/// Monday 00:00 (local) of the week [weeksAgo] weeks before [now]'s week.
+DateTime weekStartOf(DateTime now, {int weeksAgo = 0}) =>
+    // calendar arithmetic, not Duration: stays at local midnight across DST
+    DateTime(now.year, now.month, now.day - (now.weekday - 1) - 7 * weeksAgo);
+
+/// Sessions per calendar week for the last [weeks] weeks, oldest first;
+/// the last entry is the current week.
+List<int> sessionsPerWeek(List<SessionLog> logs,
+    {int weeks = 8, DateTime? now}) {
   final n = now ?? DateTime.now();
-  // calendar arithmetic, not Duration: stays at local midnight across DST
-  final weekStart = DateTime(n.year, n.month, n.day - (n.weekday - 1));
-  return logs
-      .where((l) => !l.startedAt.isBefore(weekStart))
-      .length;
+  final starts = [
+    for (var i = weeks - 1; i >= 0; i--) weekStartOf(n, weeksAgo: i)
+  ];
+  final counts = List.filled(weeks, 0);
+  for (final l in logs) {
+    for (var i = weeks - 1; i >= 0; i--) {
+      if (!l.startedAt.isBefore(starts[i])) {
+        // future-dated logs (clock changes) still count as this week
+        counts[i]++;
+        break;
+      }
+    }
+  }
+  return counts;
 }

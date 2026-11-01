@@ -91,12 +91,16 @@ class TierCard extends StatelessWidget {
   final void Function(BuildContext source) onOpen;
   final bool recommended;
 
+  /// Half-width bento tile: tier, plan and plan count; tap to open.
+  final bool compact;
+
   const TierCard({
     super.key,
     required this.summary,
     required this.onStart,
     required this.onOpen,
     this.recommended = false,
+    this.compact = false,
   });
 
   @override
@@ -104,6 +108,27 @@ class TierCard extends StatelessWidget {
     final zh = L10n.zh;
     final plan = summary.bestPlan;
     final hue = Iron.tier(summary.tier);
+    if (compact) {
+      return IronCard(
+        color: Iron.tint(hue),
+        radius: Iron.rL,
+        padding: const EdgeInsets.all(16),
+        onTap: () => onOpen(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            IronPill(tierLabel(summary.tier),
+                color: hue, icon: tierIcon(summary.tier), solid: true),
+            const SizedBox(height: 12),
+            const Spacer(),
+            Text(plan.title(zh), style: Iron.hero(17)),
+            const SizedBox(height: 4),
+            Text(L10n.tf('plansCount', summary.plans.length),
+                style: Iron.caption(color: hue)),
+          ],
+        ),
+      );
+    }
     final missing =
         unavailableLabel(plan, Store.instance.settings.userEquipment);
     return IronCard(
@@ -112,22 +137,27 @@ class TierCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              IronPill(tierLabel(summary.tier),
-                  color: hue, icon: tierIcon(summary.tier), solid: true),
-              if (recommended) ...[
-                const SizedBox(width: 6),
-                Flexible(
-                  child: IronPill(L10n.t('recommendedForYou'),
-                      color: hue, icon: Icons.star_rounded),
-                ),
+          if (recommended)
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                IronPill(tierLabel(summary.tier),
+                    color: hue, icon: tierIcon(summary.tier), solid: true),
+                IronPill(L10n.t('recommendedForYou'),
+                    color: hue, icon: Icons.star_rounded),
               ],
-              const Spacer(),
-              Text(L10n.tf('plansCount', summary.plans.length),
-                  style: Iron.caption(color: hue)),
-            ],
-          ),
+            )
+          else
+            Row(
+              children: [
+                IronPill(tierLabel(summary.tier),
+                    color: hue, icon: tierIcon(summary.tier), solid: true),
+                const Spacer(),
+                Text(L10n.tf('plansCount', summary.plans.length),
+                    style: Iron.caption(color: hue)),
+              ],
+            ),
           const SizedBox(height: 14),
           Text(plan.title(zh), style: Iron.hero(19)),
           const SizedBox(height: 4),

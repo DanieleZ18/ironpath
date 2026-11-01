@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/ios_chrome.dart';
 import '../utils.dart';
 import '../weekly_program.dart';
+import '../widgets/bento.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/weekly_program_card.dart';
 import 'plan_detail.dart';
@@ -52,13 +53,15 @@ class HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    final done = program == null ? 0 : completedThisWeek(settings, logs);
+    final done = completedThisWeek(settings, logs);
     final total = program?.slots.length ?? 0;
     final Plan? today = program == null
         ? best
         : done < total
             ? program.slots[done]
             : null;
+    final lead = summaries.firstWhere((s) => s.tier == best?.tier,
+        orElse: () => summaries.first);
 
     return CustomScrollView(
       controller: widget.scrollController,
@@ -91,8 +94,52 @@ class HomeScreenState extends State<HomeScreen> {
                         color: Iron.tint(Iron.tier(today.tier))),
               ),
 
+              // ---- this week and the last workout, side by side
+              const SizedBox(height: bentoGap),
+              BentoRow(children: [
+                BentoTile(
+                  hue: Iron.accent,
+                  child: BentoStat(
+                    icon: Icons.calendar_month_rounded,
+                    label: L10n.t('statThisWeek'),
+                    value: total > 0 ? '$done/$total' : '$done',
+                    hue: Iron.accent,
+                    size: 30,
+                    note: total > 0 ? null : L10n.t('statSessions'),
+                    extra: total > 0
+                        ? SetDots(done: done, total: total, size: 10)
+                        : null,
+                  ),
+                ),
+                BentoTile(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BentoLabel(L10n.t('lastWorkout'),
+                          icon: Icons.history_rounded),
+                      const SizedBox(height: 8),
+                      const Spacer(),
+                      Text(
+                        logs.isEmpty
+                            ? L10n.t('noWorkoutsYet')
+                            : logs.first.planTitle(zh),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Iron.body(15, weight: FontWeight.w800),
+                      ),
+                      if (logs.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                            '${fmtDayHeader(logs.first.startedAt, zh)} · ${logs.first.doneSets()}/${logs.first.totalSets()} ${L10n.t('sets')}',
+                            style: Iron.caption(color: Iron.faint)),
+                      ],
+                    ],
+                  ),
+                ),
+              ]),
+
               if (program != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: bentoGap),
                 WeeklyProgramCard(
                   program: program,
                   done: done,
@@ -101,39 +148,8 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ],
 
-              // ---- last workout (day-14 retention hook)
-              const SizedBox(height: 16),
-              IronCard(
-                padding: const EdgeInsets.all(14),
-                radius: Iron.rM,
-                child: Row(
-                  children: [
-                    IconBlob(Icons.history_rounded, color: Iron.tier(1)),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(L10n.t('lastWorkout'), style: Iron.caption()),
-                          const SizedBox(height: 2),
-                          Text(
-                            logs.isEmpty
-                                ? L10n.t('noWorkoutsYet')
-                                : logs.first.planTitle(zh),
-                            style: Iron.body(15, weight: FontWeight.w700),
-                          ),
-                          if (logs.isNotEmpty)
-                            Text(
-                                '${fmtDate(logs.first.startedAt)} · ${logs.first.doneSets()}/${logs.first.totalSets()} ${L10n.t('sets')}',
-                                style: Iron.caption(color: Iron.faint)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ---- browse by tier
+              // ---- browse by tier: the recommended level full width, the
+              // other two as half tiles beneath
               const SizedBox(height: 22),
               SectionTitle(
                 L10n.t('browseByLevel'),
@@ -141,17 +157,25 @@ class HomeScreenState extends State<HomeScreen> {
                     onPressed: widget.goLibrary,
                     child: Text(L10n.t('viewAll'))),
               ),
-              for (final s in summaries)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: TierCard(
+              TierCard(
+                summary: lead,
+                onStart: () => _startPlan(context, lead.bestPlan),
+                onOpen: (card) => _openPlan(card, lead.bestPlan,
+                    radius: Iron.rL.x, color: Iron.tint(Iron.tier(lead.tier))),
+                recommended: true,
+              ),
+              const SizedBox(height: bentoGap),
+              BentoRow(children: [
+                for (final s in summaries.where((s) => s != lead))
+                  TierCard(
                     summary: s,
+                    compact: true,
                     onStart: () => _startPlan(context, s.bestPlan),
                     onOpen: (card) => _openPlan(card, s.bestPlan,
                         radius: Iron.rL.x, color: Iron.tint(Iron.tier(s.tier))),
-                    recommended: best != null && s.tier == best.tier,
                   ),
-                ),
+              ]),
+              const SizedBox(height: 12),
               if (!adFree) ...[
                 const SizedBox(height: 4),
                 const _BannerPlaceholder(),
