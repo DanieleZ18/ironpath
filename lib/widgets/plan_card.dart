@@ -6,8 +6,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
-import '../weekly_program.dart'
-    show unavailableCount, freqDistance;
+import '../weekly_program.dart' show unavailableCount, freqDistance;
 
 String tierLabel(int tier) => L10n.t(switch (tier) {
       1 => 'beginner',
@@ -67,15 +66,12 @@ class TierSummary {
 List<TierSummary> tierSummaries() {
   final eq = Store.instance.settings.userEquipment;
   final days = Store.instance.settings.userDays;
-  int score(Plan p) =>
-      unavailableCount(p, eq) * 1000 + freqDistance(p, days);
+  int score(Plan p) => unavailableCount(p, eq) * 1000 + freqDistance(p, days);
   return [
     for (final tier in [1, 2, 3])
       TierSummary(
           tier,
-          builtinPlans
-              .where((p) => p.tier == tier)
-              .toList()
+          builtinPlans.where((p) => p.tier == tier).toList()
             ..sort((a, b) {
               final c = score(a).compareTo(score(b));
               if (c != 0) return c;
@@ -90,14 +86,16 @@ List<TierSummary> tierSummaries() {
 class TierCard extends StatelessWidget {
   final TierSummary summary;
   final VoidCallback onStart;
-  final VoidCallback onOpenLibrary;
+
+  /// Opens the tier's best plan, zooming out of this card.
+  final void Function(BuildContext source) onOpen;
   final bool recommended;
 
   const TierCard({
     super.key,
     required this.summary,
     required this.onStart,
-    required this.onOpenLibrary,
+    required this.onOpen,
     this.recommended = false,
   });
 
@@ -110,7 +108,7 @@ class TierCard extends StatelessWidget {
         unavailableLabel(plan, Store.instance.settings.userEquipment);
     return IronCard(
       color: Iron.tint(hue),
-      onTap: onOpenLibrary,
+      onTap: () => onOpen(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -133,8 +131,7 @@ class TierCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(plan.title(zh), style: Iron.hero(19)),
           const SizedBox(height: 4),
-          Text('${planMeta(plan)} · ${freqLabel(plan)}',
-              style: Iron.caption()),
+          Text('${planMeta(plan)} · ${freqLabel(plan)}', style: Iron.caption()),
           if (missing.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(missing, style: Iron.caption(color: hue)),
@@ -156,7 +153,9 @@ class TierCard extends StatelessWidget {
 
 class PlanCard extends StatelessWidget {
   final Plan plan;
-  final VoidCallback onTap;
+
+  /// Gets the card's own context so the detail page can zoom out of it.
+  final void Function(BuildContext source) onTap;
 
   const PlanCard({super.key, required this.plan, required this.onTap});
 
@@ -167,7 +166,7 @@ class PlanCard extends StatelessWidget {
     final missing =
         unavailableLabel(plan, Store.instance.settings.userEquipment);
     return IronCard(
-      onTap: onTap,
+      onTap: () => onTap(context),
       padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
       radius: Iron.rM,
       child: Row(
@@ -196,9 +195,7 @@ class PlanCard extends StatelessWidget {
             ),
           ),
           Icon(
-            plan.builtin
-                ? Icons.chevron_right_rounded
-                : Icons.edit_rounded,
+            plan.builtin ? Icons.chevron_right_rounded : Icons.edit_rounded,
             size: 22,
             color: Iron.faint,
           ),

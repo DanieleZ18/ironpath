@@ -84,7 +84,11 @@ class HomeScreenState extends State<HomeScreen> {
                 recommended: program == null,
                 onStart:
                     today == null ? null : () => _startPlan(context, today),
-                onOpen: today == null ? null : () => _openPlan(context, today),
+                onOpen: today == null
+                    ? null
+                    : (card) => _openPlan(card, today,
+                        radius: Iron.rXL.x,
+                        color: Iron.tint(Iron.tier(today.tier))),
               ),
 
               if (program != null) ...[
@@ -92,7 +96,8 @@ class HomeScreenState extends State<HomeScreen> {
                 WeeklyProgramCard(
                   program: program,
                   done: done,
-                  onOpen: (p) => _openPlan(context, p),
+                  onOpen: (row, p) =>
+                      _openPlan(row, p, radius: Iron.rM.x, color: Iron.card),
                 ),
               ],
 
@@ -142,7 +147,8 @@ class HomeScreenState extends State<HomeScreen> {
                   child: TierCard(
                     summary: s,
                     onStart: () => _startPlan(context, s.bestPlan),
-                    onOpenLibrary: () => _openPlan(context, s.bestPlan),
+                    onOpen: (card) => _openPlan(card, s.bestPlan,
+                        radius: Iron.rL.x, color: Iron.tint(Iron.tier(s.tier))),
                     recommended: best != null && s.tier == best.tier,
                   ),
                 ),
@@ -160,16 +166,17 @@ class HomeScreenState extends State<HomeScreen> {
   void _startPlan(BuildContext context, Plan plan) {
     Navigator.of(context)
         .push(MaterialPageRoute(
+          // a workout is a modal task: it slides up full screen
+          fullscreenDialog: true,
           builder: (_) => SessionScreen(plan: plan),
         ))
         .then((_) => refresh());
   }
 
-  void _openPlan(BuildContext context, Plan plan) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(
-          builder: (_) => PlanDetailPage(plan: plan),
-        ))
+  /// Zooms the plan's detail page out of the card that was tapped.
+  void _openPlan(BuildContext source, Plan plan,
+      {required double radius, required Color color}) {
+    openPlanDetail(source, plan, radius: radius, color: color)
         .then((_) => refresh());
   }
 }

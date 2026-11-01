@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../motion.dart';
 import '../theme.dart';
 
 // iOS-style chrome on top of the IronPath look: frosted bars, collapsing
@@ -110,7 +111,8 @@ class IronTabBar extends StatelessWidget {
           height: 54,
           child: Row(
             children: [
-              for (var i = 0; i < items.length; i++) Expanded(child: _item(i)),
+              for (var i = 0; i < items.length; i++)
+                Expanded(child: _item(i, Motion.reduced(context))),
             ],
           ),
         ),
@@ -118,7 +120,7 @@ class IronTabBar extends StatelessWidget {
     );
   }
 
-  Widget _item(int i) {
+  Widget _item(int i, bool reduced) {
     final (icon, activeIcon, label) = items[i];
     final active = i == index;
     final color = active ? Iron.inkOf(Iron.accent) : Iron.faint;
@@ -133,10 +135,14 @@ class IronTabBar extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedScale(
-                scale: active ? 1.08 : 1,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutBack,
+              // SF Symbols-style bounce when a tab becomes active
+              TweenAnimationBuilder<double>(
+                key: ValueKey(active),
+                tween: Tween(begin: active && !reduced ? 0.78 : 1.0, end: 1.0),
+                duration: Motion.bouncy.duration,
+                curve: Motion.bouncy,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
                 child: Icon(active ? activeIcon : icon, size: 25, color: color),
               ),
               const SizedBox(height: 2),

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../l10n.dart';
+import '../motion.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -108,6 +109,8 @@ class _SessionScreenState extends State<SessionScreen> {
   }
 
   void _completeSet() {
+    // a light tap of confirmation, felt rather than heard
+    if (Store.instance.settings.feedbackOn) HapticFeedback.lightImpact();
     final weight =
         double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.'));
     if (_log.length <= _itemIdx) {
@@ -259,17 +262,20 @@ class _SessionScreenState extends State<SessionScreen> {
           switchOutCurve: Curves.easeInCubic,
           // fade + a slight rise/scale: each set and rest feels like a card
           // being dealt, without moving far enough to distract
-          transitionBuilder: (child, anim) => FadeTransition(
-            opacity: anim,
-            child: ScaleTransition(
-              scale: Tween(begin: 0.97, end: 1.0).animate(anim),
-              child: SlideTransition(
-                position: Tween(begin: const Offset(0, 0.02), end: Offset.zero)
-                    .animate(anim),
-                child: child,
-              ),
-            ),
-          ),
+          transitionBuilder: (child, anim) => Motion.reduced(context)
+              ? FadeTransition(opacity: anim, child: child)
+              : FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: Tween(begin: 0.97, end: 1.0).animate(anim),
+                    child: SlideTransition(
+                      position:
+                          Tween(begin: const Offset(0, 0.02), end: Offset.zero)
+                              .animate(anim),
+                      child: child,
+                    ),
+                  ),
+                ),
           child: KeyedSubtree(
             key: ValueKey('$_phase-$_itemIdx-$_setIdx'),
             child: switch (_phase) {
@@ -471,11 +477,22 @@ class _SessionScreenState extends State<SessionScreen> {
                     const SizedBox(height: 8),
                     Text(L10n.t('restTime').toUpperCase(),
                         style: Iron.eyebrow(color: Iron.accent)),
+                    const SizedBox(height: 10),
+                    // the set just finished pops into its dot
+                    SetDots(
+                        done: _setIdx + 1,
+                        total: _item.sets,
+                        color: _hue,
+                        popLast: true),
                     const SizedBox(height: 18),
                     RestRing(
                       value: _restTotal == 0 ? 0 : _restRemaining / _restTotal,
-                      child: Text('$m:${s.toString().padLeft(2, '0')}',
-                          style: Iron.hero(64)),
+                      // digits roll down as time runs out; the last three
+                      // seconds turn to the accent with the warning ticks
+                      child: RollingText('$m:${s.toString().padLeft(2, '0')}',
+                          down: true,
+                          style: Iron.hero(64,
+                              color: _restRemaining <= 3 ? Iron.accent : null)),
                     ),
                     const SizedBox(height: 24),
                     IronCard(
@@ -565,48 +582,196 @@ class _SessionScreenState extends State<SessionScreen> {
 
   Widget _buildFinished(BuildContext context) {
     final zh = L10n.zh;
-    final total = _log.fold<int>(0, (a, i) => a + i.sets.length);
     final recovery = trainingTips[1];
+    return _FinishView(
+      planTitle: plan.title(zh),
+      sets: _log.fold<int>(0, (a, i) => a + i.sets.length),
+      seconds: _durationSeconds,
+      exercises: _log.length,
+      tip: _tipCard(zh ? recovery.zh : recovery.en),
+      onDone: () => Navigator.of(context).pop(),
+    );
+  }
+}
+
+/// The one orchestrated moment in the app: the check draws itself, the
+/// title rises in, the numbers count up, and a success haptic lands as the
+/// check closes. One controller sequences it all; Reduce Motion shows the
+/// finished state at once.
+class _FinishView extends StatefulWidget {
+  final String planTitle;
+  final int sets;
+  final int seconds;
+  final int exercises;
+  final Widget tip;
+  final VoidCallback onDone;
+
+  const _FinishView({
+    required this.planTitle,
+    required this.sets,
+    required this.seconds,
+    required this.exercises,
+    required this.tip,
+    required this.onDone,
+  });
+
+  @override
+  State<_FinishView> createState() => _FinishViewState();
+}
+
+class _FinishViewState extends State<_FinishView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1500));
+  final List<Timer> _haptics = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_c.status != AnimationStatus.dismissed) return;
+    final haptics = Store.instance.settings.feedbackOn;
+    if (Motion.reduced(context)) {
+      _c.value = 1;
+      if (haptics) HapticFeedback.mediumImpact();
+      return;
+    }
+    _c.forward();
+    if (haptics) {
+      // success pattern: a firm tap as the check closes, a lighter echo
+      _haptics
+        ..add(Timer(const Duration(milliseconds: 620),
+            () => HapticFeedback.mediumImpact()))
+        ..add(Timer(const Duration(milliseconds: 730),
+            () => HapticFeedback.lightImpact()));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final t in _haptics) {
+      t.cancel();
+    }
+    _c.dispose();
+    super.dispose();
+  }
+
+  Animation<double> _seg(double a, double b,
+          [Curve curve = Curves.easeOutCubic]) =>
+      CurvedAnimation(parent: _c, curve: Interval(a, b, curve: curve));
+
+  /// Fade + rise for a text block entering at [a]..[b].
+  Widget _rise(double a, double b, Widget child) {
+    final t = _seg(a, b);
+    return FadeTransition(
+      opacity: t,
+      child: SlideTransition(
+        position:
+            Tween(begin: const Offset(0, 0.25), end: Offset.zero).animate(t),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _stat(int i, double value, String Function(double) format,
+      String label, Color hue) {
+    final delay = Duration(milliseconds: 650 + 90 * i);
+    return _rise(
+      0.4 + 0.06 * i,
+      0.75 + 0.06 * i,
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: Iron.tint(hue),
+          borderRadius: const BorderRadius.all(Iron.rM),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: CountUp(
+                value: value,
+                format: format,
+                delay: delay,
+                style: Iron.hero(24, color: hue),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(label, style: Iron.caption()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ring = _seg(0.0, 0.42, Curves.easeInOutCubic);
+    final tick = _seg(0.26, 0.5, Curves.easeOutCubic);
+    final disc = _seg(0.0, 0.55, Motion.bouncy);
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         children: [
           Center(
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                  color: Iron.tint(Iron.accent), shape: BoxShape.circle),
-              child: Icon(Icons.check_rounded, size: 72, color: Iron.accent),
+            child: AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) => Transform.scale(
+                scale: 0.6 + 0.4 * disc.value,
+                child: SizedBox(
+                  width: 128,
+                  height: 128,
+                  child: CustomPaint(
+                    painter: _CheckPainter(
+                      ring: ring.value,
+                      tick: tick.value,
+                      disc: Iron.tint(Iron.accent),
+                      ink: Iron.accent,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 18),
-          Text(L10n.t('greatJob'),
-              textAlign: TextAlign.center, style: Iron.hero(30)),
+          _rise(
+              0.3,
+              0.6,
+              Text(L10n.t('greatJob'),
+                  textAlign: TextAlign.center, style: Iron.hero(30))),
           const SizedBox(height: 6),
-          Text('${L10n.t('sessionFinished')} · ${plan.title(zh)}',
-              textAlign: TextAlign.center, style: Iron.caption()),
+          _rise(
+              0.36,
+              0.66,
+              Text('${L10n.t('sessionFinished')} · ${widget.planTitle}',
+                  textAlign: TextAlign.center, style: Iron.caption())),
           const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
-                  child: StatTile(value: '$total', label: L10n.t('totalSets'))),
+                  child: _stat(0, widget.sets.toDouble(), (v) => '${v.round()}',
+                      L10n.t('totalSets'), Iron.accent)),
               const SizedBox(width: 10),
               Expanded(
-                  child: StatTile(
-                      value: fmtDuration(_durationSeconds),
-                      label: L10n.t('duration'),
-                      color: Iron.tier(1))),
+                  child: _stat(
+                      1,
+                      widget.seconds.toDouble(),
+                      (v) => fmtDuration(v.round()),
+                      L10n.t('duration'),
+                      Iron.tier(1))),
               const SizedBox(width: 10),
               Expanded(
-                  child: StatTile(
-                      value: '${_log.length}',
-                      label: L10n.t('statExercises'),
-                      color: Iron.tier(2))),
+                  child: _stat(
+                      2,
+                      widget.exercises.toDouble(),
+                      (v) => '${v.round()}',
+                      L10n.t('statExercises'),
+                      Iron.tier(2))),
             ],
           ),
           const SizedBox(height: 14),
-          _tipCard(zh ? recovery.zh : recovery.en),
+          _rise(0.6, 0.9, widget.tip),
           const SizedBox(height: 14),
           // AdMob interstitial goes here (week 6-7) — never mid-workout.
           Container(
@@ -623,9 +788,67 @@ class _SessionScreenState extends State<SessionScreen> {
           IronButton(
               label: L10n.t('finish'),
               icon: Icons.home_rounded,
-              onPressed: () => Navigator.of(context).pop()),
+              onPressed: widget.onDone),
         ],
       ),
     );
   }
+}
+
+/// Tinted disc, a ring that sweeps closed ([ring] 0..1), then a check
+/// stroke that draws itself ([tick] 0..1).
+class _CheckPainter extends CustomPainter {
+  final double ring;
+  final double tick;
+  final Color disc;
+  final Color ink;
+
+  _CheckPainter(
+      {required this.ring,
+      required this.tick,
+      required this.disc,
+      required this.ink});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
+    canvas.drawCircle(c, r - 4, Paint()..color = disc);
+    final stroke = Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 7
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    if (ring > 0) {
+      canvas.drawArc(Rect.fromCircle(center: c, radius: r - 4), -1.5708,
+          6.2832 * ring, false, stroke);
+    }
+    if (tick > 0) {
+      final a = Offset(c.dx - r * 0.34, c.dy + r * 0.02);
+      final b = Offset(c.dx - r * 0.08, c.dy + r * 0.28);
+      final e = Offset(c.dx + r * 0.38, c.dy - r * 0.26);
+      final first = (b - a).distance;
+      final second = (e - b).distance;
+      final drawn = (first + second) * tick;
+      final path = Path()..moveTo(a.dx, a.dy);
+      if (drawn <= first) {
+        final p = Offset.lerp(a, b, drawn / first)!;
+        path.lineTo(p.dx, p.dy);
+      } else {
+        final p = Offset.lerp(b, e, (drawn - first) / second)!;
+        path
+          ..lineTo(b.dx, b.dy)
+          ..lineTo(p.dx, p.dy);
+      }
+      canvas.drawPath(path, stroke);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CheckPainter old) =>
+      old.ring != ring ||
+      old.tick != tick ||
+      old.disc != disc ||
+      old.ink != ink;
 }

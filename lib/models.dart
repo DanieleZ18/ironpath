@@ -5,7 +5,8 @@ class Exercise {
   final String id;
   final String nameEn;
   final String nameZh;
-  final String category; // 'bodyweight' | 'dumbbell' | 'barbell' | 'machine' | 'cable'
+  final String
+      category; // 'bodyweight' | 'dumbbell' | 'barbell' | 'machine' | 'cable'
   final List<String> muscles; // english keys, see L10n.muscle
   final int difficulty; // 1 beginner .. 3 advanced
   final String descEn;
@@ -73,8 +74,8 @@ class Exercise {
 
   /// Whether any of the user's flagged body issues contraindicate this
   /// exercise. issues: subset of {'knee','shoulder','lower_back'}.
-  bool contraindicatedFor(List<String> issues) => issues
-      .any((issue) => contraindications.contains(issue));
+  bool contraindicatedFor(List<String> issues) =>
+      issues.any((issue) => contraindications.contains(issue));
 }
 
 class PlanItem {
@@ -210,7 +211,8 @@ class SetLog {
 
   const SetLog({required this.index, required this.done, this.weight});
 
-  Map<String, dynamic> toJson() => {'index': index, 'done': done, 'weight': weight};
+  Map<String, dynamic> toJson() =>
+      {'index': index, 'done': done, 'weight': weight};
 
   factory SetLog.fromJson(Map<String, dynamic> j) => SetLog(
         index: (j['index'] as num).toInt(),
@@ -243,7 +245,8 @@ class ItemLog {
 class SessionLog {
   final String id;
   final String planId;
-  final String planTitleEn; // snapshot: builtin seeds may change across versions
+  final String
+      planTitleEn; // snapshot: builtin seeds may change across versions
   final String planTitleZh;
   final DateTime startedAt;
   final int durationSeconds;
@@ -279,7 +282,8 @@ class SessionLog {
         planId: (j['planId'] ?? '') as String,
         planTitleEn: (j['planTitleEn'] ?? '') as String,
         planTitleZh: (j['planTitleZh'] ?? '') as String,
-        startedAt: DateTime.fromMillisecondsSinceEpoch((j['startedAt'] as num).toInt()),
+        startedAt: DateTime.fromMillisecondsSinceEpoch(
+            (j['startedAt'] as num).toInt()),
         durationSeconds: (j['durationSeconds'] as num).toInt(),
         items: ((j['items'] ?? []) as List)
             .map((e) => ItemLog.fromJson(Map<String, dynamic>.from(e)))
@@ -290,6 +294,8 @@ class SessionLog {
 class AppSettings {
   String lang; // 'system' | 'en' | 'zh'
   String appearance; // 'system' | 'dark' | 'light'
+  String themeId; // colour theme: a preset id or 'custom'
+  double customHue; // 0-360, used when themeId == 'custom'
   bool remindersOn;
   int reminderHour; // 0-23
   int reminderMinute;
@@ -304,6 +310,8 @@ class AppSettings {
   AppSettings({
     this.lang = 'system',
     this.appearance = 'system',
+    this.themeId = 'sage',
+    this.customHue = 150,
     this.remindersOn = false,
     this.reminderHour = 19,
     this.reminderMinute = 0,
@@ -319,6 +327,8 @@ class AppSettings {
   Map<String, dynamic> toJson() => {
         'lang': lang,
         'appearance': appearance,
+        'themeId': themeId,
+        'customHue': customHue,
         'remindersOn': remindersOn,
         'reminderHour': reminderHour,
         'reminderMinute': reminderMinute,
@@ -334,6 +344,8 @@ class AppSettings {
   factory AppSettings.fromJson(Map<String, dynamic> j) => AppSettings(
         lang: (j['lang'] ?? 'system') as String,
         appearance: (j['appearance'] ?? 'system') as String,
+        themeId: (j['themeId'] ?? 'sage') as String,
+        customHue: ((j['customHue'] ?? 150) as num).toDouble(),
         remindersOn: (j['remindersOn'] ?? false) as bool,
         reminderHour: (j['reminderHour'] ?? 19) as int,
         reminderMinute: (j['reminderMinute'] ?? 0) as int,
@@ -342,9 +354,8 @@ class AppSettings {
         userTier: j['userTier'] == null ? null : (j['userTier'] as num).toInt(),
         userEquipment: j['userEquipment'] as String?,
         ageBand: j['ageBand'] as String?,
-        bodyIssues: ((j['bodyIssues'] ?? []) as List)
-            .map((e) => e as String)
-            .toList(),
+        bodyIssues:
+            ((j['bodyIssues'] ?? []) as List).map((e) => e as String).toList(),
         userDays: j['userDays'] == null ? null : (j['userDays'] as num).toInt(),
       );
 }

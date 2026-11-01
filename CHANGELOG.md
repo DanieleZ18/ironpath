@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+### Colour themes
+- Settings → Theme colour: six presets — Sage (default, unchanged),
+  Plates (difficulty colours follow bumper plates: yellow 15 kg, blue
+  20 kg, red 25 kg), Chalk, Trail, Pool, Dawn — plus Custom: drag a hue
+  slider and the whole palette retunes live.
+- Beige and black remain the two backgrounds ("Light / Dark" are now
+  labelled 米色 / 黑色 · Beige / Black); themes only lean them slightly.
+- Every theme keeps text at WCAG 4.5:1 and fills at 3:1 in both
+  appearances (tested for all presets and a sweep of custom hues).
+
+### Motion
+- Tapping a plan card zooms its detail page out of that card (iOS 18 zoom /
+  Material container transform); closing zooms it back. Close by edge swipe
+  or pull-down on iPhone, predictive back on Android — the gesture scrubs
+  the animation.
+- Cards, buttons and tiles respond to touch with a springy press.
+- Workouts open as a full-screen modal.
+- Numbers roll into place (rest countdown, stats, week progress).
+- Completing a set gives a light haptic and pops its dot; the rest ring
+  draws itself in; the last three seconds turn to the accent.
+- Finishing a workout is a single choreographed moment: the check draws
+  itself, the stats count up, and a success haptic lands.
+- Theme, appearance and language changes cross-fade; the app follows the
+  phone's dark mode live.
+- Honours Reduce Motion / Remove animations everywhere.
+
 ## 0.3.0 — 2026-10-29
 
 ### Design

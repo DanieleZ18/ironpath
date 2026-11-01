@@ -7,11 +7,20 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/ios_chrome.dart';
+import '../widgets/zoom_route.dart';
 import '../widgets/muscle_glyph.dart';
 import 'exercise_detail_screen.dart';
 import 'plan_editor.dart';
 import 'session_screen.dart';
 import '../widgets/plan_card.dart';
+
+/// Opens a plan's detail page by zooming it out of the tapped card
+/// ([source] is the card's context; [radius] and [color] describe the card
+/// so the page grows out of its exact shape).
+Future<void> openPlanDetail(BuildContext source, Plan plan,
+        {double radius = 24, Color? color}) =>
+    openZoomed<void>(source, (_) => PlanDetailPage(plan: plan),
+        radius: radius, color: color);
 
 class PlanDetailPage extends StatefulWidget {
   final Plan plan;
@@ -99,6 +108,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   void _start(Plan p) {
     Navigator.of(context)
         .push(MaterialPageRoute(
+      // a workout is a modal task: it slides up full screen
+      fullscreenDialog: true,
       builder: (_) => SessionScreen(plan: p),
     ))
         .then((_) {

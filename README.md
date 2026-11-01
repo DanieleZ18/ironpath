@@ -53,6 +53,19 @@ deeper shade of the same hue that clears 4.5:1 — the text helpers
 **Dark**: grey charcoal `#191A19`, cards `#232523`, sage `#8FB09A`, tiers
 `#9DB3C9/#B4A8C8/#D0A595`, tints at 18%.
 
+**Colour themes** (2026-11-01, Settings → Theme colour): surfaces stay beige
+(米色) / charcoal (黑色); a theme supplies the accent + three tier hues
+(`ThemeSpec`), and leans the page a few percent toward its accent. Six
+presets, each drawn from where training happens — Sage (default, the values
+above, unchanged), Plates (tiers follow bumper-plate colours: yellow 15 kg →
+blue 20 kg → red 25 kg), Chalk (graphite greys), Trail, Pool, Dawn — plus
+Custom: any hue on a slider, from which `ThemeSpec.custom` derives the whole
+set (tiers at +120°/+180°/+240°), solving each tone for a contrast target so
+every hue is equally legible. A safety clamp keeps all fills ≥3:1 against
+their tints; `inkOf` keeps text ≥4.5:1. `test/theme_test.dart` checks every
+preset and a 15° sweep of custom hues in both appearances. Stored as
+`AppSettings.themeId` / `customHue`.
+
 **Exercise glyphs** (`lib/widgets/muscle_glyph.dart`): until illustrations
 land, each exercise shows a small body figure with its muscles highlighted —
 primary muscle full strength (decides front/back view), secondary lighter.
@@ -91,11 +104,33 @@ frosted bars and swipe-to-delete are shared.
 - history: swipe left to delete, with undo; library: long-press a plan for
   a context menu (start / details / copy / edit / delete)
 
-**Motion**: tabs cross-fade with a slight drift (220ms), onboarding
-questions slide in the direction of travel, session phases fade and rise
-(280ms), the rest ring sweeps continuously. Theme switches apply in one
-frame (`themeAnimationDuration: zero`) because widgets read the palette
-directly.
+**Motion** (2026-11-01, `lib/motion.dart`): motion answers what the user
+did — press, open, confirm, change — and goes quiet under the system's
+Reduce Motion. Springs are parameterised like SwiftUI
+(`SpringCurve(response, dampingFraction)`; tokens `Motion.snappy / smooth /
+bouncy`).
+- press feedback: cards, buttons, choice tiles, tappable pills and weekly
+  rows sink slightly and spring back (`Pressable`, raw pointers, so it never
+  steals taps); on Apple devices presses dim instead of rippling
+- card → plan detail: the page zooms out of the exact card tapped and back
+  into it on close (`lib/widgets/zoom_route.dart` — iOS 18 zoom / Material
+  container transform), the page behind recedes and dims; dismiss by iOS
+  edge swipe or pull-down, or Android predictive back, all scrubbing the
+  same animation; Reduce Motion → cross-fade
+- workouts present as full-screen modals (slide up on iOS)
+- numbers roll instead of jumping (`RollingText`): rest countdown, history
+  stats, week progress
+- session: completing a set taps a light haptic and pops its dot; the rest
+  ring draws itself in and sweeps continuously; the last three seconds turn
+  to the accent
+- the one orchestrated moment: finishing a workout — ring sweeps closed,
+  check draws, title rises, stats count up, success haptic as the check
+  closes (one controller, `_FinishView`)
+- tabs cross-fade with a slight drift; tab icons bounce on selection;
+  onboarding questions slide in the direction of travel
+- theme, appearance and language changes cross-fade like iOS appearance
+  switches (`ThemeCrossfade`: snapshot the frame, apply, dissolve); the
+  app follows the phone's dark mode live
 
 **Shared components** (`lib/theme.dart`): `IronCard` (white or tinted,
 tappable), `IronButton`, `IronPill`, `IconBlob` (icon on a soft tint), `SetDots` (● ● ○ ○), `BarbellProgress`,

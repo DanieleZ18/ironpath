@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
+import '../motion.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/plan_card.dart' show tierIcon;
@@ -134,7 +135,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   // right, back → from the left; the old page drifts away
                   transitionBuilder: (child, anim) {
                     final incoming = child.key == ValueKey(_page);
-                    final dx = (incoming ? 1 : -1) * (_forward ? 1 : -1) * 0.08;
+                    final dx = (incoming ? 1 : -1) *
+                        (_forward ? 1 : -1) *
+                        (Motion.reduced(context) ? 0.0 : 0.08);
                     return FadeTransition(
                       opacity: anim,
                       child: SlideTransition(

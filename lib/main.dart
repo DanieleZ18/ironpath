@@ -10,6 +10,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/root.dart';
 import 'store.dart';
 import 'theme.dart';
+import 'widgets/theme_crossfade.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,11 +31,64 @@ Future<void> main() async {
     platformDark:
         ui.PlatformDispatcher.instance.platformBrightness == Brightness.dark,
   );
+  Iron.setTheme(Store.instance.settings.themeId,
+      hue: Store.instance.settings.customHue);
   runApp(const GymApp());
 }
 
-class GymApp extends StatelessWidget {
+class GymApp extends StatefulWidget {
   const GymApp({super.key});
+
+  @override
+  State<GymApp> createState() => _GymAppState();
+}
+
+class _GymAppState extends State<GymApp> with WidgetsBindingObserver {
+  final _crossfade = GlobalKey<ThemeCrossfadeState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  bool get _reduceMotion => WidgetsBinding
+      .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+
+  void _apply(VoidCallback change) {
+    final host = _crossfade.currentState;
+    if (host == null || _reduceMotion) {
+      change();
+    } else {
+      host.crossfade(change);
+    }
+  }
+
+  // 'system' settings follow the phone live, with the same crossfade the
+  // phone itself uses when it switches appearance
+  @override
+  void didChangePlatformBrightness() {
+    if (Iron.appearance != 'system') return;
+    final dark =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+            Brightness.dark;
+    if (dark == Iron.isDark) return;
+    _apply(() => Iron.setAppearance('system', platformDark: dark));
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    if (L10n.setting != 'system') return;
+    _apply(() => L10n.setLang('system',
+        systemLocale:
+            WidgetsBinding.instance.platformDispatcher.locale.toString()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +110,10 @@ class GymApp extends StatelessWidget {
             // would animate only half the screen — switch in one frame
             themeAnimationDuration: Duration.zero,
             // iOS shows black behind a page that a card sheet pushes back
-            builder: (context, child) =>
-                ColoredBox(color: Colors.black, child: child),
+            builder: (context, child) => ThemeCrossfade(
+              key: _crossfade,
+              child: ColoredBox(color: Colors.black, child: child),
+            ),
             home: Store.instance.settings.onboardingDone
                 ? const RootShell()
                 : const OnboardingPage(),

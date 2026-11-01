@@ -21,8 +21,7 @@ class L10n {
 
   static bool get zh => _resolved == 'zh';
 
-  static String t(String key) =>
-      (_dict[_resolved] ?? _dict['en']!)[key] ?? key;
+  static String t(String key) => (_dict[_resolved] ?? _dict['en']!)[key] ?? key;
 
   /// t() with a {n} placeholder filled in.
   static String tf(String key, Object n) => t(key).replaceAll('{n}', '$n');
@@ -103,15 +102,18 @@ const Map<String, Map<String, String>> _dict = {
     'english': 'English',
     'chinese': '中文',
     'appearance': 'Appearance',
-    'dark': 'Dark',
-    'light': 'Light',
+    'dark': 'Black',
+    'light': 'Beige',
     'reminders': 'Workout reminders',
     'soundHaptics': 'Sounds & haptics',
     'soundHapticsHint': 'Countdown beeps and rest-end alerts during a workout.',
-    'reminderStub': 'Reminder time is saved now; the local notification fires after v0.2 wires up notifications.',
+    'reminderStub':
+        'Reminder time is saved now; the local notification fires after v0.2 wires up notifications.',
     'about': 'About',
-    'offlinePitch': 'Offline-first. No account. No cloud. Your data never leaves this device.',
-    'disclaimer': 'Health disclaimer: training plans are general guidance, not medical advice. Consult a professional before starting a new program.',
+    'offlinePitch':
+        'Offline-first. No account. No cloud. Your data never leaves this device.',
+    'disclaimer':
+        'Health disclaimer: training plans are general guidance, not medical advice. Consult a professional before starting a new program.',
     'copyDone': 'Duplicated. Find it under My plans.',
     'saved': 'Saved',
     'planNeedsName': 'Give the plan a name first.',
@@ -145,7 +147,8 @@ const Map<String, Map<String, String>> _dict = {
     'issueLowerBack': 'Lower back',
     'warnIssue': 'Careful: {n}',
     'swapTo': 'Swap to {n}',
-    'olderDeloadHint': 'At 55+, consider a deload week every 4-6 weeks. Rest times in this app already include +30s.',
+    'olderDeloadHint':
+        'At 55+, consider a deload week every 4-6 weeks. Rest times in this app already include +30s.',
     'obEqNone': 'Nothing — bodyweight only',
     'obEqDumbbell': 'Adjustable dumbbells',
     'obEqGym': 'Full gym access',
@@ -183,6 +186,8 @@ const Map<String, Map<String, String>> _dict = {
     'done': 'Done',
     'more': 'More',
     'viewDetails': 'View details',
+    'themeColor': 'Theme color',
+    'hue': 'Hue',
   },
   'zh': {
     'appTitle': 'IronPath',
@@ -251,8 +256,8 @@ const Map<String, Map<String, String>> _dict = {
     'english': 'English',
     'chinese': '中文',
     'appearance': '外观',
-    'dark': '深色',
-    'light': '浅色',
+    'dark': '黑色',
+    'light': '米色',
     'reminders': '训练提醒',
     'soundHaptics': '提示音与震动',
     'soundHapticsHint': '训练中的倒计时提示音和休息结束提醒。',
@@ -331,6 +336,8 @@ const Map<String, Map<String, String>> _dict = {
     'done': '完成',
     'more': '更多',
     'viewDetails': '查看详情',
+    'themeColor': '主题色',
+    'hue': '色相',
   },
 };
 

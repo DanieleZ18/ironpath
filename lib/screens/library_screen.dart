@@ -25,23 +25,26 @@ class LibraryScreenState extends State<LibraryScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _openDetail(Plan plan) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => PlanDetailPage(plan: plan)),
-    );
+  /// Zooms the detail page out of the plan's card ([source]).
+  Future<void> _openDetail(BuildContext source, Plan plan) async {
+    await openPlanDetail(source, plan, radius: Iron.rM.x, color: Iron.card);
     refresh();
   }
 
   Future<void> _start(Plan plan) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => SessionScreen(plan: plan)),
+      MaterialPageRoute(
+          // a workout is a modal task: it slides up full screen
+          fullscreenDialog: true,
+          builder: (_) => SessionScreen(plan: plan)),
     );
     refresh();
   }
 
   /// The plan's quick actions, shared by both long-press menus:
   /// (label, Cupertino icon, Material icon, action, destructive).
-  List<(String, IconData, IconData, VoidCallback, bool)> _menuEntries(Plan p) =>
+  List<(String, IconData, IconData, VoidCallback, bool)> _menuEntries(
+          Plan p, BuildContext source) =>
       [
         (
           L10n.t('startWorkout'),
@@ -54,7 +57,7 @@ class LibraryScreenState extends State<LibraryScreen> {
           L10n.t('viewDetails'),
           CupertinoIcons.doc_text,
           Icons.description_outlined,
-          () => _openDetail(p),
+          () => _openDetail(source, p),
           false
         ),
         if (p.builtin)
@@ -101,65 +104,66 @@ class LibraryScreenState extends State<LibraryScreen> {
   /// Plan card with a long-press menu. Apple: iOS context menu (the card
   /// lifts over a blurred page). Elsewhere: Material popup menu at the
   /// press point.
-  Widget _withMenu(Plan p) {
-    final card = PlanCard(plan: p, onTap: () => _openDetail(p));
-    final entries = _menuEntries(p);
-    if (!isApple(context)) {
-      return GestureDetector(
-        onLongPressStart: (d) async {
-          HapticFeedback.mediumImpact();
-          final pos = d.globalPosition;
-          final size = MediaQuery.sizeOf(context);
-          final i = await showMenu<int>(
-            context: context,
-            position: RelativeRect.fromLTRB(
-                pos.dx, pos.dy, size.width - pos.dx, size.height - pos.dy),
-            items: [
-              for (var k = 0; k < entries.length; k++)
-                PopupMenuItem(
-                  value: k,
-                  child: Row(
-                    children: [
-                      Icon(entries[k].$3,
-                          size: 20,
-                          color: entries[k].$5 ? Iron.danger : Iron.sub),
-                      const SizedBox(width: 12),
-                      Text(entries[k].$1,
-                          style: Iron.body(15,
-                              color: entries[k].$5 ? Iron.danger : Iron.ink,
-                              weight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-            ],
-          );
-          if (i != null) entries[i].$4();
-        },
-        child: card,
-      );
-    }
-    return CupertinoContextMenu(
-      actions: [
-        for (final (label, icon, _, action, destructive) in entries)
-          CupertinoContextMenuAction(
-            onPressed: () {
-              Navigator.of(context).pop(); // dismiss the menu first
-              action();
+  Widget _withMenu(Plan p) => Builder(builder: (source) {
+        final card =
+            PlanCard(plan: p, onTap: (source) => _openDetail(source, p));
+        final entries = _menuEntries(p, source);
+        if (!isApple(context)) {
+          return GestureDetector(
+            onLongPressStart: (d) async {
+              HapticFeedback.mediumImpact();
+              final pos = d.globalPosition;
+              final size = MediaQuery.sizeOf(context);
+              final i = await showMenu<int>(
+                context: context,
+                position: RelativeRect.fromLTRB(
+                    pos.dx, pos.dy, size.width - pos.dx, size.height - pos.dy),
+                items: [
+                  for (var k = 0; k < entries.length; k++)
+                    PopupMenuItem(
+                      value: k,
+                      child: Row(
+                        children: [
+                          Icon(entries[k].$3,
+                              size: 20,
+                              color: entries[k].$5 ? Iron.danger : Iron.sub),
+                          const SizedBox(width: 12),
+                          Text(entries[k].$1,
+                              style: Iron.body(15,
+                                  color: entries[k].$5 ? Iron.danger : Iron.ink,
+                                  weight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                ],
+              );
+              if (i != null) entries[i].$4();
             },
-            isDestructiveAction: destructive,
-            trailingIcon: icon,
-            child: Text(label,
-                style: Iron.body(16,
-                    color: destructive ? Iron.danger : Iron.ink,
-                    weight: FontWeight.w600)),
+            child: card,
+          );
+        }
+        return CupertinoContextMenu(
+          actions: [
+            for (final (label, icon, _, action, destructive) in entries)
+              CupertinoContextMenuAction(
+                onPressed: () {
+                  Navigator.of(context).pop(); // dismiss the menu first
+                  action();
+                },
+                isDestructiveAction: destructive,
+                trailingIcon: icon,
+                child: Text(label,
+                    style: Iron.body(16,
+                        color: destructive ? Iron.danger : Iron.ink,
+                        weight: FontWeight.w600)),
+              ),
+          ],
+          child: SizedBox(
+            width: MediaQuery.sizeOf(context).width - 40,
+            child: card,
           ),
-      ],
-      child: SizedBox(
-        width: MediaQuery.sizeOf(context).width - 40,
-        child: card,
-      ),
-    );
-  }
+        );
+      });
 
   Future<void> _newPlan() async {
     await Navigator.of(context).push(

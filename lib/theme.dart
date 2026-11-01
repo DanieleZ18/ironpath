@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'motion.dart';
 
 // Design tokens, light + dark — "soft & friendly", Morandi (v4.1, 2026-10-29).
 // - rounded everything: 24px cards, 20px buttons, pill chips
@@ -39,6 +42,122 @@ class _Palette {
   });
 }
 
+/// A colour theme: one accent and three tier hues for each brightness.
+/// Surfaces (beige paper / charcoal) are shared; [surfaceTint] leans the
+/// page and inset surfaces a few percent toward the accent so the whole
+/// screen feels tuned to the choice.
+class ThemeSpec {
+  final String id;
+  final String nameEn;
+  final String nameZh;
+  final List<Color> light; // accent, tier1, tier2, tier3
+  final List<Color> dark;
+  final double surfaceTint;
+
+  const ThemeSpec({
+    required this.id,
+    required this.nameEn,
+    required this.nameZh,
+    required this.light,
+    required this.dark,
+    this.surfaceTint = 0.03,
+  });
+
+  String name(bool zh) => zh ? nameZh : nameEn;
+
+  /// A full theme from any hue: a low-saturation accent at that hue and
+  /// three tier hues spread around the wheel (+120°, +180°, +240°). Each
+  /// tone is solved for a contrast target rather than a fixed lightness,
+  /// so every hue comes out equally legible (greens and yellows would
+  /// otherwise be far lighter than blues at the same HSL lightness).
+  factory ThemeSpec.custom(double hue) {
+    Color tone(double h, double s, double target) => _solve(
+        HSLColor.fromAHSL(1, h % 360, s, 0.62).toColor(),
+        const Color(0xFFFFFFFF),
+        target,
+        darken: true);
+    final light = [
+      tone(hue, 0.18, 4.4),
+      tone(hue + 120, 0.24, 3.6),
+      tone(hue + 180, 0.22, 3.6),
+      tone(hue + 240, 0.26, 3.6),
+    ];
+    return ThemeSpec(
+      id: 'custom',
+      nameEn: 'Custom',
+      nameZh: '自定义',
+      light: light,
+      dark: [for (final c in light) _liftForDark(c)],
+    );
+  }
+}
+
+/// Step [c]'s HSL lightness (darker or lighter) until it reaches [target]
+/// contrast against [against]. Used to solve custom tones and as a safety
+/// clamp on preset tones.
+Color _solve(Color c, Color against, double target, {required bool darken}) {
+  var hsl = HSLColor.fromColor(c);
+  for (var i = 0;
+      i < 60 && Iron._contrast(hsl.toColor(), against) < target;
+      i++) {
+    final l = (hsl.lightness + (darken ? -0.01 : 0.01)).clamp(0.0, 1.0);
+    hsl = hsl.withLightness(l);
+  }
+  return hsl.toColor();
+}
+
+/// Dark-mode version of a light tone: same hue, a touch more saturation,
+/// lifted to a pastel that reads on charcoal.
+Color _liftForDark(Color c) {
+  final h = HSLColor.fromColor(c);
+  return _solve(
+      h
+          .withSaturation((h.saturation * 1.08 + 0.04).clamp(0.0, 1.0))
+          .withLightness(0.72)
+          .toColor(),
+      _darkBase.card,
+      5.0,
+      darken: false);
+}
+
+// Shared surfaces. Light = warm grey-beige paper (米色), dark = grey
+// charcoal (黑色); themes only lean them slightly (ThemeSpec.surfaceTint).
+const _lightBase = _Palette(
+  bg: Color(0xFFF4F2EE),
+  card: Color(0xFFFFFFFF),
+  cardHi: Color(0xFFECE9E3),
+  ink: Color(0xFF2E302E),
+  sub: Color(0xFF61635E),
+  faint: Color(0xFF6F716B),
+  accent: Color(0xFF5E7F6A),
+  onAccent: Color(0xFFFFFFFF),
+  line: Color(0x1A2E302E),
+  tier1: Color(0xFF6F8BA6),
+  tier2: Color(0xFF8A7AA0),
+  tier3: Color(0xFFB07A6A),
+  danger: Color(0xFFB07A6A),
+  tintAmount: 0.14,
+  overlayBrightness: Brightness.dark, // dark icons on light bg
+);
+
+const _darkBase = _Palette(
+  bg: Color(0xFF191A19),
+  card: Color(0xFF232523),
+  cardHi: Color(0xFF2D302D),
+  ink: Color(0xFFEDECE8),
+  sub: Color(0xFFB2B1AB),
+  faint: Color(0xFF8E8D87),
+  accent: Color(0xFF8FB09A),
+  onAccent: Color(0xFF172019),
+  line: Color(0x1AEDECE8),
+  tier1: Color(0xFF9DB3C9),
+  tier2: Color(0xFFB4A8C8),
+  tier3: Color(0xFFD0A595),
+  danger: Color(0xFFD0A595),
+  tintAmount: 0.18,
+  overlayBrightness: Brightness.light, // light icons on dark bg
+);
+
 class Iron {
   Iron._();
 
@@ -61,45 +180,188 @@ class Iron {
 
   static const fontFamily = 'Nunito';
 
-  // ---- light palette (grey-beige paper, dusty hues) --------------------
-  static const _lightPalette = _Palette(
-    bg: Color(0xFFF4F2EE),
-    card: Color(0xFFFFFFFF),
-    cardHi: Color(0xFFECE9E3),
-    ink: Color(0xFF2E302E),
-    sub: Color(0xFF61635E),
-    faint: Color(0xFF6F716B),
-    accent: Color(0xFF5E7F6A), // sage
-    onAccent: Color(0xFFFFFFFF),
-    line: Color(0x1A2E302E),
-    tier1: Color(0xFF6F8BA6), // mist blue
-    tier2: Color(0xFF8A7AA0), // grey violet
-    tier3: Color(0xFFB07A6A), // clay rose
-    danger: Color(0xFFB07A6A),
-    tintAmount: 0.14,
-    overlayBrightness: Brightness.dark, // dark icons on light bg
-  );
+  // ---- colour themes -----------------------------------------------------
+  // Each preset takes its colours from somewhere training happens. Sage is
+  // the default and reproduces the original palette exactly.
 
-  // ---- dark palette (grey charcoal, lifted dusty hues) -------------------
-  static const _darkPalette = _Palette(
-    bg: Color(0xFF191A19),
-    card: Color(0xFF232523),
-    cardHi: Color(0xFF2D302D),
-    ink: Color(0xFFEDECE8),
-    sub: Color(0xFFB2B1AB),
-    faint: Color(0xFF8E8D87),
-    accent: Color(0xFF8FB09A),
-    onAccent: Color(0xFF172019),
-    line: Color(0x1AEDECE8),
-    tier1: Color(0xFF9DB3C9),
-    tier2: Color(0xFFB4A8C8),
-    tier3: Color(0xFFD0A595),
-    danger: Color(0xFFD0A595),
-    tintAmount: 0.18,
-    overlayBrightness: Brightness.light, // light icons on dark bg
-  );
+  static const presets = <ThemeSpec>[
+    ThemeSpec(
+      id: 'sage',
+      nameEn: 'Sage',
+      nameZh: '鼠尾草',
+      light: [
+        Color(0xFF5E7F6A), // sage
+        Color(0xFF6F8BA6), // mist blue
+        Color(0xFF8A7AA0), // grey violet
+        Color(0xFFB07A6A), // clay rose
+      ],
+      dark: [
+        Color(0xFF8FB09A),
+        Color(0xFF9DB3C9),
+        Color(0xFFB4A8C8),
+        Color(0xFFD0A595),
+      ],
+      surfaceTint: 0,
+    ),
+    // tiers follow the bumper-plate colour code: harder = heavier plate
+    ThemeSpec(
+      id: 'plates',
+      nameEn: 'Plates',
+      nameZh: '杠铃片',
+      light: [
+        Color(0xFF56616B), // iron
+        Color(0xFF9A7F3D), // yellow 15 kg
+        Color(0xFF5E7DA6), // blue 20 kg
+        Color(0xFFA65D57), // red 25 kg
+      ],
+      dark: [
+        Color(0xFFACB8C3),
+        Color(0xFFDBC795),
+        Color(0xFF9FB4D1),
+        Color(0xFFD3A19D),
+      ],
+    ),
+    // chalk and graphite: tiers step from light to dark grey
+    ThemeSpec(
+      id: 'chalk',
+      nameEn: 'Chalk',
+      nameZh: '镁粉',
+      light: [
+        Color(0xFF474C51),
+        Color(0xFF80858A),
+        Color(0xFF6B7075),
+        Color(0xFF4C5156),
+      ],
+      dark: [
+        Color(0xFFD5D9DC),
+        Color(0xFF8E959B),
+        Color(0xFFB3B9BE),
+        Color(0xFFD9DDE0),
+      ],
+      surfaceTint: 0,
+    ),
+    // an outdoor run: moss, river, bark, red earth
+    ThemeSpec(
+      id: 'trail',
+      nameEn: 'Trail',
+      nameZh: '林道',
+      light: [
+        Color(0xFF687A4C),
+        Color(0xFF5C8A86),
+        Color(0xFF9A7E55),
+        Color(0xFF9A5E4B),
+      ],
+      dark: [
+        Color(0xFFBCCCA3),
+        Color(0xFFA5CAC7),
+        Color(0xFFD1BC9E),
+        Color(0xFFD5A89A),
+      ],
+    ),
+    // pool tiles, water, lavender towels, coral lane ropes
+    ThemeSpec(
+      id: 'pool',
+      nameEn: 'Pool',
+      nameZh: '泳池',
+      light: [
+        Color(0xFF4C8587),
+        Color(0xFF6A8BB6),
+        Color(0xFF8981B3),
+        Color(0xFFB57662),
+      ],
+      dark: [
+        Color(0xFF9FCED0),
+        Color(0xFF9AB4D5),
+        Color(0xFFA9A2CE),
+        Color(0xFFD6A899),
+      ],
+    ),
+    // an early run: heather, morning sky, sunrise ochre, rose
+    ThemeSpec(
+      id: 'dawn',
+      nameEn: 'Dawn',
+      nameZh: '晨跑',
+      light: [
+        Color(0xFF84688A),
+        Color(0xFF648AA3),
+        Color(0xFFA8834F),
+        Color(0xFFB06D73),
+      ],
+      dark: [
+        Color(0xFFC0AAC5),
+        Color(0xFFA1BCCF),
+        Color(0xFFD6BD99),
+        Color(0xFFD19EA2),
+      ],
+    ),
+  ];
 
-  static _Palette get _p => _dark ? _darkPalette : _lightPalette;
+  static ThemeSpec _spec = presets.first;
+
+  /// The active theme: a preset id, or 'custom' with [customHue].
+  static String get themeId => _spec.id;
+  static double customHue = 150;
+  static ThemeSpec get spec => _spec;
+
+  static ThemeSpec specFor(String id, {double? hue}) => id == 'custom'
+      ? ThemeSpec.custom(hue ?? customHue)
+      : presets.firstWhere((p) => p.id == id, orElse: () => presets.first);
+
+  static void setTheme(String id, {double? hue}) {
+    if (hue != null) customHue = hue;
+    _spec = specFor(id, hue: customHue);
+    _light = _build(_lightBase, _spec.light, _spec.surfaceTint);
+    _darkP = _build(_darkBase, _spec.dark, _spec.surfaceTint);
+    _inkCache.clear();
+    SystemChrome.setSystemUIOverlayStyle(overlay);
+    notifier.value++;
+  }
+
+  static _Palette _build(_Palette base, List<Color> tones, double lean) {
+    final dark = base.overlayBrightness == Brightness.light;
+    final accent = tones[0];
+    Color leanTo(Color c, double amount) => Color.lerp(c, accent, amount)!;
+    final card = dark ? leanTo(base.card, lean * 0.6) : base.card;
+    // safety clamp: fills keep 3:1 against their own tinted block
+    Color fill(Color c) {
+      final tint = Color.lerp(card, c, base.tintAmount)!;
+      return _solve(c, tint, 3.0, darken: !dark);
+    }
+
+    final h = HSLColor.fromColor(accent);
+    return _Palette(
+      bg: leanTo(base.bg, lean),
+      card: card,
+      cardHi: leanTo(base.cardHi, lean),
+      ink: base.ink,
+      sub: base.sub,
+      faint: base.faint,
+      accent: fill(accent),
+      onAccent: dark
+          ? HSLColor.fromAHSL(1, h.hue, 0.22, 0.10).toColor()
+          : base.onAccent,
+      line: base.line,
+      tier1: fill(tones[1]),
+      tier2: fill(tones[2]),
+      tier3: fill(tones[3]),
+      danger: base.danger,
+      tintAmount: base.tintAmount,
+      overlayBrightness: base.overlayBrightness,
+    );
+  }
+
+  static _Palette _light = _build(_lightBase, presets.first.light, 0);
+  static _Palette _darkP = _build(_darkBase, presets.first.dark, 0);
+
+  /// The accent + tier fills a theme would use in the current brightness —
+  /// for previews (theme swatches) without switching.
+  static List<Color> previewTones(ThemeSpec s) {
+    final p = _build(_dark ? _darkBase : _lightBase, _dark ? s.dark : s.light,
+        s.surfaceTint);
+    return [p.accent, p.tier1, p.tier2, p.tier3];
+  }
+
+  static _Palette get _p => _dark ? _darkP : _light;
 
   static bool get isDark => _dark;
 
@@ -227,6 +489,10 @@ class Iron {
       letterSpacing: 0.6,
       height: 1.3);
 
+  static bool get _appleTarget =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS;
+
   static ThemeData theme() {
     final p = _p;
     final brightness = _dark ? Brightness.dark : Brightness.light;
@@ -250,7 +516,12 @@ class Iron {
       ),
       dividerColor: p.line,
       hintColor: p.faint,
-      splashFactory: InkSparkle.splashFactory,
+      // iOS doesn't ripple: presses dim (and Pressable sinks the surface);
+      // Android keeps the Material sparkle
+      splashFactory:
+          _appleTarget ? NoSplash.splashFactory : InkSparkle.splashFactory,
+      highlightColor:
+          _appleTarget ? p.ink.withValues(alpha: _dark ? 0.08 : 0.05) : null,
       // each platform's native page motion: Android gets predictive back
       // (fade-forwards when not gesturing), Apple devices slide in from the
       // right with edge swipe-back, everything else fades forwards
@@ -496,16 +767,15 @@ class IronButton extends StatelessWidget {
         : FilledButton.styleFrom(
             backgroundColor: Iron.inkOf(color!),
             foregroundColor: Iron.isDark ? Iron.bg : Colors.white);
-    if (icon == null) {
-      return FilledButton(
-          style: style, onPressed: onPressed, child: Text(label));
-    }
-    return FilledButton.icon(
-      style: style,
-      onPressed: onPressed,
-      icon: Icon(icon, size: 22),
-      label: Text(label),
-    );
+    final button = icon == null
+        ? FilledButton(style: style, onPressed: onPressed, child: Text(label))
+        : FilledButton.icon(
+            style: style,
+            onPressed: onPressed,
+            icon: Icon(icon, size: 22),
+            label: Text(label),
+          );
+    return Pressable(enabled: onPressed != null, child: button);
   }
 }
 
@@ -532,7 +802,7 @@ class IronCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = BorderRadius.all(radius);
-    return DecoratedBox(
+    final card = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: r,
         boxShadow: raised && color == null ? Iron.shadow : null,
@@ -547,6 +817,7 @@ class IronCard extends StatelessWidget {
         ),
       ),
     );
+    return onTap == null ? card : Pressable(scale: 0.975, child: card);
   }
 }
 
@@ -593,12 +864,13 @@ class IronPill extends StatelessWidget {
         ],
       ),
     );
-    return Material(
+    final pill = Material(
       color: bg,
       shape: const StadiumBorder(),
       clipBehavior: Clip.antiAlias,
       child: onTap == null ? body : InkWell(onTap: onTap, child: body),
     );
+    return onTap == null ? pill : Pressable(scale: 0.94, child: pill);
   }
 }
 
@@ -661,33 +933,50 @@ class SetDots extends StatelessWidget {
   final Color? color;
   final double size;
 
+  /// The newest filled dot springs in — the confirmation of a set just done.
+  final bool popLast;
+
   const SetDots(
       {super.key,
       required this.done,
       required this.total,
       this.color,
-      this.size = 12});
+      this.size = 12,
+      this.popLast = false});
 
   @override
   Widget build(BuildContext context) {
     final hue = color ?? Iron.accent;
+    final pop = popLast && !Motion.reduced(context);
+    Widget dot(int i, Widget child) => pop && i == done - 1
+        ? TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.2, end: 1),
+            duration: Motion.bouncy.duration,
+            curve: Motion.bouncy,
+            builder: (context, s, child) =>
+                Transform.scale(scale: s, child: child),
+            child: child,
+          )
+        : child;
     return Wrap(
       spacing: size * 0.5,
       runSpacing: size * 0.5,
       children: [
         for (var i = 0; i < total; i++)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: i < done ? hue : Colors.transparent,
-              border: Border.all(
-                  color: i < done ? hue : hue.withValues(alpha: 0.35),
-                  width: 2),
-            ),
-          ),
+          dot(
+              i,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i < done ? hue : Colors.transparent,
+                  border: Border.all(
+                      color: i < done ? hue : hue.withValues(alpha: 0.35),
+                      width: 2),
+                ),
+              )),
       ],
     );
   }
@@ -756,16 +1045,22 @@ class RestRing extends StatelessWidget {
             height: size,
             // the timer ticks once a second; a linear 1s tween per tick makes
             // the ring sweep continuously instead of jumping
+            // ...and it draws itself in when the rest begins
             child: TweenAnimationBuilder<double>(
-              tween: Tween(end: value.clamp(0, 1)),
-              duration: const Duration(seconds: 1),
-              curve: Curves.linear,
-              builder: (context, v, _) => CircularProgressIndicator(
-                value: v,
-                strokeWidth: 16,
-                strokeCap: StrokeCap.round,
-                backgroundColor: Iron.tint(Iron.accent),
-                valueColor: AlwaysStoppedAnimation(Iron.accent),
+              tween: Tween(begin: Motion.reduced(context) ? 1 : 0, end: 1),
+              duration: const Duration(milliseconds: 700),
+              curve: Motion.smooth,
+              builder: (context, drawIn, _) => TweenAnimationBuilder<double>(
+                tween: Tween(end: value.clamp(0, 1)),
+                duration: const Duration(seconds: 1),
+                curve: Curves.linear,
+                builder: (context, v, _) => CircularProgressIndicator(
+                  value: v * drawIn,
+                  strokeWidth: 16,
+                  strokeCap: StrokeCap.round,
+                  backgroundColor: Iron.tint(Iron.accent),
+                  valueColor: AlwaysStoppedAnimation(Iron.accent),
+                ),
               ),
             ),
           ),
@@ -798,7 +1093,8 @@ class ChoiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hue = color ?? Iron.accent;
-    return AnimatedContainer(
+    return Pressable(
+        child: AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.all(Iron.rM),
@@ -846,7 +1142,7 @@ class ChoiceTile extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -874,7 +1170,8 @@ class StatTile extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(value, style: Iron.hero(24, color: hue)),
+            // changed values roll into place (e.g. after deleting a log)
+            child: RollingText(value, style: Iron.hero(24, color: hue)),
           ),
           const SizedBox(height: 2),
           Text(label, style: Iron.caption()),
