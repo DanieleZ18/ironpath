@@ -3,6 +3,8 @@ package com.daniele.gym_app
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Configuration
+import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
@@ -12,7 +14,8 @@ import java.util.Calendar
 /**
  * Home-screen widget: this week's workouts. The Flutter side (WidgetBridge)
  * writes the week's state after every save; this provider only draws it.
- * Labels arrive already localised.
+ * Labels arrive already localised, and the accent is the app's own (its
+ * colour theme, "System" included), with a day and a night value.
  */
 class WeekWidgetProvider : HomeWidgetProvider() {
 
@@ -23,7 +26,7 @@ class WeekWidgetProvider : HomeWidgetProvider() {
       widgetData: SharedPreferences,
   ) {
     val all = widgetData.all
-    fun int(key: String) = (all[key] as? Number)?.toInt() ?: 0
+    fun int(key: String, fallback: Int = 0) = (all[key] as? Number)?.toInt() ?: fallback
     fun long(key: String) = (all[key] as? Number)?.toLong() ?: 0L
     fun str(key: String, fallback: String) = (all[key] as? String) ?: fallback
 
@@ -35,6 +38,17 @@ class WeekWidgetProvider : HomeWidgetProvider() {
     val labels = str("day_labels", "Mon|Tue|Wed|Thu|Fri|Sat|Sun").split("|")
     val next = if (stale) "" else str("next_title", "")
     val today = todayIndex()
+
+    // the app's accent for each appearance (Sage until the app has run)
+    val fillDay = int("accent_light", 0xFF5E7F6A.toInt())
+    val fillNight = int("accent_dark", 0xFF8FB09A.toInt())
+    val textDay = int("accent_text_light", 0xFF516D5B.toInt())
+    val textNight = int("accent_text_dark", 0xFF8FB09A.toInt())
+    val softDay = int("accent_soft_light", 0xFFAFBFB5.toInt())
+    val softNight = int("accent_soft_dark", 0xFF596A5E.toInt())
+    val night =
+        (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
 
     // the sessions left this week are pencilled onto the days still to come
     val planned = BooleanArray(7)
@@ -50,14 +64,22 @@ class WeekWidgetProvider : HomeWidgetProvider() {
       val views = RemoteViews(context.packageName, R.layout.week_widget)
       views.setTextViewText(R.id.week_label, str("label_week", "This week"))
       views.setTextViewText(R.id.week_progress, if (total > 0) "$done / $total" else "$done")
+      colour(views, R.id.week_progress, "setTextColor", textDay, textNight, night)
       for (i in 0 until 7) {
-        val drawable = when {
-          days[i] == '1' -> R.drawable.dot_done
-          i == today -> R.drawable.dot_today
-          planned[i] -> R.drawable.dot_planned
-          else -> R.drawable.dot_off
-        }
+        val trained = days[i] == '1'
+        // white shapes tinted with the accent; the empty ring keeps its grey
+        val (drawable, day, nightTone) =
+            when {
+              trained -> Triple(R.drawable.dot_fill, fillDay, fillNight)
+              i == today -> Triple(R.drawable.dot_today, fillDay, fillNight)
+              planned[i] -> Triple(R.drawable.dot_ring, softDay, softNight)
+              else -> Triple(R.drawable.dot_off, 0, 0)
+            }
         views.setImageViewResource(DOTS[i], drawable)
+        if (drawable != R.drawable.dot_off) {
+          colour(views, DOTS[i], "setColorFilter", day, nightTone, night)
+        }
+        views.setViewVisibility(CHECKS[i], if (trained) View.VISIBLE else View.GONE)
         views.setTextViewText(LABELS[i], labels.getOrElse(i) { "" })
       }
       if (next.isEmpty()) {
@@ -69,6 +91,25 @@ class WeekWidgetProvider : HomeWidgetProvider() {
       views.setOnClickPendingIntent(
           R.id.widget_root, HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java))
       appWidgetManager.updateAppWidget(id, views)
+    }
+  }
+
+  /**
+   * Sets a colour that has a day and a night value. Android 12+ keeps both
+   * and switches with the system; older versions get the current one.
+   */
+  private fun colour(
+      views: RemoteViews,
+      id: Int,
+      method: String,
+      day: Int,
+      night: Int,
+      isNight: Boolean,
+  ) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      views.setColorInt(id, method, day, night)
+    } else {
+      views.setInt(id, method, if (isNight) night else day)
     }
   }
 
@@ -90,6 +131,8 @@ class WeekWidgetProvider : HomeWidgetProvider() {
   companion object {
     private val DOTS =
         intArrayOf(R.id.dot1, R.id.dot2, R.id.dot3, R.id.dot4, R.id.dot5, R.id.dot6, R.id.dot7)
+    private val CHECKS =
+        intArrayOf(R.id.chk1, R.id.chk2, R.id.chk3, R.id.chk4, R.id.chk5, R.id.chk6, R.id.chk7)
     private val LABELS =
         intArrayOf(R.id.lab1, R.id.lab2, R.id.lab3, R.id.lab4, R.id.lab5, R.id.lab6, R.id.lab7)
   }

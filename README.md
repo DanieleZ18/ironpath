@@ -66,7 +66,10 @@ fed from Dart). `lib/widget_bridge.dart` computes the week after every
 trained, the next workout's title, and the labels already localised — and
 writes it to the shared store, then asks both widgets to redraw. The
 widgets reset to a fresh week on their own when `updated_at` is older
-than this week's Monday, and redraw at midnight so "today" moves.
+than this week's Monday, and redraw at midnight so "today" moves. They
+draw with the app's own accent (`Iron.accentFor`, light and dark, sent as
+signed 32-bit ARGB); on Android 12+ both values go to the launcher
+(`setColorInt`) so it switches with the system's dark mode by itself.
 - Android: `WeekWidgetProvider.kt` (RemoteViews, `res/layout/week_widget.xml`,
   dot drawables, `res/xml/week_widget_info.xml`, 4×2 default, launcher
   corner radius on Android 12+, light/dark colours). Registered in the
@@ -117,6 +120,22 @@ every hue is equally legible. A safety clamp keeps all fills ≥3:1 against
 their tints; `inkOf` keeps text ≥4.5:1. `test/theme_test.dart` checks every
 preset and a 15° sweep of custom hues in both appearances. Stored as
 `AppSettings.themeId` / `customHue`.
+
+**System theme** (2026-11-04, the default for new installs, `themeId:
+'system'`): the colours follow the phone. `lib/system_colors.dart` reads
+the system accent through `dynamic_color` — Android 12+'s wallpaper
+palette (tone 40 of the primary palette), a desktop's accent colour — at
+launch and on every resume; `ThemeSpec.system(hue)` keeps the whole theme
+in that hue like Material You: the accent plus the three tiers as light /
+medium / deep shades (difficulty is ordinal, so a one-hue ramp fits), each
+solved for a contrast step. No system colour (iPhone, which gives apps
+none; older Android; web) → Sage, and Settings says so. Light / dark has
+followed the phone since v0.3 (`appearance: 'system'`).
+
+**High contrast**: the system's Increase Contrast / High contrast text
+(`AccessibilityFeatures.highContrast`) is followed live —
+`Iron.setHighContrast` lifts secondary text to 7:1, tertiary to 5.5:1,
+hairlines to 22 % and `inkOf` to 7:1.
 
 **Exercise demos** (2026-11-01, `lib/widgets/exercise_motion.dart` +
 `lib/data/exercise_motions.dart`): every one of the 101 exercises is shown

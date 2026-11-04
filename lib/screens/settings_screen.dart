@@ -313,6 +313,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           spacing: 10,
           runSpacing: 14,
           children: [
+            // the phone's own colour first: it's the default
+            _swatch(
+                ThemeSpec.system(Iron.systemHue), Iron.themeId == 'system', zh,
+                isSystem: true),
             for (final spec in Iron.presets)
               _swatch(spec, spec.id == Iron.themeId, zh),
             _swatch(ThemeSpec.custom(Iron.customHue), custom, zh,
@@ -331,6 +335,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 )
               : const SizedBox(width: double.infinity),
         ),
+        if (Iron.themeId == 'system') ...[
+          const SizedBox(height: 12),
+          Text(
+              L10n.t(
+                  Iron.systemHue == null ? 'systemColorNone' : 'systemColorOn'),
+              style: Iron.caption()),
+        ],
         const SizedBox(height: 14),
         _themePreview(),
       ],
@@ -338,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _swatch(ThemeSpec spec, bool selected, bool zh,
-      {bool isCustom = false}) {
+      {bool isCustom = false, bool isSystem = false}) {
     final tones = Iron.previewTones(spec);
     final ring = Iron.inkOf(tones[0]);
     final tintBg = Color.lerp(Iron.card, tones[0], Iron.isDark ? 0.18 : 0.14)!;
@@ -368,7 +379,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         : Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              dot(tones[0], 28),
+              // system: the accent dot carries a small phone, "from your
+              // phone"
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  dot(tones[0], 28),
+                  if (isSystem)
+                    Positioned(
+                      right: -7,
+                      bottom: -5,
+                      child: Container(
+                        width: 17,
+                        height: 17,
+                        decoration: BoxDecoration(
+                            color: Iron.card, shape: BoxShape.circle),
+                        child: Icon(Icons.smartphone_rounded,
+                            size: 11, color: Iron.sub),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 6),
               Row(
                 mainAxisSize: MainAxisSize.min,

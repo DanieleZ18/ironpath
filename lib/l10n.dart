@@ -188,6 +188,9 @@ const Map<String, Map<String, String>> _dict = {
     'viewDetails': 'View details',
     'themeColor': 'Theme color',
     'hue': 'Hue',
+    'systemColorOn': 'Colours come from your wallpaper and change with it.',
+    'systemColorNone':
+        "This phone doesn't share a system colour, so Sage is used. Light and dark still follow the phone.",
     'tabToday': 'Today',
     'tabExercises': 'Exercises',
     'filterAll': 'All',
@@ -360,6 +363,8 @@ const Map<String, Map<String, String>> _dict = {
     'viewDetails': '查看详情',
     'themeColor': '主题色',
     'hue': '色相',
+    'systemColorOn': '颜色取自你的壁纸，换壁纸后会跟着变。',
+    'systemColorNone': '这台设备不向 App 提供系统主题色，先用鼠尾草；深浅色依然跟随系统。',
     'tabToday': '今天',
     'tabExercises': '动作',
     'filterAll': '全部',

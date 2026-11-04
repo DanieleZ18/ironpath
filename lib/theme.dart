@@ -92,6 +92,58 @@ class ThemeSpec {
       dark: [for (final c in light) _liftForDark(c)],
     );
   }
+
+  /// Follow the phone: the system's accent hue (Android 12+ wallpaper
+  /// colours, a desktop's accent colour). Like Material You, the whole
+  /// theme stays in that one hue — the accent, and the three difficulty
+  /// tiers as shades of it from light (beginner) to deep (advanced), each
+  /// solved for a contrast step so they stay apart — in the app's soft
+  /// saturation. Where the system shares no colour (iPhone, older Android,
+  /// the web) it is Sage.
+  factory ThemeSpec.system(double? hue) {
+    if (hue == null) {
+      final sage = Iron.presets.first;
+      return ThemeSpec(
+        id: 'system',
+        nameEn: 'System',
+        nameZh: '跟随系统',
+        light: sage.light,
+        dark: sage.dark,
+        surfaceTint: sage.surfaceTint,
+      );
+    }
+    final h = hue % 360;
+    // light: darkened from a pale start until each reaches its contrast
+    // against white; dark: lightened from a deep start against the card
+    Color light(double s, double target) => _solve(
+        HSLColor.fromAHSL(1, h, s, 0.78).toColor(),
+        const Color(0xFFFFFFFF),
+        target,
+        darken: true);
+    Color dark(double s, double target) => _solve(
+        HSLColor.fromAHSL(1, h, (s * 1.08 + 0.04).clamp(0.0, 1.0), 0.28)
+            .toColor(),
+        _darkBase.card,
+        target,
+        darken: false);
+    return ThemeSpec(
+      id: 'system',
+      nameEn: 'System',
+      nameZh: '跟随系统',
+      light: [
+        light(0.20, 4.4), // accent
+        light(0.22, 3.3), // beginner
+        light(0.24, 4.9), // intermediate
+        light(0.26, 7.4), // advanced
+      ],
+      dark: [
+        dark(0.20, 5.0),
+        dark(0.22, 3.5),
+        dark(0.24, 5.4),
+        dark(0.26, 8.2),
+      ],
+    );
+  }
 }
 
 /// Step [c]'s HSL lightness (darker or lighter) until it reaches [target]
@@ -300,18 +352,39 @@ class Iron {
 
   static ThemeSpec _spec = presets.first;
 
-  /// The active theme: a preset id, or 'custom' with [customHue].
+  /// The active theme: 'system', a preset id, or 'custom' with [customHue].
   static String get themeId => _spec.id;
   static double customHue = 150;
   static ThemeSpec get spec => _spec;
 
-  static ThemeSpec specFor(String id, {double? hue}) => id == 'custom'
-      ? ThemeSpec.custom(hue ?? customHue)
-      : presets.firstWhere((p) => p.id == id, orElse: () => presets.first);
+  /// The phone's accent hue, or null where the system shares none. Read at
+  /// launch and whenever the app comes back to the foreground.
+  static double? systemHue;
+
+  static ThemeSpec specFor(String id, {double? hue}) => switch (id) {
+        'custom' => ThemeSpec.custom(hue ?? customHue),
+        'system' => ThemeSpec.system(systemHue),
+        _ => presets.firstWhere((p) => p.id == id, orElse: () => presets.first),
+      };
 
   static void setTheme(String id, {double? hue}) {
     if (hue != null) customHue = hue;
     _spec = specFor(id, hue: customHue);
+    _rebuild();
+  }
+
+  /// The system's Increase Contrast (iOS) / High contrast text (Android):
+  /// secondary text steps up to 7:1, tertiary to 5.5:1, hairlines double,
+  /// and coloured text clears 7:1.
+  static bool highContrast = false;
+
+  static void setHighContrast(bool on) {
+    if (on == highContrast) return;
+    highContrast = on;
+    _rebuild();
+  }
+
+  static void _rebuild() {
     _light = _build(_lightBase, _spec.light, _spec.surfaceTint);
     _darkP = _build(_darkBase, _spec.dark, _spec.surfaceTint);
     _inkCache.clear();
@@ -324,25 +397,33 @@ class Iron {
     final accent = tones[0];
     Color leanTo(Color c, double amount) => Color.lerp(c, accent, amount)!;
     final card = dark ? leanTo(base.card, lean * 0.6) : base.card;
-    // safety clamp: fills keep 3:1 against their own tinted block
+    // safety clamp: fills keep 3:1 against their own tinted block. The
+    // tint moves with the fill, so solve against the adjusted fill's tint
+    // until it holds.
     Color fill(Color c) {
-      final tint = Color.lerp(card, c, base.tintAmount)!;
-      return _solve(c, tint, 3.0, darken: !dark);
+      var out = c;
+      for (var k = 0; k < 4; k++) {
+        final tint = Color.lerp(card, out, base.tintAmount)!;
+        if (Iron._contrast(out, tint) >= 3.0) break;
+        out = _solve(out, tint, 3.0, darken: !dark);
+      }
+      return out;
     }
 
     final h = HSLColor.fromColor(accent);
+    final hc = highContrast;
     return _Palette(
       bg: leanTo(base.bg, lean),
       card: card,
       cardHi: leanTo(base.cardHi, lean),
       ink: base.ink,
-      sub: base.sub,
-      faint: base.faint,
+      sub: hc ? _solve(base.sub, card, 7.0, darken: !dark) : base.sub,
+      faint: hc ? _solve(base.faint, card, 5.5, darken: !dark) : base.faint,
       accent: fill(accent),
       onAccent: dark
           ? HSLColor.fromAHSL(1, h.hue, 0.22, 0.10).toColor()
           : base.onAccent,
-      line: base.line,
+      line: hc ? base.line.withValues(alpha: 0.22) : base.line,
       tier1: fill(tones[1]),
       tier2: fill(tones[2]),
       tier3: fill(tones[3]),
@@ -394,26 +475,43 @@ class Iron {
         (la > lb ? lb + 0.05 : la + 0.05);
   }
 
-  static final Map<(int, bool), Color> _inkCache = {};
+  static final Map<(int, bool, bool), Color> _inkCache = {};
 
   /// Readable shade of [hue] for text (or as a fill behind white text):
   /// the same hue, darkened (light mode) or lightened (dark mode) just
-  /// enough to clear 4.5:1 against its own tint, the page and the card.
-  static Color inkOf(Color hue) {
-    return _inkCache.putIfAbsent((hue.toARGB32(), _dark), () {
-      final hsl = HSLColor.fromColor(hue);
-      bool ok(Color c) =>
-          _contrast(c, tint(hue)) >= 4.6 &&
-          _contrast(c, bg) >= 4.6 &&
-          _contrast(c, card) >= 4.6;
-      var c = hue;
-      for (var i = 0; i < 40 && !ok(c); i++) {
-        final l =
-            (hsl.lightness + (_dark ? 1 : -1) * 0.02 * (i + 1)).clamp(0.0, 1.0);
-        c = hsl.withLightness(l).toColor();
-      }
-      return c;
-    });
+  /// enough to clear 4.5:1 (7:1 under high contrast) against its own tint,
+  /// the page and the card.
+  static Color inkOf(Color hue) => _inkCache.putIfAbsent(
+      (hue.toARGB32(), _dark, highContrast), () => _inkIn(hue, _p, _dark));
+
+  static Color _inkIn(Color hue, _Palette p, bool dark) {
+    final target = highContrast ? 7.0 : 4.6;
+    final hsl = HSLColor.fromColor(hue);
+    final tinted = Color.lerp(p.card, hue, p.tintAmount)!;
+    bool ok(Color c) =>
+        _contrast(c, tinted) >= target &&
+        _contrast(c, p.bg) >= target &&
+        _contrast(c, p.card) >= target;
+    var c = hue;
+    for (var i = 0; i < 50 && !ok(c); i++) {
+      final l =
+          (hsl.lightness + (dark ? 1 : -1) * 0.02 * (i + 1)).clamp(0.0, 1.0);
+      c = hsl.withLightness(l).toColor();
+    }
+    return c;
+  }
+
+  /// The accent in either appearance, for things drawn outside the app
+  /// (the home-screen widget): the fill, a readable shade for text, and a
+  /// soft version halfway to the card.
+  static ({Color fill, Color text, Color soft}) accentFor(
+      {required bool dark}) {
+    final p = dark ? _darkP : _light;
+    return (
+      fill: p.accent,
+      text: _inkIn(p.accent, p, dark),
+      soft: Color.lerp(p.card, p.accent, 0.5)!,
+    );
   }
 
   static bool _isHue(Color c) =>

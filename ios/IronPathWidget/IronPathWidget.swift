@@ -22,6 +22,17 @@ struct WeekEntry: TimelineEntry {
   let weekLabel: String
   let nextLabel: String
   let nextTitle: String
+  /// The app's accent (its colour theme), light and dark, as ARGB.
+  var accentLight: Int? = nil
+  var accentDark: Int? = nil
+
+  /// The accent to draw with: the app's own, Sage until the app has run.
+  var accent: Color {
+    guard let light = accentLight, let dark = accentDark else { return sage }
+    return Color(UIColor { tc in
+      uiColor(argb: tc.userInterfaceStyle == .dark ? dark : light)
+    })
+  }
 
   static let sample = WeekEntry(
     date: Date(), done: 2, total: 4,
@@ -76,12 +87,25 @@ struct WeekProvider: TimelineProvider {
       today: today, labels: labels,
       weekLabel: d?.string(forKey: "label_week") ?? "This week",
       nextLabel: d?.string(forKey: "label_next") ?? "Up next",
-      nextTitle: stale ? "" : (d?.string(forKey: "next_title") ?? ""))
+      nextTitle: stale ? "" : (d?.string(forKey: "next_title") ?? ""),
+      accentLight: d?.object(forKey: "accent_light") == nil
+        ? nil : d?.integer(forKey: "accent_light"),
+      accentDark: d?.object(forKey: "accent_dark") == nil
+        ? nil : d?.integer(forKey: "accent_dark"))
   }
 }
 
-/// The app's sage accent, in both appearances.
-private let accent = Color(UIColor { tc in
+private func uiColor(argb value: Int) -> UIColor {
+  let u = UInt32(truncatingIfNeeded: value)
+  return UIColor(
+    red: CGFloat((u >> 16) & 0xFF) / 255,
+    green: CGFloat((u >> 8) & 0xFF) / 255,
+    blue: CGFloat(u & 0xFF) / 255,
+    alpha: 1)
+}
+
+/// The default theme's sage accent, in both appearances.
+private let sage = Color(UIColor { tc in
   tc.userInterfaceStyle == .dark
     ? UIColor(red: 0.56, green: 0.69, blue: 0.60, alpha: 1)
     : UIColor(red: 0.37, green: 0.50, blue: 0.42, alpha: 1)
@@ -92,6 +116,7 @@ struct DayDot: View {
   let planned: Bool
   let today: Bool
   var size: CGFloat = 20
+  var accent: Color = sage
 
   var body: some View {
     ZStack {
@@ -122,7 +147,7 @@ struct WeekRow: View {
         VStack(spacing: 4) {
           DayDot(
             trained: entry.trained[i], planned: entry.planned[i], today: i == entry.today,
-            size: dot)
+            size: dot, accent: entry.accent)
           Text(i < entry.labels.count ? entry.labels[i] : "")
             .font(.system(size: 10, weight: i == entry.today ? .bold : .medium))
             .foregroundStyle(i == entry.today ? .primary : .secondary)
@@ -159,7 +184,7 @@ struct WeekWidgetView: View {
           ForEach(0..<7, id: \.self) { i in
             DayDot(
               trained: entry.trained[i], planned: entry.planned[i], today: i == entry.today,
-              size: 12)
+              size: 12, accent: entry.accent)
           }
         }
       }
@@ -188,7 +213,7 @@ struct WeekWidgetView: View {
       Spacer()
       Text(progress)
         .font(.system(size: 22, weight: .heavy, design: .rounded))
-        .foregroundStyle(accent)
+        .foregroundStyle(entry.accent)
         .widgetAccentable()
     }
   }

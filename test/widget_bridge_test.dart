@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gym_app/l10n.dart';
 import 'package:gym_app/models.dart';
 import 'package:gym_app/store.dart';
+import 'package:gym_app/theme.dart';
 import 'package:gym_app/widget_bridge.dart';
 
 void main() {
@@ -43,6 +44,20 @@ void main() {
     expect(p['day_labels'], 'Mon|Tue|Wed|Thu|Fri|Sat|Sun');
     expect(p['label_week'], 'This week');
     expect(p['updated_at'], now.millisecondsSinceEpoch);
+    // the app's accent travels with it, as signed 32-bit ARGB
+    expect(p['accent_light'],
+        Iron.accentFor(dark: false).fill.toARGB32().toSigned(32));
+    expect(p['accent_dark'],
+        Iron.accentFor(dark: true).fill.toARGB32().toSigned(32));
+    for (final k in [
+      'accent_text_light',
+      'accent_text_dark',
+      'accent_soft_light',
+      'accent_soft_dark'
+    ]) {
+      final v = p[k] as int;
+      expect(v, inInclusiveRange(-0x80000000, 0x7FFFFFFF), reason: k);
+    }
 
     L10n.setLang('zh');
     final zh = WidgetBridge.payload(settings, logs, now: now);

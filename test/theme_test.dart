@@ -18,6 +18,8 @@ double contrast(Color a, Color b) {
 void main() {
   tearDown(() {
     Iron.setAppearance('light');
+    Iron.systemHue = null;
+    Iron.setHighContrast(false);
     Iron.setTheme('sage');
   });
 
@@ -35,15 +37,24 @@ void main() {
 
   // every theme a user can pick — presets and the custom hue wheel — must
   // keep fills visible and text readable in both appearances
+  // ('system', h) stands for a phone whose accent has hue h; ('system',
+  // null) for one that shares none
   final themes = <(String, double?)>[
+    ('system', null),
     for (final p in Iron.presets) (p.id, null),
     for (var h = 0; h < 360; h += 15) ('custom', h.toDouble()),
+    for (var h = 0; h < 360; h += 45) ('system', h.toDouble()),
   ];
   for (final dark in [false, true]) {
     test('contrast holds for every theme (${dark ? 'dark' : 'light'})', () {
       Iron.setAppearance(dark ? 'dark' : 'light');
       for (final (id, hue) in themes) {
-        Iron.setTheme(id, hue: hue);
+        if (id == 'system') {
+          Iron.systemHue = hue;
+          Iron.setTheme(id);
+        } else {
+          Iron.setTheme(id, hue: hue);
+        }
         final name = '$id${hue == null ? '' : ' @$hue'}';
         for (final c in [
           Iron.accent,
@@ -71,6 +82,69 @@ void main() {
     });
   }
 
+  test('System follows the phone: its hue, or Sage when it has none', () {
+    Iron.setAppearance('light');
+    Iron.systemHue = null;
+    Iron.setTheme('system');
+    expect(Iron.themeId, 'system');
+    final sage = Iron.presets.first;
+    expect(Iron.spec.light, sage.light);
+    expect(Iron.spec.dark, sage.dark);
+    expect(Iron.accent, const Color(0xFF5E7F6A));
+
+    // a blue wallpaper: the whole theme turns that blue — accent and the
+    // three tiers as shades of it, light (beginner) to deep (advanced)
+    for (final wallpaper in [215.0, 12.0, 130.0]) {
+      Iron.systemHue = wallpaper;
+      for (final dark in [false, true]) {
+        Iron.setAppearance(dark ? 'dark' : 'light');
+        Iron.setTheme('system');
+        double hueOf(Color c) => HSLColor.fromColor(c).hue;
+        double off(double a) {
+          final d = (a - wallpaper).abs() % 360;
+          return d > 180 ? 360 - d : d;
+        }
+
+        final name = 'hue $wallpaper ${dark ? 'dark' : 'light'}';
+        for (final c in [
+          Iron.accent,
+          Iron.tier(1),
+          Iron.tier(2),
+          Iron.tier(3)
+        ]) {
+          expect(off(hueOf(c)), lessThan(4), reason: name);
+        }
+        // the tiers step apart in contrast, so they never read as one colour
+        final steps = [
+          for (var t = 1; t <= 3; t++) contrast(Iron.tier(t), Iron.card)
+        ];
+        expect(steps[1] / steps[0], greaterThan(1.3), reason: name);
+        expect(steps[2] / steps[1], greaterThan(1.3), reason: name);
+      }
+    }
+    Iron.setAppearance('light');
+    expect(Iron.spec.name(true), '跟随系统');
+  });
+
+  test('high contrast lifts text and hairlines, and drops back', () {
+    for (final dark in [false, true]) {
+      Iron.setAppearance(dark ? 'dark' : 'light');
+      Iron.setTheme('sage');
+      final sub = Iron.sub, line = Iron.line;
+      Iron.setHighContrast(true);
+      expect(contrast(Iron.sub, Iron.card), greaterThanOrEqualTo(7));
+      expect(contrast(Iron.faint, Iron.card), greaterThanOrEqualTo(5.5));
+      expect(Iron.line.a, greaterThan(line.a));
+      for (final c in [Iron.accent, Iron.tier(1), Iron.tier(2), Iron.tier(3)]) {
+        expect(contrast(Iron.inkOf(c), Iron.card), greaterThanOrEqualTo(7),
+            reason: 'hue text, ${dark ? 'dark' : 'light'}');
+      }
+      Iron.setHighContrast(false);
+      expect(Iron.sub, sub);
+      expect(Iron.line, line);
+    }
+  });
+
   test('custom tiers are distinct hues, not one colour three times', () {
     for (var h = 0; h < 360; h += 30) {
       final s = ThemeSpec.custom(h.toDouble());
@@ -90,7 +164,8 @@ void main() {
     expect(back.themeId, 'custom');
     expect(back.customHue, 212);
     final old = AppSettings.fromJson({'lang': 'zh'});
-    expect(old.themeId, 'sage');
+    expect(old.themeId, 'system'); // follows the phone unless chosen
+    expect(AppSettings().themeId, 'system');
     expect(old.customHue, 150);
     // an id that no longer exists resolves to the default preset
     expect(Iron.specFor('gone').id, 'sage');

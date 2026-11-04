@@ -294,7 +294,7 @@ class SessionLog {
 class AppSettings {
   String lang; // 'system' | 'en' | 'zh'
   String appearance; // 'system' | 'dark' | 'light'
-  String themeId; // colour theme: a preset id or 'custom'
+  String themeId; // colour theme: 'system', a preset id or 'custom'
   double customHue; // 0-360, used when themeId == 'custom'
   bool remindersOn;
   int reminderHour; // 0-23
@@ -310,7 +310,7 @@ class AppSettings {
   AppSettings({
     this.lang = 'system',
     this.appearance = 'system',
-    this.themeId = 'sage',
+    this.themeId = 'system',
     this.customHue = 150,
     this.remindersOn = false,
     this.reminderHour = 19,
@@ -344,7 +344,7 @@ class AppSettings {
   factory AppSettings.fromJson(Map<String, dynamic> j) => AppSettings(
         lang: (j['lang'] ?? 'system') as String,
         appearance: (j['appearance'] ?? 'system') as String,
-        themeId: (j['themeId'] ?? 'sage') as String,
+        themeId: (j['themeId'] ?? 'system') as String,
         customHue: ((j['customHue'] ?? 150) as num).toDouble(),
         remindersOn: (j['remindersOn'] ?? false) as bool,
         reminderHour: (j['reminderHour'] ?? 19) as int,

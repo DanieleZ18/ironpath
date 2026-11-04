@@ -7,6 +7,7 @@ import 'package:home_widget/home_widget.dart';
 import 'l10n.dart';
 import 'models.dart';
 import 'store.dart';
+import 'theme.dart';
 import 'utils.dart';
 import 'weekly_program.dart';
 
@@ -43,7 +44,17 @@ class WidgetBridge {
       if (i >= 0 && i < 7) trained[i] = true;
     }
     final next = program != null && done < total ? program.slots[done] : null;
+    // colours as signed 32-bit ARGB, so both platforms read plain ints
+    int argb(Color c) => c.toARGB32().toSigned(32);
+    final light = Iron.accentFor(dark: false),
+        dark = Iron.accentFor(dark: true);
     return {
+      'accent_light': argb(light.fill),
+      'accent_dark': argb(dark.fill),
+      'accent_text_light': argb(light.text),
+      'accent_text_dark': argb(dark.text),
+      'accent_soft_light': argb(light.soft),
+      'accent_soft_dark': argb(dark.soft),
       'week_done': done,
       'week_total': total,
       'week_days': trained.map((t) => t ? '1' : '0').join(),

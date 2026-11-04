@@ -10,6 +10,7 @@ import 'l10n.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/root.dart';
 import 'store.dart';
+import 'system_colors.dart';
 import 'theme.dart';
 import 'widget_bridge.dart';
 import 'widgets/theme_crossfade.dart';
@@ -33,6 +34,11 @@ Future<void> main() async {
     platformDark:
         ui.PlatformDispatcher.instance.platformBrightness == Brightness.dark,
   );
+  // colours that follow the phone: its accent (wallpaper on Android 12+)
+  // and its Increase Contrast setting
+  Iron.systemHue = await SystemColors.accentHue();
+  Iron.setHighContrast(
+      ui.PlatformDispatcher.instance.accessibilityFeatures.highContrast);
   Iron.setTheme(Store.instance.settings.themeId,
       hue: Store.instance.settings.customHue);
   // the home-screen widget may be a week out of date by now
@@ -84,6 +90,39 @@ class _GymAppState extends State<GymApp> with WidgetsBindingObserver {
             Brightness.dark;
     if (dark == Iron.isDark) return;
     _apply(() => Iron.setAppearance('system', platformDark: dark));
+  }
+
+  // the system's colours can change while the app is away (a new
+  // wallpaper on Android): look again whenever it comes back
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshSystemColour();
+  }
+
+  Future<void> _refreshSystemColour() async {
+    final hue = await SystemColors.accentHue();
+    if (!mounted) return;
+    final old = Iron.systemHue;
+    final same =
+        hue == null ? old == null : old != null && (hue - old).abs() < 0.5;
+    if (same) return;
+    if (Iron.themeId == 'system') {
+      _apply(() {
+        Iron.systemHue = hue;
+        Iron.setTheme('system');
+      });
+      unawaited(WidgetBridge.sync());
+    } else {
+      Iron.systemHue = hue; // only the Settings swatch shows it
+    }
+  }
+
+  @override
+  void didChangeAccessibilityFeatures() {
+    final on = WidgetsBinding
+        .instance.platformDispatcher.accessibilityFeatures.highContrast;
+    if (on == Iron.highContrast) return;
+    _apply(() => Iron.setHighContrast(on));
   }
 
   @override

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Colours follow the phone
+- New default colour theme, System (跟随系统): on Android 12+ the app takes
+  its colour from your wallpaper, the way Material You does, and changes
+  when the wallpaper does (picked up when you come back to the app). The
+  whole theme stays in that one hue in the app's soft tones; the three
+  levels become light, medium and deep shades of it.
+- iPhone doesn't let apps read a system colour, so there System uses Sage;
+  light and dark mode keep following the phone as before. Settings says
+  which of the two is happening.
+- The system's Increase Contrast (iOS) / High contrast text (Android)
+  setting is followed live: secondary text steps up to 7:1, tertiary to
+  5.5:1, hairlines get stronger, coloured text clears 7:1.
+- The home-screen widgets now use the app's own accent (whatever theme
+  you picked, System included) in light and dark, instead of fixed Sage.
+- Fix: a fill's contrast against its own tinted block is now solved
+  against the adjusted colour's tint, so it can't land just under 3:1.
+
 ### Home-screen widget
 - "This week" widget on Android and iOS: your workouts this week day by
   day (a check on each day trained, a dot on today, rings on the sessions
