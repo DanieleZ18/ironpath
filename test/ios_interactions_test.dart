@@ -90,21 +90,21 @@ void main() {
   testWidgets('plan detail: delete from the … menu', variant: platforms,
       (tester) async {
     await setUpPhone(tester);
-    final plan = Store.instance.builtin.first.copyAsCustom('custom_t',
-        titleEn: 'Mine', titleZh: 'Mine');
+    final plan = Store.instance.builtin.first
+        .copyAsCustom('custom_t', titleEn: 'Mine', titleZh: 'Mine');
     Store.instance.customPlans = [plan];
     await tester.pumpWidget(app(Builder(
       builder: (context) => TextButton(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => PlanDetailPage(plan: plan))),
+        onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => PlanDetailPage(plan: plan))),
         child: const Text('open'),
       ),
     )));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(
-        apple() ? CupertinoIcons.ellipsis_circle : Icons.more_vert));
+    await tester.tap(find
+        .byIcon(apple() ? CupertinoIcons.ellipsis_circle : Icons.more_vert));
     await tester.pumpAndSettle();
     // iOS action sheet vs Material overflow menu
     if (apple()) {

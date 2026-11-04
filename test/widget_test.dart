@@ -20,17 +20,45 @@ void main() {
 
   test('exercise copy is complete and muscles are known', () {
     const muscles = {
-      'chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms', 'core',
-      'quads', 'hamstrings', 'adductors', 'abductors', 'glutes', 'calves',
-      'lower_back', 'cardio', 'full_body', 'traps',
+      'chest',
+      'back',
+      'shoulders',
+      'biceps',
+      'triceps',
+      'forearms',
+      'core',
+      'quads',
+      'hamstrings',
+      'adductors',
+      'abductors',
+      'glutes',
+      'calves',
+      'lower_back',
+      'cardio',
+      'full_body',
+      'traps',
     };
-    const categories = {'bodyweight', 'dumbbell', 'barbell', 'machine', 'cable'};
+    const categories = {
+      'bodyweight',
+      'dumbbell',
+      'barbell',
+      'machine',
+      'cable'
+    };
     for (final e in exercisesSeed) {
       expect(categories, contains(e.category), reason: e.id);
       expect(e.muscles, isNotEmpty, reason: e.id);
       expect(muscles.containsAll(e.muscles), isTrue, reason: e.id);
-      for (final text in [e.nameEn, e.nameZh, e.descEn, e.descZh, e.progEn,
-          e.progZh, e.regEn, e.regZh]) {
+      for (final text in [
+        e.nameEn,
+        e.nameZh,
+        e.descEn,
+        e.descZh,
+        e.progEn,
+        e.progZh,
+        e.regEn,
+        e.regZh
+      ]) {
         expect(text.trim(), isNotEmpty, reason: e.id);
       }
       expect(e.cuesEn, isNotEmpty, reason: e.id);
@@ -83,8 +111,8 @@ void main() {
     });
 
     test('dumbbell intermediate, 4 days → upper/lower ×2', () {
-      final p = deriveWeeklyProgram(
-          settings(tier: 2, days: 4, eq: 'dumbbell'))!;
+      final p =
+          deriveWeeklyProgram(settings(tier: 2, days: 4, eq: 'dumbbell'))!;
       expect(p.slots.length, 4);
       final ids = p.slots.map((s) => s.id).toList();
       expect(ids[0] == ids[2], isTrue);
@@ -117,13 +145,10 @@ void main() {
     });
 
     test('bodyweight-only beginner, 2 days → bodyweight A/B', () {
-      final p =
-          deriveWeeklyProgram(settings(tier: 1, days: 2, eq: 'none'))!;
+      final p = deriveWeeklyProgram(settings(tier: 1, days: 2, eq: 'none'))!;
       expect(p.slots.length, 2);
-      expect(p.slots.map((s) => s.id).toSet(), {
-        'builtin_beginner_bodyweight_a',
-        'builtin_beginner_bodyweight_b'
-      });
+      expect(p.slots.map((s) => s.id).toSet(),
+          {'builtin_beginner_bodyweight_a', 'builtin_beginner_bodyweight_b'});
     });
 
     test('skipped onboarding → null', () {
@@ -165,8 +190,7 @@ void main() {
       log(DateTime(2026, 10, 25, 23, 59)), // previous Sun
     ];
     expect(
-        completedThisWeek(AppSettings(), logs,
-            now: DateTime(2026, 10, 29, 20)),
+        completedThisWeek(AppSettings(), logs, now: DateTime(2026, 10, 29, 20)),
         2);
   });
 
@@ -208,8 +232,7 @@ void main() {
           p.items.every((it) =>
               exerciseMap[it.exerciseId]!.requiredEquipment() != 'gym') &&
           p.items.any((it) =>
-              exerciseMap[it.exerciseId]!.requiredEquipment() ==
-              'dumbbell'));
+              exerciseMap[it.exerciseId]!.requiredEquipment() == 'dumbbell'));
       expect(unavailableLabel(dbPlan, 'none'), contains('Dumbbell'));
     });
 

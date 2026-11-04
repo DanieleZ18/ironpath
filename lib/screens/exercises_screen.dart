@@ -199,7 +199,11 @@ class ExerciseTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              MuscleGlyph(muscles: e.muscles, color: hue, size: 56),
+              MuscleGlyph(
+                  muscles: e.muscles,
+                  color: hue,
+                  size: 56,
+                  radius: Iron.inner(Iron.rL, 14)),
               const Spacer(),
               if (!available)
                 Icon(Icons.lock_outline_rounded, size: 18, color: Iron.faint),

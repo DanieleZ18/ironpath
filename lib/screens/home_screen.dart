@@ -65,16 +65,13 @@ class HomeScreenState extends State<HomeScreen> {
       slivers: [
         largeTitleBar(
           L10n.t('tabToday'),
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: _openSettings,
-            child: Semantics(
-              button: true,
-              label: L10n.t('tabSettings'),
-              child: Icon(CupertinoIcons.gear,
-                  size: 26, color: Iron.inkOf(Iron.accent)),
-            ),
-          ),
+          trailing: isApple(context)
+              ? GlassIconButton(CupertinoIcons.gear,
+                  label: L10n.t('tabSettings'), onPressed: _openSettings)
+              : IconButton(
+                  icon: Icon(Icons.settings_outlined, color: Iron.ink),
+                  tooltip: L10n.t('tabSettings'),
+                  onPressed: _openSettings),
         ),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset(context)),
@@ -302,9 +299,9 @@ class _BannerPlaceholder extends StatelessWidget {
     return Container(
       height: 52,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: Iron.cardHi,
-        borderRadius: const BorderRadius.all(Iron.rM),
+        shape: Iron.squircle(Iron.rM),
       ),
       child: Text('AdMob banner', style: Iron.caption(color: Iron.faint)),
     );

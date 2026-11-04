@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">IronPath · 本周</string>
+    <string name="widget_description">本周每天的训练进度。</string>
+    <string name="widget_week">本周</string>
+</resources>

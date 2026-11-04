@@ -11,11 +11,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['chest', 'triceps', 'shoulders'],
     difficulty: 2,
-    descEn: 'Primary horizontal press. A bench gives the best setup; the floor works too (floor press).',
+    descEn:
+        'Primary horizontal press. A bench gives the best setup; the floor works too (floor press).',
     descZh: '主项水平推。有卧推凳最好，没有也能在地板上做（地板卧推）。',
-    cuesEn: ['Shoulder blades pinched back and down into the bench.', 'Press up and slightly together, wrists stacked over elbows.'],
+    cuesEn: [
+      'Shoulder blades pinched back and down into the bench.',
+      'Press up and slightly together, wrists stacked over elbows.'
+    ],
     cuesZh: ['肩胛骨后收下沉压在凳面上。', '向上推并略微向内合拢，手腕在肘部正上方。'],
-    mistakesEn: ['Flaring the elbows straight out to the sides.', 'Clanging the dumbbells together at the top and losing tension.'],
+    mistakesEn: [
+      'Flaring the elbows straight out to the sides.',
+      'Clanging the dumbbells together at the top and losing tension.'
+    ],
     mistakesZh: ['手肘向两侧完全打开。', '顶端两个哑铃相撞泄掉张力。'],
     progEn: 'Add weight or a 2s pause at the bottom.',
     progZh: '加重，或在最低点停 2 秒。',
@@ -33,11 +40,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['shoulder'],
     muscles: ['chest'],
     difficulty: 2,
-    descEn: 'Isolation for the chest in a big stretch. Light weights, hugged arc, zero ego.',
+    descEn:
+        'Isolation for the chest in a big stretch. Light weights, hugged arc, zero ego.',
     descZh: '大拉伸幅度的胸部孤立动作。用轻重量，弧线内收，别逞强。',
-    cuesEn: ['Fixed slight elbow bend — the angle never changes.', 'Open until you feel a chest stretch, then hug back up.'],
+    cuesEn: [
+      'Fixed slight elbow bend — the angle never changes.',
+      'Open until you feel a chest stretch, then hug back up.'
+    ],
     cuesZh: ['肘弯固定不变——角度全程保持。', '打开到胸部有拉伸感就收回来。'],
-    mistakesEn: ['Turning it into a sloppy press by bending the elbows more and more.', 'Going too heavy and dropping below the shoulder line.'],
+    mistakesEn: [
+      'Turning it into a sloppy press by bending the elbows more and more.',
+      'Going too heavy and dropping below the shoulder line.'
+    ],
     mistakesZh: ['肘部越弯越多，变成蹩脚卧推。', '重量太大，手降到肩膀线以下。'],
     progEn: 'Add weight in small jumps or a pause in the stretch.',
     progZh: '小幅加重，或在拉伸位加停顿。',
@@ -55,11 +69,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['shoulder'],
     muscles: ['shoulders', 'triceps'],
     difficulty: 2,
-    descEn: 'Seated or standing vertical press. The main mass builder for the shoulders.',
+    descEn:
+        'Seated or standing vertical press. The main mass builder for the shoulders.',
     descZh: '坐姿或站姿的垂直推举。肩部最主要的围度动作。',
-    cuesEn: ['Ribs down, do not lean back into an incline press.', 'Press slightly back so the weights finish over the ears.'],
+    cuesEn: [
+      'Ribs down, do not lean back into an incline press.',
+      'Press slightly back so the weights finish over the ears.'
+    ],
     cuesZh: ['肋骨下压，不要后仰成上斜推。', '略微向后推，让哑铃停在耳朵正上方。'],
-    mistakesEn: ['Arching the lower back to press more weight.', 'Half reps that never lock out or reach chin height.'],
+    mistakesEn: [
+      'Arching the lower back to press more weight.',
+      'Half reps that never lock out or reach chin height.'
+    ],
     mistakesZh: ['靠塌腰推起更大重量。', '半程：既不锁定也不到下巴高度。'],
     progEn: 'Add weight or slow the lowering phase.',
     progZh: '加重，或放慢下降阶段。',
@@ -77,11 +98,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['shoulder'],
     muscles: ['shoulders'],
     difficulty: 2,
-    descEn: 'Press with a rotating grip from palms-in to palms-out. Extra rotator work through the turn.',
+    descEn:
+        'Press with a rotating grip from palms-in to palms-out. Extra rotator work through the turn.',
     descZh: '从掌心向内转到向外的推举。旋转过程额外练到肩袖。',
-    cuesEn: ['Rotate smoothly as the elbows pass shoulder height.', 'Elbows finish under the wrists at the top.'],
+    cuesEn: [
+      'Rotate smoothly as the elbows pass shoulder height.',
+      'Elbows finish under the wrists at the top.'
+    ],
     cuesZh: ['肘部经过肩高时平稳旋转手腕。', '顶端手腕位于手肘正上方。'],
-    mistakesEn: ['Rushing the rotation into a wrist flick.', 'Leaning back under load.'],
+    mistakesEn: [
+      'Rushing the rotation into a wrist flick.',
+      'Leaning back under load.'
+    ],
     mistakesZh: ['旋转变成了甩手腕。', '负重下身体后仰。'],
     progEn: 'Add weight slowly — the rotation limits the load.',
     progZh: '小步加重——旋转限制了能用的重量。',
@@ -99,11 +127,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['shoulder'],
     muscles: ['shoulders'],
     difficulty: 1,
-    descEn: 'The side-delt width builder. Light weight, high control, done for high reps.',
+    descEn:
+        'The side-delt width builder. Light weight, high control, done for high reps.',
     descZh: '练中束、加肩宽的动作。轻重量、高控制、多次数。',
-    cuesEn: ['Lead with the elbows, pinkies slightly up like pouring water.', 'Stop at shoulder height, lower slowly.'],
+    cuesEn: [
+      'Lead with the elbows, pinkies slightly up like pouring water.',
+      'Stop at shoulder height, lower slowly.'
+    ],
     cuesZh: ['用手肘带动，小指略高像倒水。', '抬到肩高即止，缓慢下放。'],
-    mistakesEn: ['Swinging with the hips and traps shrugging up.', 'Going heavy enough that the front delts take over.'],
+    mistakesEn: [
+      'Swinging with the hips and traps shrugging up.',
+      'Going heavy enough that the front delts take over.'
+    ],
     mistakesZh: ['靠晃动身体和耸肩借力。', '重量大到前束接管动作。'],
     progEn: 'Slow the negatives to 3s or add a partial-rep burnout.',
     progZh: '离心放慢到 3 秒，或结尾加半程力竭。',
@@ -120,11 +155,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['back', 'biceps'],
     difficulty: 1,
-    descEn: 'One hand and one knee on a bench, row with the other. Great stretch and squeeze per side.',
+    descEn:
+        'One hand and one knee on a bench, row with the other. Great stretch and squeeze per side.',
     descZh: '一手一膝撑凳、另一手划船。每侧都有充分的拉伸和收缩。',
-    cuesEn: ['Flat back, pull the elbow toward the hip.', 'Let the shoulder blade stretch at the bottom, squeeze at the top.'],
+    cuesEn: [
+      'Flat back, pull the elbow toward the hip.',
+      'Let the shoulder blade stretch at the bottom, squeeze at the top.'
+    ],
     cuesZh: ['背部放平，手肘往髋部方向拉。', '底部让肩胛骨充分前伸，顶部收紧。'],
-    mistakesEn: ['Torso twisting up as the row gets heavy.', 'Yanking with the arm while the back never loads.'],
+    mistakesEn: [
+      'Torso twisting up as the row gets heavy.',
+      'Yanking with the arm while the back never loads.'
+    ],
     mistakesZh: ['重量一大躯干就跟着拧。', '只用手臂猛拽，背部没吃上力。'],
     progEn: 'Add weight or a 1s squeeze at the top.',
     progZh: '加重，或顶端加 1 秒收缩。',
@@ -142,11 +184,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['lower_back'],
     muscles: ['back', 'biceps'],
     difficulty: 2,
-    descEn: 'Both-arm row from a hinged position. Bigger load than the one-arm version, more lower-back demand.',
+    descEn:
+        'Both-arm row from a hinged position. Bigger load than the one-arm version, more lower-back demand.',
     descZh: '俯身姿态下的双臂划船。负荷比单臂更大，对下背要求也更高。',
-    cuesEn: ['Hinge to about 45 degrees and hold the angle all set.', 'Row to the lower ribs, elbows brush past the sides.'],
+    cuesEn: [
+      'Hinge to about 45 degrees and hold the angle all set.',
+      'Row to the lower ribs, elbows brush past the sides.'
+    ],
     cuesZh: ['俯身约 45 度，全程保持这个角度。', '拉到下肋位置，手肘擦着身体两侧走。'],
-    mistakesEn: ['Torso rising toward vertical set after set.', 'Rounding the lower back under fatigue.'],
+    mistakesEn: [
+      'Torso rising toward vertical set after set.',
+      'Rounding the lower back under fatigue.'
+    ],
     mistakesZh: ['一组比一组直起来。', '疲劳后下背弓起。'],
     progEn: 'Add weight, or pause each rep at the top.',
     progZh: '加重，或每次顶部加停顿。',
@@ -163,11 +212,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['biceps'],
     difficulty: 1,
-    descEn: 'Standard biceps curl. Elbows pinned, no swing — boring and effective.',
+    descEn:
+        'Standard biceps curl. Elbows pinned, no swing — boring and effective.',
     descZh: '标准哑铃弯举。手肘固定、身体不晃——无聊但有效。',
-    cuesEn: ['Elbows stay at the sides, curl to a hard squeeze.', 'Lower all the way to straight arms.'],
+    cuesEn: [
+      'Elbows stay at the sides, curl to a hard squeeze.',
+      'Lower all the way to straight arms.'
+    ],
     cuesZh: ['手肘贴住身体两侧，弯举到用力收紧为止。', '下放到手臂完全伸直。'],
-    mistakesEn: ['Hips swinging the weight up.', 'Half-range reps at the strongest point only.'],
+    mistakesEn: [
+      'Hips swinging the weight up.',
+      'Half-range reps at the strongest point only.'
+    ],
     mistakesZh: ['靠髋部晃动把重量带起来。', '只在最有力的区间做半程。'],
     progEn: 'Slow the negatives or add a seated strict version.',
     progZh: '放慢离心，或改成坐姿严格版。',
@@ -184,11 +240,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['biceps', 'forearms'],
     difficulty: 1,
-    descEn: 'Neutral-grip curl for the brachialis and forearm. Thickens the upper arm from the side.',
+    descEn:
+        'Neutral-grip curl for the brachialis and forearm. Thickens the upper arm from the side.',
     descZh: '对握弯举，练肱肌和前臂。从侧面看让手臂更厚。',
-    cuesEn: ['Palms face each other the whole time.', 'Control the top half of the range.'],
+    cuesEn: [
+      'Palms face each other the whole time.',
+      'Control the top half of the range.'
+    ],
     cuesZh: ['全程掌心相对。', '控制动作的顶端一半行程。'],
-    mistakesEn: ['Rowing the shoulder forward with each rep.', 'Wrist rolling backward under fatigue.'],
+    mistakesEn: [
+      'Rowing the shoulder forward with each rep.',
+      'Wrist rolling backward under fatigue.'
+    ],
     mistakesZh: ['每次都把肩膀往前送。', '疲劳后手腕向后翻。'],
     progEn: 'Add weight or slow 3s negatives.',
     progZh: '加重，或 3 秒慢放。',
@@ -208,9 +271,15 @@ const List<Exercise> dumbbellSeed = [
     difficulty: 1,
     descEn: 'Overhead extension in a big stretch for the triceps long head.',
     descZh: '头上方向的臂屈伸，充分拉伸三头肌长头。',
-    cuesEn: ['Elbows point forward and stay narrow.', 'Lower until you feel the stretch, then press to lockout.'],
+    cuesEn: [
+      'Elbows point forward and stay narrow.',
+      'Lower until you feel the stretch, then press to lockout.'
+    ],
     cuesZh: ['手肘朝前并保持夹窄。', '下放到有拉伸感，再推到锁定。'],
-    mistakesEn: ['Elbows flaring wide apart.', 'Lower back over-arching — brace the core.'],
+    mistakesEn: [
+      'Elbows flaring wide apart.',
+      'Lower back over-arching — brace the core.'
+    ],
     mistakesZh: ['手肘向两侧打开。', '下背过度反弓——收紧核心。'],
     progEn: 'Move to one arm at a time, then add weight.',
     progZh: '换成单臂版本，再逐步加重。',
@@ -227,11 +296,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['triceps'],
     difficulty: 1,
-    descEn: 'Hinged triceps extension to full lockout. Light weights only — leverage is poor by design.',
+    descEn:
+        'Hinged triceps extension to full lockout. Light weights only — leverage is poor by design.',
     descZh: '俯身位的臂屈伸做到完全锁定。只能用轻重量——杠杆本来就吃亏。',
-    cuesEn: ['Upper arm parallel to the floor and glued there.', 'Extend to a full squeeze, pause, return slowly.'],
+    cuesEn: [
+      'Upper arm parallel to the floor and glued there.',
+      'Extend to a full squeeze, pause, return slowly.'
+    ],
     cuesZh: ['大臂平行地面并固定不动。', '伸直到完全收紧，停一下，再缓慢回来。'],
-    mistakesEn: ['Swinging the whole arm instead of extending the elbow.', 'Torso rising out of the hinge.'],
+    mistakesEn: [
+      'Swinging the whole arm instead of extending the elbow.',
+      'Torso rising out of the hinge.'
+    ],
     mistakesZh: ['整条手臂在甩而不是伸肘。', '俯身角度丢了，躯干直起来。'],
     progEn: 'Add a 2s top hold before adding weight.',
     progZh: '先加 2 秒顶端停顿，再考虑加重。',
@@ -248,11 +324,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['quads', 'glutes', 'core'],
     difficulty: 1,
-    descEn: 'Weight held at the chest, counterbalance makes full-depth squats easy to learn.',
+    descEn:
+        'Weight held at the chest, counterbalance makes full-depth squats easy to learn.',
     descZh: '重量抱在胸前，配重在前让全幅度深蹲变得容易学会。',
-    cuesEn: ['Elbows brush inside the knees at the bottom.', 'Chest tall, weight close to the body.'],
+    cuesEn: [
+      'Elbows brush inside the knees at the bottom.',
+      'Chest tall, weight close to the body.'
+    ],
     cuesZh: ['最低点手肘轻轻碰到膝盖内侧。', '挺胸，重量贴近身体。'],
-    mistakesEn: ['Letting the weight drift away from the chest.', 'Heels lifting at depth.'],
+    mistakesEn: [
+      'Letting the weight drift away from the chest.',
+      'Heels lifting at depth.'
+    ],
     mistakesZh: ['重量越抱越远。', '蹲到底时脚跟离地。'],
     progEn: 'Add weight or a 2s pause in the hole.',
     progZh: '加重，或在底部停 2 秒。',
@@ -270,11 +353,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['lower_back'],
     muscles: ['hamstrings', 'glutes', 'lower_back'],
     difficulty: 2,
-    descEn: 'Hip-hinge posterior chain work. Hamstrings and glutes under a deep stretch.',
+    descEn:
+        'Hip-hinge posterior chain work. Hamstrings and glutes under a deep stretch.',
     descZh: '屈髋铰链的后链训练。腘绳肌和臀部在深度拉伸下发力。',
-    cuesEn: ['Push the hips back, soft knees, dumbbells slide down the thighs.', 'Stop when the hamstrings max out, then stand tall.'],
+    cuesEn: [
+      'Push the hips back, soft knees, dumbbells slide down the thighs.',
+      'Stop when the hamstrings max out, then stand tall.'
+    ],
     cuesZh: ['臀部向后推，膝盖微弯，哑铃贴着大腿下滑。', '腘绳肌拉到极限就停，然后站直。'],
-    mistakesEn: ['Squatting the weight down instead of hinging.', 'Rounding the lower back to chase depth.'],
+    mistakesEn: [
+      'Squatting the weight down instead of hinging.',
+      'Rounding the lower back to chase depth.'
+    ],
     mistakesZh: ['变成蹲下去而不是髋部后移。', '为了追求更低而弓下背。'],
     progEn: 'Add weight while keeping the hinge shape.',
     progZh: '在保持屈髋形态的前提下加重。',
@@ -292,11 +382,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['knee'],
     muscles: ['quads', 'glutes'],
     difficulty: 2,
-    descEn: 'Bodyweight lunge with dumbbells at the sides. The standard way to load single-leg work.',
+    descEn:
+        'Bodyweight lunge with dumbbells at the sides. The standard way to load single-leg work.',
     descZh: '双手持哑铃的箭步蹲。单腿训练最标准的负重方式。',
-    cuesEn: ['Torso tall even when loaded.', 'Long step, front shin near vertical at the bottom.'],
+    cuesEn: [
+      'Torso tall even when loaded.',
+      'Long step, front shin near vertical at the bottom.'
+    ],
     cuesZh: ['负重下躯干依然挺直。', '步幅放大，最低点前侧小腿接近垂直。'],
-    mistakesEn: ['Torso pitching forward under load.', 'Short choppy steps hitting the front knee.'],
+    mistakesEn: [
+      'Torso pitching forward under load.',
+      'Short choppy steps hitting the front knee.'
+    ],
     mistakesZh: ['负重后躯干前倾。', '步子太小，膝盖猛顶。'],
     progEn: 'Heavier dumbbells or walking lunges if space allows.',
     progZh: '加大哑铃重量，空间够就做行走箭步蹲。',
@@ -314,11 +411,18 @@ const List<Exercise> dumbbellSeed = [
     contraindications: ['knee'],
     muscles: ['quads', 'glutes'],
     difficulty: 1,
-    descEn: 'Step onto a sturdy chair or bench holding dumbbells. Knee-friendly single-leg strength.',
+    descEn:
+        'Step onto a sturdy chair or bench holding dumbbells. Knee-friendly single-leg strength.',
     descZh: '持哑铃踏上稳固的椅子或凳子。对膝盖友好的单腿力量动作。',
-    cuesEn: ['Drive through the top leg only — no push-off from the floor foot.', 'Control the way down, do not crash.'],
+    cuesEn: [
+      'Drive through the top leg only — no push-off from the floor foot.',
+      'Control the way down, do not crash.'
+    ],
     cuesZh: ['只靠上方的腿发力——下面的脚不许蹬地。', '下落要有控制，不要砸下去。'],
-    mistakesEn: ['Bouncing off the bottom leg for help.', 'Using a step so high the hips tilt.'],
+    mistakesEn: [
+      'Bouncing off the bottom leg for help.',
+      'Using a step so high the hips tilt.'
+    ],
     mistakesZh: ['靠下面的腿蹬地借力。', '凳子太高导致骨盆歪斜。'],
     progEn: 'Heavier dumbbells or a higher step.',
     progZh: '加重，或换更高的凳子。',
@@ -335,11 +439,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['traps'],
     difficulty: 1,
-    descEn: 'Straight-up shoulder shrug for the traps. Simple, hard to mess up, easy to load.',
+    descEn:
+        'Straight-up shoulder shrug for the traps. Simple, hard to mess up, easy to load.',
     descZh: '垂直上耸练斜方肌。简单、难做错、好加重。',
-    cuesEn: ['Straight up toward the ears, then a 1s hold.', 'Arms stay long — no elbow bending.'],
+    cuesEn: [
+      'Straight up toward the ears, then a 1s hold.',
+      'Arms stay long — no elbow bending.'
+    ],
     cuesZh: ['垂直向耳朵方向上耸，顶端停 1 秒。', '手臂保持伸长——不要弯肘。'],
-    mistakesEn: ['Rolling the shoulders in circles.', 'Bending the elbows and turning it into a weird row.'],
+    mistakesEn: [
+      'Rolling the shoulders in circles.',
+      'Bending the elbows and turning it into a weird row.'
+    ],
     mistakesZh: ['肩部画圆滚动。', '弯肘变成奇怪的小划船。'],
     progEn: 'Heavier dumbbells and longer holds.',
     progZh: '加重并延长顶端保持。',
@@ -357,11 +468,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['chest', 'shoulders', 'triceps'],
     difficulty: 2,
-    descEn: 'Bench set to about 30 degrees. Shifts the press toward the upper chest — the part flat pressing misses.',
+    descEn:
+        'Bench set to about 30 degrees. Shifts the press toward the upper chest — the part flat pressing misses.',
     descZh: '凳子调到约 30 度。把推的重点移到上胸——平板卧推照顾不到的部分。',
-    cuesEn: ['Shoulder blades pinched and down into the bench.', 'Press up and slightly back over the upper chest.'],
+    cuesEn: [
+      'Shoulder blades pinched and down into the bench.',
+      'Press up and slightly back over the upper chest.'
+    ],
     cuesZh: ['肩胛骨后收下沉，贴紧凳面。', '向上并略向后推，落点在上胸上方。'],
-    mistakesEn: ['Bench set too steep — it becomes a shoulder press.', 'Elbows flared straight out to the sides.'],
+    mistakesEn: [
+      'Bench set too steep — it becomes a shoulder press.',
+      'Elbows flared straight out to the sides.'
+    ],
     mistakesZh: ['角度太陡——变成了肩推。', '手肘完全向两侧打开。'],
     progEn: 'Heavier dumbbells, or a 2-second pause on the chest.',
     progZh: '换更重的哑铃，或在胸口停顿 2 秒。',
@@ -378,11 +496,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['chest', 'triceps'],
     difficulty: 1,
-    descEn: 'Bench press lying on the floor — no bench needed. The floor stops the elbows, which keeps the shoulders out of the deep stretch.',
+    descEn:
+        'Bench press lying on the floor — no bench needed. The floor stops the elbows, which keeps the shoulders out of the deep stretch.',
     descZh: '躺在地上做的卧推——不需要凳子。地板挡住手肘，肩膀不会进入很深的拉伸位。',
-    cuesEn: ['Knees bent, feet flat, upper arms at about 45 degrees.', 'Let the triceps touch the floor softly, then press.'],
+    cuesEn: [
+      'Knees bent, feet flat, upper arms at about 45 degrees.',
+      'Let the triceps touch the floor softly, then press.'
+    ],
     cuesZh: ['屈膝踩地，上臂与躯干约 45 度。', '大臂轻触地面，再推起。'],
-    mistakesEn: ['Bouncing the elbows off the floor.', 'Arching hard to lift the hips.'],
+    mistakesEn: [
+      'Bouncing the elbows off the floor.',
+      'Arching hard to lift the hips.'
+    ],
     mistakesZh: ['手肘撞地借力反弹。', '用力挺腰把臀部抬起。'],
     progEn: 'Pause on the floor for 2 seconds, then go heavier.',
     progZh: '大臂在地面停 2 秒，再加重量。',
@@ -399,11 +524,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['shoulders', 'back'],
     difficulty: 1,
-    descEn: 'Hinge forward and sweep light dumbbells out to the sides. Trains the rear delts that keep shoulders healthy and posture upright.',
+    descEn:
+        'Hinge forward and sweep light dumbbells out to the sides. Trains the rear delts that keep shoulders healthy and posture upright.',
     descZh: '俯身，把轻哑铃向两侧打开。练三角肌后束——它让肩膀更健康、体态更挺拔。',
-    cuesEn: ['Flat back, slight bend in the elbows that never changes.', 'Lead with the elbows, pause when arms reach shoulder height.'],
+    cuesEn: [
+      'Flat back, slight bend in the elbows that never changes.',
+      'Lead with the elbows, pause when arms reach shoulder height.'
+    ],
     cuesZh: ['背部平直，手肘微屈且角度不变。', '用手肘带动，手臂到肩高时停顿。'],
-    mistakesEn: ['Going too heavy and swinging the torso.', 'Shrugging the shoulders up toward the ears.'],
+    mistakesEn: [
+      'Going too heavy and swinging the torso.',
+      'Shrugging the shoulders up toward the ears.'
+    ],
     mistakesZh: ['重量太大，躯干跟着甩。', '耸肩，肩膀往耳朵方向提。'],
     progEn: 'Slower lowering, or a 2-second squeeze at the top.',
     progZh: '下放更慢，或在顶端收缩 2 秒。',
@@ -420,11 +552,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['shoulders'],
     difficulty: 1,
-    descEn: 'Raise the dumbbells forward to shoulder height. Isolates the front delts; light weight is plenty.',
+    descEn:
+        'Raise the dumbbells forward to shoulder height. Isolates the front delts; light weight is plenty.',
     descZh: '把哑铃向前举到与肩同高。孤立训练三角肌前束，轻重量就够了。',
-    cuesEn: ['Stand tall, ribs down, soft elbows.', 'Lift to shoulder height only and lower slowly.'],
+    cuesEn: [
+      'Stand tall, ribs down, soft elbows.',
+      'Lift to shoulder height only and lower slowly.'
+    ],
     cuesZh: ['站直，肋骨下沉，手肘微屈。', '只举到肩高，缓慢下放。'],
-    mistakesEn: ['Leaning back to swing the weight up.', 'Raising far above the head.'],
+    mistakesEn: [
+      'Leaning back to swing the weight up.',
+      'Raising far above the head.'
+    ],
     mistakesZh: ['身体后仰把哑铃甩上去。', '举得远高于头顶。'],
     progEn: 'Slower tempo, or a pause at the top.',
     progZh: '放慢节奏，或在顶端停顿。',
@@ -442,11 +581,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['glutes', 'hamstrings'],
     difficulty: 1,
-    descEn: 'Upper back on a sofa or bench, dumbbell on the hips, drive the hips up. The most direct glute builder there is.',
+    descEn:
+        'Upper back on a sofa or bench, dumbbell on the hips, drive the hips up. The most direct glute builder there is.',
     descZh: '上背靠在沙发或凳边，哑铃放在髋部，向上顶髋。最直接的臀部训练动作。',
-    cuesEn: ['Chin tucked, ribs down — move at the hips, not the lower back.', 'Shins vertical at the top; squeeze hard for a second.'],
+    cuesEn: [
+      'Chin tucked, ribs down — move at the hips, not the lower back.',
+      'Shins vertical at the top; squeeze hard for a second.'
+    ],
     cuesZh: ['收下巴、肋骨下沉——在髋部发力，不是腰。', '顶端小腿垂直，用力夹臀 1 秒。'],
-    mistakesEn: ['Arching the lower back to get higher.', 'Feet too far away so the hamstrings take over.'],
+    mistakesEn: [
+      'Arching the lower back to get higher.',
+      'Feet too far away so the hamstrings take over.'
+    ],
     mistakesZh: ['挺腰换来更高的高度。', '脚放得太远，腘绳肌抢走了发力。'],
     progEn: 'Heavier dumbbell, single-leg thrusts, or a pause at the top.',
     progZh: '加重哑铃、做单腿臀推，或顶端停顿。',
@@ -463,11 +609,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['hamstrings', 'glutes', 'core'],
     difficulty: 2,
-    descEn: 'Hinge on one leg while the other reaches back. Hamstrings, glutes and balance with a light load on the spine.',
+    descEn:
+        'Hinge on one leg while the other reaches back. Hamstrings, glutes and balance with a light load on the spine.',
     descZh: '单腿屈髋，另一条腿向后伸。练腘绳肌、臀部和平衡，脊柱负担小。',
-    cuesEn: ['Hips stay square to the floor; the back leg and torso move as one.', 'Soft standing knee, dumbbell close to the shin.'],
+    cuesEn: [
+      'Hips stay square to the floor; the back leg and torso move as one.',
+      'Soft standing knee, dumbbell close to the shin.'
+    ],
     cuesZh: ['髋部始终正对地面，后腿和躯干作为一个整体运动。', '支撑腿膝盖微屈，哑铃贴近小腿。'],
-    mistakesEn: ['Opening the hip so the body twists sideways.', 'Rounding the back to reach the floor.'],
+    mistakesEn: [
+      'Opening the hip so the body twists sideways.',
+      'Rounding the back to reach the floor.'
+    ],
     mistakesZh: ['髋部打开，身体侧向扭转。', '弓背去够地面。'],
     progEn: 'Heavier dumbbell, or hold one in each hand.',
     progZh: '加重哑铃，或双手各持一只。',
@@ -484,11 +637,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['quads', 'adductors', 'glutes'],
     difficulty: 1,
-    descEn: 'Wide stance, toes out, one dumbbell hanging between the legs. More inner thigh and glutes than a regular squat.',
+    descEn:
+        'Wide stance, toes out, one dumbbell hanging between the legs. More inner thigh and glutes than a regular squat.',
     descZh: '宽站距、脚尖外转，一只哑铃垂在两腿之间。比普通深蹲更多练到大腿内侧和臀部。',
-    cuesEn: ['Knees push out over the toes the whole way.', 'Chest up, sit straight down between the heels.'],
+    cuesEn: [
+      'Knees push out over the toes the whole way.',
+      'Chest up, sit straight down between the heels.'
+    ],
     cuesZh: ['膝盖全程向外推，对准脚尖。', '挺胸，在两脚跟之间垂直坐下。'],
-    mistakesEn: ['Knees collapsing inward.', 'Leaning far forward with a rounded back.'],
+    mistakesEn: [
+      'Knees collapsing inward.',
+      'Leaning far forward with a rounded back.'
+    ],
     mistakesZh: ['膝盖内扣。', '弓背大幅前倾。'],
     progEn: 'Heavier dumbbell, or stand on two steps for more depth.',
     progZh: '加重哑铃，或站在两个台阶上加大幅度。',
@@ -505,11 +665,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['quads', 'glutes'],
     difficulty: 2,
-    descEn: 'Stay in a fixed split stance and lower straight down. Less balance than a walking lunge, so you can load it more.',
+    descEn:
+        'Stay in a fixed split stance and lower straight down. Less balance than a walking lunge, so you can load it more.',
     descZh: '保持固定的前后分腿站姿，垂直向下蹲。比行进箭步蹲更稳，可以上更大重量。',
-    cuesEn: ['Torso tall, back knee drops toward the floor.', 'Drive through the front heel and mid-foot.'],
+    cuesEn: [
+      'Torso tall, back knee drops toward the floor.',
+      'Drive through the front heel and mid-foot.'
+    ],
     cuesZh: ['上身挺直，后膝向地面落。', '用前脚脚跟和足中发力站起。'],
-    mistakesEn: ['Stance too narrow, like walking a tightrope.', 'Front heel lifting off the floor.'],
+    mistakesEn: [
+      'Stance too narrow, like walking a tightrope.',
+      'Front heel lifting off the floor.'
+    ],
     mistakesZh: ['左右站距太窄，像走钢丝。', '前脚跟离地。'],
     progEn: 'Heavier dumbbells, then rear-foot-elevated (Bulgarian).',
     progZh: '加重哑铃，再进阶为后脚垫高（保加利亚分腿蹲）。',
@@ -527,11 +694,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['biceps'],
     difficulty: 1,
-    descEn: 'Seated, elbow braced against the inner thigh. Takes all cheating out of the curl.',
+    descEn:
+        'Seated, elbow braced against the inner thigh. Takes all cheating out of the curl.',
     descZh: '坐姿，手肘抵住大腿内侧。彻底杜绝弯举时的借力。',
-    cuesEn: ['Upper arm stays still against the thigh.', 'Squeeze at the top, lower fully to a straight arm.'],
+    cuesEn: [
+      'Upper arm stays still against the thigh.',
+      'Squeeze at the top, lower fully to a straight arm.'
+    ],
     cuesZh: ['大臂贴住大腿保持不动。', '顶端收紧，下放到手臂完全伸直。'],
-    mistakesEn: ['Lifting the elbow off the thigh.', 'Stopping short of full extension.'],
+    mistakesEn: [
+      'Lifting the elbow off the thigh.',
+      'Stopping short of full extension.'
+    ],
     mistakesZh: ['手肘离开大腿。', '下放不到底。'],
     progEn: '3-second lowering, or heavier dumbbell.',
     progZh: '3 秒下放，或加重哑铃。',
@@ -548,11 +722,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['triceps'],
     difficulty: 2,
-    descEn: 'Lying on a bench or floor, bend only at the elbows to lower the dumbbells beside your head.',
+    descEn:
+        'Lying on a bench or floor, bend only at the elbows to lower the dumbbells beside your head.',
     descZh: '仰卧在凳上或地上，只弯曲手肘，把哑铃放到头部两侧。',
-    cuesEn: ['Upper arms stay pointed at the ceiling.', 'Palms face each other; lower slowly beside the ears.'],
+    cuesEn: [
+      'Upper arms stay pointed at the ceiling.',
+      'Palms face each other; lower slowly beside the ears.'
+    ],
     cuesZh: ['大臂始终指向天花板。', '掌心相对，缓慢下放到耳侧。'],
-    mistakesEn: ['Elbows drifting out wide.', 'Turning it into a press by moving the shoulders.'],
+    mistakesEn: [
+      'Elbows drifting out wide.',
+      'Turning it into a press by moving the shoulders.'
+    ],
     mistakesZh: ['手肘向外散开。', '肩膀参与，变成了推举。'],
     progEn: 'Heavier dumbbells, or let the upper arms angle slightly back.',
     progZh: '加重哑铃，或让大臂略向头后倾斜。',
@@ -569,11 +750,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['glutes', 'hamstrings', 'cardio'],
     difficulty: 2,
-    descEn: 'Kettlebell-style swing with one dumbbell held by the end. A hip snap, not a squat and not an arm raise.',
+    descEn:
+        'Kettlebell-style swing with one dumbbell held by the end. A hip snap, not a squat and not an arm raise.',
     descZh: '双手握住一只哑铃的一端，做壶铃式摆荡。是髋部爆发，不是深蹲也不是抬手。',
-    cuesEn: ['Hike the weight back between the legs with a flat back.', 'Snap the hips forward; the arms just float to chest height.'],
+    cuesEn: [
+      'Hike the weight back between the legs with a flat back.',
+      'Snap the hips forward; the arms just float to chest height.'
+    ],
     cuesZh: ['背部平直，把哑铃从两腿间向后送。', '髋部向前猛顶，手臂只是顺势飘到胸高。'],
-    mistakesEn: ['Squatting down instead of hinging.', 'Lifting with the arms or leaning back at the top.'],
+    mistakesEn: [
+      'Squatting down instead of hinging.',
+      'Lifting with the arms or leaning back at the top.'
+    ],
     mistakesZh: ['用下蹲代替屈髋。', '用手臂往上抬，或顶端身体后仰。'],
     progEn: 'Heavier dumbbell, longer sets for conditioning.',
     progZh: '加重哑铃，或延长组时间做体能。',
@@ -591,13 +779,21 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['traps', 'forearms', 'core'],
     difficulty: 1,
-    descEn: 'Pick up heavy dumbbells and walk. Grip, traps and core all work to keep you upright.',
+    descEn:
+        'Pick up heavy dumbbells and walk. Grip, traps and core all work to keep you upright.',
     descZh: '拎起重哑铃走路。握力、斜方肌和核心都在为保持身体直立而工作。',
-    cuesEn: ['Stand tall, shoulders down and back.', 'Short, quick steps; do not let the weights swing.'],
+    cuesEn: [
+      'Stand tall, shoulders down and back.',
+      'Short, quick steps; do not let the weights swing.'
+    ],
     cuesZh: ['站直，肩膀下沉后收。', '小而快的步子，不要让哑铃晃。'],
-    mistakesEn: ['Leaning to one side or shrugging.', 'Looking down at the feet.'],
+    mistakesEn: [
+      'Leaning to one side or shrugging.',
+      'Looking down at the feet.'
+    ],
     mistakesZh: ['身体侧倾或耸肩。', '低头看脚。'],
-    progEn: 'Heavier dumbbells or longer distance; try one-arm (suitcase) carries.',
+    progEn:
+        'Heavier dumbbells or longer distance; try one-arm (suitcase) carries.',
     progZh: '加重或走更远；尝试单手（提箱式）行走。',
     regEn: 'Lighter weights, shorter walks.',
     regZh: '减轻重量、缩短距离。',
@@ -614,11 +810,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['adductors', 'glutes', 'hamstrings'],
     difficulty: 2,
-    descEn: 'Wide stance, one heavy dumbbell held vertically between the legs. The upright torso and open hips put the inner thighs and glutes in charge.',
+    descEn:
+        'Wide stance, one heavy dumbbell held vertically between the legs. The upright torso and open hips put the inner thighs and glutes in charge.',
     descZh: '宽站距，一只重哑铃竖握在两腿之间。直立的躯干和外展的髋让大腿内侧和臀部主导发力。',
-    cuesEn: ['Knees out over the toes; chest tall.', 'Drive the floor apart with the feet as you stand.'],
+    cuesEn: [
+      'Knees out over the toes; chest tall.',
+      'Drive the floor apart with the feet as you stand.'
+    ],
     cuesZh: ['膝盖推向脚尖方向，胸口挺起。', '站起时像要把地面踩裂一样向外发力。'],
-    mistakesEn: ['Rounding the back to reach the dumbbell.', 'Knees caving in on the way up.'],
+    mistakesEn: [
+      'Rounding the back to reach the dumbbell.',
+      'Knees caving in on the way up.'
+    ],
     mistakesZh: ['弓背去够哑铃。', '起身时膝盖内扣。'],
     progEn: 'Heavier dumbbell, or stand on two boxes for a deeper start.',
     progZh: '加重，或站在两个箱子上加深起始位置。',
@@ -636,11 +839,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['quads', 'adductors', 'glutes'],
     difficulty: 2,
-    descEn: 'Lateral lunge with a dumbbell held at the chest. The weight pulls you upright and lets the inner thigh work through a full range.',
+    descEn:
+        'Lateral lunge with a dumbbell held at the chest. The weight pulls you upright and lets the inner thigh work through a full range.',
     descZh: '胸前抱哑铃的侧弓步。重量帮你保持直立，让大腿内侧在完整幅度里发力。',
-    cuesEn: ['Step wide, sit back into the bent hip; the other leg stays straight.', 'Push off the bent leg to return — do not pull with the straight one.'],
+    cuesEn: [
+      'Step wide, sit back into the bent hip; the other leg stays straight.',
+      'Push off the bent leg to return — do not pull with the straight one.'
+    ],
     cuesZh: ['大步跨出，坐向弯曲腿的髋部，另一条腿伸直。', '用弯曲腿蹬回来——别用伸直腿拉。'],
-    mistakesEn: ['Knee drifting past the toes and inward.', 'Rounding the back over the dumbbell.'],
+    mistakesEn: [
+      'Knee drifting past the toes and inward.',
+      'Rounding the back over the dumbbell.'
+    ],
     mistakesZh: ['膝盖超过脚尖并内扣。', '抱着哑铃弓背。'],
     progEn: 'Heavier dumbbell, or a 2 s pause at the bottom.',
     progZh: '加重，或底部停 2 秒。',
@@ -658,9 +868,13 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['glutes', 'quads', 'abductors'],
     difficulty: 2,
-    descEn: 'Curtsy lunge with dumbbells at the sides. Loads the glute and outer hip of the front leg.',
+    descEn:
+        'Curtsy lunge with dumbbells at the sides. Loads the glute and outer hip of the front leg.',
     descZh: '双手持哑铃的屈膝礼弓步。加强前腿的臀部和臀外侧负荷。',
-    cuesEn: ['Cross the back foot behind and lower straight down.', 'Front knee stays over the foot; hips stay square.'],
+    cuesEn: [
+      'Cross the back foot behind and lower straight down.',
+      'Front knee stays over the foot; hips stay square.'
+    ],
     cuesZh: ['后脚交叉到后方，垂直下蹲。', '前膝在前脚正上方，髋部正对前方。'],
     mistakesEn: ['Front knee caving inward.', 'Leaning toward the back leg.'],
     mistakesZh: ['前膝内扣。', '身体倒向后腿。'],
@@ -680,11 +894,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['quads', 'glutes'],
     difficulty: 2,
-    descEn: 'Walking lunges with dumbbells at the sides. One of the most complete leg exercises — strength, balance and a pump in one.',
+    descEn:
+        'Walking lunges with dumbbells at the sides. One of the most complete leg exercises — strength, balance and a pump in one.',
     descZh: '双手持哑铃的行走弓步。最完整的腿部动作之一——力量、平衡和充血一次到位。',
-    cuesEn: ['Long steps, torso tall, back knee straight down.', 'Drive through the front heel and step straight into the next rep.'],
+    cuesEn: [
+      'Long steps, torso tall, back knee straight down.',
+      'Drive through the front heel and step straight into the next rep.'
+    ],
     cuesZh: ['大步、躯干直立，后膝垂直下落。', '前脚跟发力，直接跨进下一步。'],
-    mistakesEn: ['Short steps loading the front knee.', 'Shoulders rounding forward under the dumbbells.'],
+    mistakesEn: [
+      'Short steps loading the front knee.',
+      'Shoulders rounding forward under the dumbbells.'
+    ],
     mistakesZh: ['步幅太短，压力都在前膝。', '拿着哑铃肩膀往前塌。'],
     progEn: 'Heavier dumbbells, or longer walks.',
     progZh: '加重，或走更长距离。',
@@ -702,11 +923,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['quads', 'glutes'],
     difficulty: 2,
-    descEn: 'Step back into a lunge holding dumbbells. The friendliest loaded lunge for the knees: the front shin stays vertical.',
+    descEn:
+        'Step back into a lunge holding dumbbells. The friendliest loaded lunge for the knees: the front shin stays vertical.',
     descZh: '持哑铃向后撤步成弓步。对膝盖最友好的负重弓步：前侧小腿全程垂直。',
-    cuesEn: ['Step back far enough that the front shin stays vertical.', 'Push through the front heel to stand and bring the feet together.'],
+    cuesEn: [
+      'Step back far enough that the front shin stays vertical.',
+      'Push through the front heel to stand and bring the feet together.'
+    ],
     cuesZh: ['后撤得够远，让前小腿保持垂直。', '前脚跟发力站起，双脚并拢。'],
-    mistakesEn: ['Front knee shooting forward.', 'Torso leaning forward to use momentum.'],
+    mistakesEn: [
+      'Front knee shooting forward.',
+      'Torso leaning forward to use momentum.'
+    ],
     mistakesZh: ['前膝冲前。', '上身前倾借惯性。'],
     progEn: 'Heavier dumbbells, or step off a low box (deficit).',
     progZh: '加重，或从矮箱上后撤（加深）。',
@@ -724,11 +952,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['hamstrings', 'lower_back', 'glutes'],
     difficulty: 2,
-    descEn: 'Hinge forward with a dumbbell held against the upper back. Teaches the hip hinge with the load high, where you feel every degree of back rounding.',
+    descEn:
+        'Hinge forward with a dumbbell held against the upper back. Teaches the hip hinge with the load high, where you feel every degree of back rounding.',
     descZh: '哑铃抵在上背，向前做髋屈伸。负荷放得高，背一圆你就能感觉到——学髋屈伸的好动作。',
-    cuesEn: ['Soft knees, hips travel straight back, back flat.', 'Stop when the hamstrings are tight, then drive the hips forward.'],
+    cuesEn: [
+      'Soft knees, hips travel straight back, back flat.',
+      'Stop when the hamstrings are tight, then drive the hips forward.'
+    ],
     cuesZh: ['膝微屈，髋部直直往后送，背部平直。', '腘绳肌绷紧时停住，然后髋部向前顶。'],
-    mistakesEn: ['Bending the knees and squatting instead.', 'Rounding the upper back under the dumbbell.'],
+    mistakesEn: [
+      'Bending the knees and squatting instead.',
+      'Rounding the upper back under the dumbbell.'
+    ],
     mistakesZh: ['屈膝变成深蹲。', '哑铃压得上背弯曲。'],
     progEn: 'Heavier dumbbell; keep it light and slow.',
     progZh: '适度加重，依然轻而慢。',
@@ -746,15 +981,23 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['quads', 'glutes'],
     difficulty: 3,
-    descEn: 'Rear foot on a bench, dumbbells at the sides. The hardest single-leg squat most people need — strength and stability with no barbell.',
+    descEn:
+        'Rear foot on a bench, dumbbells at the sides. The hardest single-leg squat most people need — strength and stability with no barbell.',
     descZh: '后脚搭凳，双手持哑铃。多数人需要的最难单腿深蹲——不用杠铃也能练出力量和稳定。',
-    cuesEn: ['Front foot far enough forward that the knee stays over the foot.', 'Lower the back knee straight down; torso slightly forward.'],
+    cuesEn: [
+      'Front foot far enough forward that the knee stays over the foot.',
+      'Lower the back knee straight down; torso slightly forward.'
+    ],
     cuesZh: ['前脚放得够远，膝盖保持在脚的正上方。', '后膝垂直下落，躯干略微前倾。'],
-    mistakesEn: ['Bouncing the back knee off the floor.', 'Pushing with the back foot.'],
+    mistakesEn: [
+      'Bouncing the back knee off the floor.',
+      'Pushing with the back foot.'
+    ],
     mistakesZh: ['后膝砸地借弹力。', '用后脚发力。'],
     progEn: 'Heavier dumbbells, or a front-foot deficit.',
     progZh: '加重，或前脚垫高。',
-    regEn: 'Bodyweight Bulgarian split squat, or dumbbell split squat with both feet down.',
+    regEn:
+        'Bodyweight Bulgarian split squat, or dumbbell split squat with both feet down.',
     regZh: '徒手保加利亚分腿蹲，或双脚着地的哑铃分腿蹲。',
     contraindications: ['knee'],
     defSets: 3,
@@ -768,11 +1011,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['forearms'],
     difficulty: 1,
-    descEn: 'Seated, forearm on the thigh, palm up; let the wrist drop and curl it back up. Builds the grip that rows, deadlifts and carries depend on.',
+    descEn:
+        'Seated, forearm on the thigh, palm up; let the wrist drop and curl it back up. Builds the grip that rows, deadlifts and carries depend on.',
     descZh: '坐姿，前臂放在大腿上、掌心朝上，让手腕下垂再弯起。划船、硬拉和提物都依赖的握力就靠它。',
-    cuesEn: ['Only the wrist moves; the forearm stays glued to the thigh.', 'Let the dumbbell roll to the fingertips at the bottom.'],
+    cuesEn: [
+      'Only the wrist moves; the forearm stays glued to the thigh.',
+      'Let the dumbbell roll to the fingertips at the bottom.'
+    ],
     cuesZh: ['只有手腕动，前臂紧贴大腿。', '底部让哑铃滚到指尖。'],
-    mistakesEn: ['Lifting the elbow to help.', 'Rushing — this move is about the stretch.'],
+    mistakesEn: [
+      'Lifting the elbow to help.',
+      'Rushing — this move is about the stretch.'
+    ],
     mistakesZh: ['抬肘借力。', '做太快——这个动作重在拉伸。'],
     progEn: 'Heavier dumbbell with a 1 s squeeze at the top.',
     progZh: '加重，顶端夹紧 1 秒。',
@@ -789,11 +1039,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['forearms'],
     difficulty: 1,
-    descEn: 'The same position with the palm down; lift the back of the hand toward you. Balances the wrist and keeps elbows happy.',
+    descEn:
+        'The same position with the palm down; lift the back of the hand toward you. Balances the wrist and keeps elbows happy.',
     descZh: '同样的姿势但掌心朝下，把手背朝自己抬起。平衡手腕前后的力量，手肘更舒服。',
-    cuesEn: ['Forearm flat on the thigh, wrist just past the knee.', 'Lift slowly, lower slower; the weight is light.'],
+    cuesEn: [
+      'Forearm flat on the thigh, wrist just past the knee.',
+      'Lift slowly, lower slower; the weight is light.'
+    ],
     cuesZh: ['前臂平放大腿上，手腕刚过膝盖。', '慢慢抬、更慢放，重量要轻。'],
-    mistakesEn: ['Using too much weight and bending the elbow.', 'Snapping the wrist up.'],
+    mistakesEn: [
+      'Using too much weight and bending the elbow.',
+      'Snapping the wrist up.'
+    ],
     mistakesZh: ['重量太大导致屈肘。', '手腕猛甩。'],
     progEn: 'Add reps before weight.',
     progZh: '先加次数再加重。',
@@ -810,11 +1067,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['forearms', 'biceps'],
     difficulty: 1,
-    descEn: 'Curl with the palms facing down. Shifts the work from the biceps to the brachialis and the top of the forearm.',
+    descEn:
+        'Curl with the palms facing down. Shifts the work from the biceps to the brachialis and the top of the forearm.',
     descZh: '掌心朝下做弯举。把发力从二头转到肱肌和前臂上侧。',
-    cuesEn: ['Elbows pinned to the sides; wrists straight.', 'Lower under control — the way down builds the forearm.'],
+    cuesEn: [
+      'Elbows pinned to the sides; wrists straight.',
+      'Lower under control — the way down builds the forearm.'
+    ],
     cuesZh: ['手肘贴紧体侧，手腕伸直。', '控制下放——下放过程最练前臂。'],
-    mistakesEn: ['Flexing the wrists up to help.', 'Swinging the elbows forward.'],
+    mistakesEn: [
+      'Flexing the wrists up to help.',
+      'Swinging the elbows forward.'
+    ],
     mistakesZh: ['勾手腕借力。', '手肘前甩。'],
     progEn: 'Heavier dumbbells or slower eccentrics.',
     progZh: '加重，或放慢离心。',
@@ -831,11 +1095,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['core', 'forearms', 'traps'],
     difficulty: 2,
-    descEn: 'Walk with one heavy dumbbell at your side and stay perfectly upright. The side of the trunk fights the lean on every step.',
+    descEn:
+        'Walk with one heavy dumbbell at your side and stay perfectly upright. The side of the trunk fights the lean on every step.',
     descZh: '一手提重哑铃行走，身体保持完全直立。每一步躯干侧面都在对抗歪斜。',
-    cuesEn: ['Stand tall; the free arm hangs naturally, shoulders level.', 'Short, quiet steps; breathe behind a braced trunk.'],
+    cuesEn: [
+      'Stand tall; the free arm hangs naturally, shoulders level.',
+      'Short, quiet steps; breathe behind a braced trunk.'
+    ],
     cuesZh: ['站直，空手自然垂下，双肩水平。', '步子小而安静，核心绷住的同时正常呼吸。'],
-    mistakesEn: ['Leaning away from the weight.', 'Shrugging the loaded shoulder.'],
+    mistakesEn: [
+      'Leaning away from the weight.',
+      'Shrugging the loaded shoulder.'
+    ],
     mistakesZh: ['身体倒向重量的反侧。', '负重侧耸肩。'],
     progEn: 'Heavier dumbbell or longer distance.',
     progZh: '加重，或走更远。',
@@ -852,9 +1123,13 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['calves'],
     difficulty: 2,
-    descEn: 'Single-leg calf raise on a step with a dumbbell on the working side. The calf grows from heavy loads and full stretches, and this gives both.',
+    descEn:
+        'Single-leg calf raise on a step with a dumbbell on the working side. The calf grows from heavy loads and full stretches, and this gives both.',
     descZh: '台阶上单腿提踵，同侧手持哑铃。小腿靠大重量和完整拉伸生长，这个动作两者都有。',
-    cuesEn: ['Full stretch at the bottom with a 1 s pause.', 'Rise onto the big toe, not the outside of the foot.'],
+    cuesEn: [
+      'Full stretch at the bottom with a 1 s pause.',
+      'Rise onto the big toe, not the outside of the foot.'
+    ],
     cuesZh: ['底部完全拉伸停 1 秒。', '踮到大脚趾，而不是脚外侧。'],
     mistakesEn: ['Bouncing.', 'Partial range with heavy weight.'],
     mistakesZh: ['借弹力。', '用大重量做半程。'],
@@ -873,11 +1148,18 @@ const List<Exercise> dumbbellSeed = [
     category: 'dumbbell',
     muscles: ['calves'],
     difficulty: 1,
-    descEn: 'Seated with dumbbells on the knees and the balls of the feet on a step. The bent knee shifts the work to the deeper soleus.',
+    descEn:
+        'Seated with dumbbells on the knees and the balls of the feet on a step. The bent knee shifts the work to the deeper soleus.',
     descZh: '坐姿，哑铃放在膝盖上，前脚掌踩在台阶上。屈膝让负荷转到更深层的比目鱼肌。',
-    cuesEn: ['Heels drop fully, then rise as high as possible.', 'Slow reps — the soleus likes time under tension.'],
+    cuesEn: [
+      'Heels drop fully, then rise as high as possible.',
+      'Slow reps — the soleus likes time under tension.'
+    ],
     cuesZh: ['脚跟完全下落，再尽量踮高。', '动作要慢——比目鱼肌喜欢长时间的张力。'],
-    mistakesEn: ['Bouncing out of the bottom.', 'Rocking the dumbbells forward.'],
+    mistakesEn: [
+      'Bouncing out of the bottom.',
+      'Rocking the dumbbells forward.'
+    ],
     mistakesZh: ['底部借弹力。', '哑铃往前晃。'],
     progEn: 'Heavier dumbbells or a 2 s hold at the top.',
     progZh: '加重，或顶端停 2 秒。',

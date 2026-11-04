@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'data/exercises_seed.dart';
 import 'data/plans_seed.dart';
 import 'models.dart';
+import 'widget_bridge.dart';
 
 /// Local-only persistence. Everything lives in SharedPreferences as JSON —
 /// fine for MVP volume (a few hundred records). Swap for Drift/Isar only if
@@ -59,15 +61,19 @@ class Store {
     final rawSettings = sp.getString('settings');
     settings = rawSettings == null
         ? AppSettings()
-        : AppSettings.fromJson(Map<String, dynamic>.from(jsonDecode(rawSettings)));
+        : AppSettings.fromJson(
+            Map<String, dynamic>.from(jsonDecode(rawSettings)));
   }
 
   Future<void> save() async {
     final sp = await SharedPreferences.getInstance();
     await sp.setString(
         'customPlans', jsonEncode(customPlans.map((e) => e.toJson()).toList()));
-    await sp.setString('logs', jsonEncode(logs.map((e) => e.toJson()).toList()));
+    await sp.setString(
+        'logs', jsonEncode(logs.map((e) => e.toJson()).toList()));
     await sp.setString('settings', jsonEncode(settings.toJson()));
+    // the home-screen widget mirrors whatever was just saved
+    unawaited(WidgetBridge.sync());
   }
 
   static List<Map<String, dynamic>> _decodeList(String? raw) {

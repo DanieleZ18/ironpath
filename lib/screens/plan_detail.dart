@@ -297,7 +297,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           const Spacer(),
           Center(
             child: MuscleGlyph(
-                muscles: ranked, color: hue, size: 128, onTint: true),
+                muscles: ranked,
+                color: hue,
+                size: 128,
+                onTint: true,
+                radius: Iron.inner(Iron.rL, 16)),
           ),
           const Spacer(),
           const SizedBox(height: 10),
@@ -327,9 +331,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   Widget _notice(IconData icon, String text, Color hue) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: Iron.tint(hue),
-        borderRadius: const BorderRadius.all(Iron.rM),
+        shape: Iron.squircle(Iron.rM),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

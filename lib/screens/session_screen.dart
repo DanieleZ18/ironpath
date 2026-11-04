@@ -428,7 +428,7 @@ class _SessionScreenState extends State<SessionScreen> {
       onTap: open,
       excludeSemantics: true,
       child: IronCard(
-        radius: Iron.rL,
+        radius: Iron.inner(Iron.rXL, 22),
         padding: EdgeInsets.zero,
         raised: false,
         onTap: open,
@@ -585,9 +585,9 @@ class _SessionScreenState extends State<SessionScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: Iron.tint(hue),
-        borderRadius: const BorderRadius.all(Iron.rM),
+        shape: Iron.squircle(Iron.rM),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,9 +711,9 @@ class _FinishViewState extends State<_FinishView>
       0.75 + 0.06 * i,
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: Iron.tint(hue),
-          borderRadius: const BorderRadius.all(Iron.rM),
+          shape: Iron.squircle(Iron.rM),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -808,9 +808,9 @@ class _FinishViewState extends State<_FinishView>
           Container(
             height: 80,
             alignment: Alignment.center,
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: Iron.cardHi,
-              borderRadius: const BorderRadius.all(Iron.rM),
+              shape: Iron.squircle(Iron.rM),
             ),
             child: Text(L10n.t('adPlaceholder'),
                 style: Iron.caption(color: Iron.faint)),

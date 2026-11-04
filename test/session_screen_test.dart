@@ -39,7 +39,8 @@ void main() {
 
   testWidgets('final set finishes and logs without a rest phase',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: SessionScreen(plan: _plan)));
+    await tester
+        .pumpWidget(const MaterialApp(home: SessionScreen(plan: _plan)));
     await tester.tap(find.text('Complete set'));
     await tester.pump();
 
@@ -65,8 +66,8 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       home: Builder(
         builder: (context) => TextButton(
-          onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SessionScreen(plan: empty))),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const SessionScreen(plan: empty))),
           child: const Text('go'),
         ),
       ),

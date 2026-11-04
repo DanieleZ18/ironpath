@@ -48,9 +48,9 @@ class ExerciseDetailView extends StatelessWidget {
               Container(
                 height: 220,
                 padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: Iron.tint(hue),
-                  borderRadius: const BorderRadius.all(Iron.rXL),
+                  shape: Iron.squircle(Iron.rXL),
                 ),
                 child: Semantics(
                   image: true,
@@ -88,7 +88,10 @@ class ExerciseDetailView extends StatelessWidget {
                       const Spacer(),
                       Center(
                         child: MuscleGlyph(
-                            muscles: ex.muscles, color: hue, size: 120),
+                            muscles: ex.muscles,
+                            color: hue,
+                            size: 120,
+                            radius: Iron.inner(Iron.rL, 16)),
                       ),
                       const Spacer(),
                       const SizedBox(height: 10),

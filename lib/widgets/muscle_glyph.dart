@@ -95,13 +95,15 @@ class MuscleGlyph extends StatelessWidget {
   final Color? color;
   final double size;
   final bool onTint; // sitting on a tinted block: use the card surface
+  final Radius? radius; // concentric with the parent; default by size
 
   const MuscleGlyph(
       {super.key,
       required this.muscles,
       this.color,
       this.size = 44,
-      this.onTint = false});
+      this.onTint = false,
+      this.radius});
 
   @override
   Widget build(BuildContext context) {
@@ -109,9 +111,9 @@ class MuscleGlyph extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: onTint ? Iron.card : Iron.tint(hue),
-        borderRadius: BorderRadius.all(Radius.circular(size * 0.36)),
+        shape: Iron.squircle(radius ?? Radius.circular(size * 0.36)),
       ),
       padding: EdgeInsets.all(size * 0.08),
       child: CustomPaint(

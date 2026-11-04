@@ -58,6 +58,32 @@ the gear on Today.
   muscles); tap → the exercise sheet with the demo.
 - History: stats bento, 8-week chart, the log.
 
+## Home-screen widget (2026-11-04)
+
+"This week" on the home screen, built with `home_widget` (native widgets,
+fed from Dart). `lib/widget_bridge.dart` computes the week after every
+`Store.save()` and at launch — done / total, a 7-flag string of days
+trained, the next workout's title, and the labels already localised — and
+writes it to the shared store, then asks both widgets to redraw. The
+widgets reset to a fresh week on their own when `updated_at` is older
+than this week's Monday, and redraw at midnight so "today" moves.
+- Android: `WeekWidgetProvider.kt` (RemoteViews, `res/layout/week_widget.xml`,
+  dot drawables, `res/xml/week_widget_info.xml`, 4×2 default, launcher
+  corner radius on Android 12+, light/dark colours). Registered in the
+  manifest; nothing else to do.
+- iOS: `ios/IronPathWidget/IronPathWidget.swift` (WidgetKit, SwiftUI;
+  small, medium, lock-screen circular + rectangular; Liquid Glass tinting
+  via `widgetAccentable`). One-time Xcode setup, since a target can't be
+  added from here: File ▸ New ▸ Target ▸ Widget Extension → name
+  `IronPathWidget` (uncheck the configuration intent), replace the
+  generated Swift with this file and drop its `Info.plist` /
+  entitlements in, then add the App Group `group.com.daniele.ironpath` to
+  both Runner and the extension (Signing & Capabilities). The group id is
+  `WidgetBridge.appGroup`; keep the three in sync. `Runner.entitlements`
+  already carries it.
+- Tests: `test/widget_bridge_test.dart` checks the payload (both
+  languages) and the channel calls through a mocked `home_widget`.
+
 ## Design — soft & friendly, Morandi palette (2026-10-29, v4.1)
 
 Two palettes sharing one token API (`lib/theme.dart`, `Iron` class — screens
@@ -143,7 +169,22 @@ at 160%).
 the licenses page). CJK falls back to the system font. Hierarchy from weight
 (400/600/700/800) + size.
 
-**Geometry**: radius 28/24/18/12, 56px pill-ish buttons, stadium chips.
+**Geometry** (2026-11-04, after iOS 26/27): every drawn corner is Apple's
+continuous curve — `Iron.squircle(r)` (a `RoundedSuperellipseBorder`) on
+cards, tiles, blobs, sheets, dialogs, snackbars; radii 28/24/18/12; a
+nested corner is concentric with its parent via `Iron.inner(outer, gap)`
+(outer radius minus the gap, never below 12); every control is a capsule
+(`Iron.capsule`): buttons, pills, chips, the tab bar. Use `ShapeDecoration`
+/ `Material(shape:)`, not `BorderRadius`, when adding surfaces.
+
+**Liquid glass** (Apple only, `GlassSurface` in `ios_chrome.dart`): blur
+of what's behind under a translucent card tint, a bright edge toward the
+light and a darkened rim away from it (iOS 27's legibility pass). Used for
+the floating tab bar (capsule, 18 pt in from the sides, a pill sliding to
+the selected tab — `IronTabBar`), round bar buttons (`GlassIconButton`:
+back, settings) and sheet bar buttons (`BarTextButton`: the one primary
+action is a filled accent capsule, the rest glass). Android keeps its
+translucent bar and Material buttons.
 
 **iOS-style interaction** (2026-10-29, `lib/widgets/ios_chrome.dart`; look
 stays Morandi + Nunito, only structure and gestures follow iOS). Everything
@@ -257,7 +298,10 @@ lib/
   widgets/weekly_chart.dart workouts-per-week chart tile
   widgets/muscle_glyph.dart static muscle figure for list rows
   widgets/zoom_route.dart   card → page zoom transition
-  widgets/ios_chrome.dart   adaptive iOS / Material chrome
+  widgets/ios_chrome.dart   adaptive iOS / Material chrome, glass surfaces
+  widget_bridge.dart        feeds the home-screen widget after every save
+android/.../WeekWidgetProvider.kt + res/layout|xml|drawable  the Android widget
+ios/IronPathWidget/        the iOS widget extension sources (add the target in Xcode)
 ```
 
 ## Conventions

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the app's light palette (lib/theme.dart) -->
+    <color name="widget_bg">#FFFFFFFF</color>
+    <color name="widget_ink">#FF2E302E</color>
+    <color name="widget_sub">#FF6B6E6B</color>
+    <color name="widget_line">#FFD8D5CE</color>
+    <color name="widget_accent">#FF5E7F6A</color>
+    <color name="widget_accent_soft">#805E7F6A</color>
+    <color name="widget_on_accent">#FFFFFFFF</color>
+</resources>

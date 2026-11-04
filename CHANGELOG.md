@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Home-screen widget
+- "This week" widget on Android and iOS: your workouts this week day by
+  day (a check on each day trained, a dot on today, rings on the sessions
+  still to come), the count against your weekly goal, and the next
+  workout. Updates after every workout, follows the app's language and
+  appearance, resets with the new week even if the app stays closed,
+  and opens the app on tap. iPhone also gets lock-screen versions (a
+  gauge and a row).
+
+### iOS 26/27 shape language
+- Corners are now Apple's continuous curve (rounded superellipse) on every
+  card, tile, sheet, dialog and blob; nested corners stay concentric with
+  their parent; every button is a capsule.
+- iPhone: the tab bar floats as a capsule of glass over the content, with a
+  pill that slides to the selected tab; back, settings and sheet buttons
+  are glass circles and capsules with the brighter edge highlight and
+  darkened rim iOS 27 gave Liquid Glass. Android keeps its own bar and
+  buttons.
+
 ### A clearer flow
 - Four tabs: Today · Plans · Exercises · History. Settings moved behind
   the gear on Today.

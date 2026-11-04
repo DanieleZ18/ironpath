@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
@@ -67,6 +68,132 @@ class Frosted extends StatelessWidget {
 
 BorderSide get _hairline => BorderSide(color: Iron.line, width: 0.5);
 
+/// A piece of glass (iOS 26/27 "Liquid Glass", approximated): whatever is
+/// behind it shows through blurred under a translucent tint, with a bright
+/// edge toward the light and a darkened edge away from it — the edges iOS
+/// 27 sharpened so glass stays legible over busy content. Any [shape].
+class GlassSurface extends StatelessWidget {
+  final Widget child;
+  final ShapeBorder shape;
+  final Color? tint;
+  final EdgeInsets padding;
+  final bool shadow;
+
+  const GlassSurface({
+    super.key,
+    required this.child,
+    this.shape = const StadiumBorder(),
+    this.tint,
+    this.padding = EdgeInsets.zero,
+    this.shadow = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Iron.isDark;
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        shape: shape,
+        shadows: shadow
+            ? [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: dark ? 0.32 : 0.1),
+                    blurRadius: 22,
+                    offset: const Offset(0, 8)),
+              ]
+            : null,
+      ),
+      child: ClipPath(
+        clipper: ShapeBorderClipper(shape: shape),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              color: (tint ?? Iron.card).withValues(alpha: dark ? 0.6 : 0.66),
+              shape: shape,
+            ),
+            child: CustomPaint(
+              foregroundPainter: _GlassEdge(shape, dark),
+              child: Padding(padding: padding, child: child),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassEdge extends CustomPainter {
+  final ShapeBorder shape;
+  final bool dark;
+  _GlassEdge(this.shape, this.dark);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final path = shape.getOuterPath(rect.deflate(0.6));
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: dark ? 0.32 : 0.8),
+            Colors.white.withValues(alpha: dark ? 0.06 : 0.18),
+            Colors.black.withValues(alpha: dark ? 0.4 : 0.12),
+          ],
+          stops: const [0, 0.55, 1],
+        ).createShader(rect),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_GlassEdge old) => old.shape != shape || old.dark != dark;
+}
+
+/// A round glass button for bar actions (back, close, settings): the way
+/// iOS 26 floats toolbar buttons over content instead of filling a bar.
+class GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String label;
+  final double size;
+  final Color? color;
+
+  const GlassIconButton(this.icon,
+      {super.key,
+      required this.onPressed,
+      required this.label,
+      this.size = 38,
+      this.color});
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        label: label,
+        child: CupertinoButton(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(44, 44),
+          onPressed: onPressed,
+          child: ExcludeSemantics(
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: GlassSurface(
+                shape: const CircleBorder(),
+                child: Center(
+                    child: Icon(icon,
+                        size: size * 0.55, color: color ?? Iron.ink)),
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
 /// Large title for a tab page: big on top, collapses into a small centred
 /// title in a frosted bar as the list scrolls (iOS "large title" bar).
 Widget largeTitleBar(String title, {Widget? trailing, Widget? leading}) =>
@@ -103,6 +230,54 @@ class IronTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduced = Motion.reduced(context);
+    if (isApple(context)) {
+      // iOS 26: the tab bar is a capsule of glass floating over the
+      // content, the selected tab marked by a pill that slides between
+      // items; the page keeps scrolling underneath
+      final bottom = MediaQuery.paddingOf(context).bottom;
+      return Padding(
+        padding: EdgeInsets.fromLTRB(18, 0, 18, math.max(bottom, 10) + 4),
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.15,
+          child: SizedBox(
+            height: 62,
+            child: GlassSurface(
+              padding: const EdgeInsets.all(4),
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final w = c.maxWidth / items.length;
+                  return Stack(
+                    children: [
+                      AnimatedPositioned(
+                        duration: Motion.of(context, Motion.snappy.duration),
+                        curve: Motion.snappy,
+                        left: w * index,
+                        top: 0,
+                        bottom: 0,
+                        width: w,
+                        child: DecoratedBox(
+                          decoration: ShapeDecoration(
+                            shape: const StadiumBorder(),
+                            color: Iron.tint(Iron.accent),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          for (var i = 0; i < items.length; i++)
+                            Expanded(child: _item(i, reduced, glass: true)),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return Frosted(
       color: Iron.card,
       border: Border(top: _hairline),
@@ -117,7 +292,7 @@ class IronTabBar extends StatelessWidget {
             child: Row(
               children: [
                 for (var i = 0; i < items.length; i++)
-                  Expanded(child: _item(i, Motion.reduced(context))),
+                  Expanded(child: _item(i, reduced)),
               ],
             ),
           ),
@@ -126,10 +301,11 @@ class IronTabBar extends StatelessWidget {
     );
   }
 
-  Widget _item(int i, bool reduced) {
+  Widget _item(int i, bool reduced, {bool glass = false}) {
     final (icon, activeIcon, label) = items[i];
     final active = i == index;
-    final color = active ? Iron.inkOf(Iron.accent) : Iron.faint;
+    final color =
+        active ? Iron.inkOf(Iron.accent) : (glass ? Iron.sub : Iron.faint);
     return Semantics(
       selected: active,
       button: true,
@@ -137,6 +313,9 @@ class IronTabBar extends StatelessWidget {
       child: InkResponse(
         onTap: () => onTap(i),
         radius: 32,
+        highlightShape: BoxShape.rectangle,
+        containedInkWell: glass,
+        customBorder: glass ? const StadiumBorder() : null,
         child: ExcludeSemantics(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -177,12 +356,13 @@ class IronBackButton extends StatelessWidget {
         onPressed: () => Navigator.of(context).maybePop(),
       );
     }
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      minimumSize: const Size(44, 44),
-      onPressed: () => Navigator.of(context).maybePop(),
-      child:
-          Icon(CupertinoIcons.back, size: 28, color: Iron.inkOf(Iron.accent)),
+    return Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: GlassIconButton(
+        CupertinoIcons.chevron_back,
+        label: MaterialLocalizations.of(context).backButtonTooltip,
+        onPressed: () => Navigator.of(context).maybePop(),
+      ),
     );
   }
 }
@@ -311,14 +491,33 @@ class BarTextButton extends StatelessWidget {
                 weight: bold ? FontWeight.w800 : FontWeight.w700)),
       );
     }
+    // iOS 26: bar buttons sit in capsules — the one primary action
+    // (bold) filled in the accent, the others as glass
+    final text = Text(label,
+        style: Iron.body(15,
+            color: bold ? Iron.onAccent : Iron.ink,
+            weight: bold ? FontWeight.w800 : FontWeight.w700));
     return CupertinoButton(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       minimumSize: const Size(44, 44),
       onPressed: onPressed,
-      child: Text(label,
-          style: Iron.body(16,
-              color: Iron.accent,
-              weight: bold ? FontWeight.w800 : FontWeight.w600)),
+      child: SizedBox(
+        height: 36,
+        child: bold
+            ? DecoratedBox(
+                decoration: ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    color: Iron.inkOf(Iron.accent)),
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Center(widthFactor: 1, child: text)),
+              )
+            : GlassSurface(
+                shadow: false,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Center(widthFactor: 1, child: text),
+              ),
+      ),
     );
   }
 }

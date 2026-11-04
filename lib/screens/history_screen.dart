@@ -123,9 +123,9 @@ class HistoryScreenState extends State<HistoryScreen> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 22),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: Iron.inkOf(Iron.danger),
-          borderRadius: const BorderRadius.all(Iron.rM),
+          shape: Iron.squircle(Iron.rM),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -189,13 +189,13 @@ class HistoryScreenState extends State<HistoryScreen> {
     final hue = Iron.tier(plan == null || !plan.builtin ? 0 : plan.tier);
     final complete = log.doneSets() == log.totalSets();
     return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Iron.rM),
-        boxShadow: Iron.shadow,
+      decoration: ShapeDecoration(
+        shape: Iron.squircle(Iron.rM),
+        shadows: Iron.shadow,
       ),
       child: Material(
         color: Iron.card,
-        borderRadius: const BorderRadius.all(Iron.rM),
+        shape: Iron.squircle(Iron.rM),
         clipBehavior: Clip.antiAlias,
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -229,9 +229,9 @@ class HistoryScreenState extends State<HistoryScreen> {
                   margin: const EdgeInsets.only(top: 6),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: Iron.cardHi,
-                    borderRadius: const BorderRadius.all(Iron.rS),
+                    shape: Iron.squircle(Iron.rS),
                   ),
                   child: Row(
                     children: [
@@ -260,9 +260,9 @@ class HistoryScreenState extends State<HistoryScreen> {
     return Container(
       width: 50,
       height: 54,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: Iron.tint(hue),
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        shape: Iron.squircle(Iron.inner(Iron.rM, 6)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

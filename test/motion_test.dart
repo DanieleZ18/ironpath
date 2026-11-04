@@ -59,8 +59,8 @@ void main() {
     expect(find.byType(PlanDetailPage), findsOneWidget);
 
     final apple = defaultTargetPlatform == TargetPlatform.iOS;
-    await tester
-        .tap(find.byIcon(apple ? CupertinoIcons.back : Icons.arrow_back));
+    await tester.tap(
+        find.byIcon(apple ? CupertinoIcons.chevron_back : Icons.arrow_back));
     await tester.pumpAndSettle();
     expect(find.byType(PlanDetailPage), findsNothing);
   });

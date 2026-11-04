@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/root.dart';
 import 'store.dart';
 import 'theme.dart';
+import 'widget_bridge.dart';
 import 'widgets/theme_crossfade.dart';
 
 Future<void> main() async {
@@ -33,6 +35,8 @@ Future<void> main() async {
   );
   Iron.setTheme(Store.instance.settings.themeId,
       hue: Store.instance.settings.customHue);
+  // the home-screen widget may be a week out of date by now
+  unawaited(WidgetBridge.sync());
   runApp(const GymApp());
 }
 

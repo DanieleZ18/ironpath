@@ -140,9 +140,9 @@ class _FirstMove extends StatelessWidget {
           Container(
             height: 112,
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: Iron.card,
-              borderRadius: const BorderRadius.all(Iron.rL),
+              shape: Iron.squircle(Iron.inner(Iron.rXL, 20)),
             ),
             child: Semantics(
               image: true,
@@ -228,7 +228,7 @@ class WeeklyProgramCard extends StatelessWidget {
         child: Builder(
             builder: (row) => Material(
                   color: suggested ? Iron.tint(hue) : Colors.transparent,
-                  borderRadius: const BorderRadius.all(Iron.rM),
+                  shape: Iron.squircle(Iron.rM),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     onTap: () => onOpen(row, plan),

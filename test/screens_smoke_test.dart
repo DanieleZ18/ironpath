@@ -78,7 +78,7 @@ void main() {
           expect(tester.takeException(), isNull);
         }
         // settings open from the gear on Today and come back
-        await tester.tap(find.byIcon(CupertinoIcons.gear));
+        await tester.tap(find.byIcon(Icons.settings_outlined));
         await tester.pumpAndSettle();
         expect(find.byType(SettingsScreen), findsOneWidget);
         expect(tester.takeException(), isNull);

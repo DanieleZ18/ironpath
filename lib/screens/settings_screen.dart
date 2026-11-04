@@ -110,9 +110,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         type: MaterialType.transparency,
         child: Container(
           height: 320,
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: Iron.card,
-            borderRadius: const BorderRadius.vertical(top: Iron.rXL),
+            shape: Iron.squircleTop(Iron.rXL),
           ),
           child: SafeArea(
             top: false,

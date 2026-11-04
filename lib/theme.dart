@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
@@ -451,6 +453,24 @@ class Iron {
   static const rBtn = Radius.circular(20);
   static const rPill = Radius.circular(999);
 
+  /// Apple's continuous corner (a rounded superellipse): the shape iOS
+  /// draws for cards, sheets and icons. Every drawn corner uses it;
+  /// controls use [capsule].
+  static ShapeBorder squircle(Radius r, {BorderSide side = BorderSide.none}) =>
+      RoundedSuperellipseBorder(side: side, borderRadius: BorderRadius.all(r));
+
+  /// The same corner on the top edge only (sheets).
+  static ShapeBorder squircleTop(Radius r) =>
+      RoundedSuperellipseBorder(borderRadius: BorderRadius.vertical(top: r));
+
+  /// Capsule: the shape of every control (buttons, pills, bars).
+  static const ShapeBorder capsule = StadiumBorder();
+
+  /// A corner nested inside another stays concentric with it: the outer
+  /// radius minus the gap between them, never sharper than 12.
+  static Radius inner(Radius outer, double gap) =>
+      Radius.circular(math.max(12, outer.x - gap));
+
   // ---- text ------------------------------------------------------------
   static TextStyle hero(double size,
           {Color? color, FontWeight weight = FontWeight.w800}) =>
@@ -585,7 +605,7 @@ class Iron {
         color: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(rL)),
+        shape: RoundedSuperellipseBorder(borderRadius: BorderRadius.all(rL)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -594,8 +614,7 @@ class Iron {
           disabledBackgroundColor: p.cardHi,
           disabledForegroundColor: p.faint,
           minimumSize: const Size.fromHeight(56),
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(rBtn)),
+          shape: const StadiumBorder(),
           textStyle: const TextStyle(
               fontFamily: fontFamily,
               fontSize: 16,
@@ -608,8 +627,7 @@ class Iron {
           backgroundColor: p.cardHi,
           side: BorderSide.none,
           minimumSize: const Size.fromHeight(52),
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(rBtn)),
+          shape: const StadiumBorder(),
           textStyle: const TextStyle(
               fontFamily: fontFamily,
               fontSize: 15,
@@ -676,8 +694,8 @@ class Iron {
       dialogTheme: DialogThemeData(
         backgroundColor: p.card,
         surfaceTintColor: Colors.transparent,
-        shape:
-            const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
+        shape: const RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.all(rXL)),
         titleTextStyle: TextStyle(
             fontFamily: fontFamily,
             fontSize: 19,
@@ -688,13 +706,14 @@ class Iron {
       ),
       timePickerTheme: TimePickerThemeData(
         backgroundColor: p.card,
-        shape:
-            const RoundedRectangleBorder(borderRadius: BorderRadius.all(rXL)),
+        shape: const RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.all(rXL)),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: p.ink,
         behavior: SnackBarBehavior.floating,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(rM)),
+        shape:
+            const RoundedSuperellipseBorder(borderRadius: BorderRadius.all(rM)),
         contentTextStyle: TextStyle(
             fontFamily: fontFamily, color: p.bg, fontWeight: FontWeight.w600),
       ),
@@ -703,7 +722,7 @@ class Iron {
         surfaceTintColor: Colors.transparent,
         dragHandleColor: p.faint,
         showDragHandle: true,
-        shape: const RoundedRectangleBorder(
+        shape: const RoundedSuperellipseBorder(
             borderRadius: BorderRadius.vertical(top: rXL)),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
@@ -801,15 +820,15 @@ class IronCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = BorderRadius.all(radius);
+    final shape = Iron.squircle(radius);
     final card = DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: r,
-        boxShadow: raised && color == null ? Iron.shadow : null,
+      decoration: ShapeDecoration(
+        shape: shape,
+        shadows: raised && color == null ? Iron.shadow : null,
       ),
       child: Material(
         color: color ?? Iron.card,
-        borderRadius: r,
+        shape: shape,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -881,9 +900,14 @@ class IconBlob extends StatelessWidget {
   final Color? color;
   final double size;
   final bool onTint; // sitting on a tinted block: use the card surface
+  final Radius? radius; // concentric with the parent; default by size
 
   const IconBlob(this.icon,
-      {super.key, this.color, this.size = 44, this.onTint = false});
+      {super.key,
+      this.color,
+      this.size = 44,
+      this.onTint = false,
+      this.radius});
 
   @override
   Widget build(BuildContext context) {
@@ -892,9 +916,9 @@ class IconBlob extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: onTint ? Iron.card : Iron.tint(hue),
-        borderRadius: BorderRadius.all(Radius.circular(size * 0.36)),
+        shape: Iron.squircle(radius ?? Radius.circular(size * 0.36)),
       ),
       child: Icon(icon, size: size * 0.5, color: hue),
     );
@@ -1096,15 +1120,15 @@ class ChoiceTile extends StatelessWidget {
     return Pressable(
         child: AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Iron.rM),
-        border:
-            Border.all(color: selected ? hue : Colors.transparent, width: 2),
-        boxShadow: selected ? null : Iron.shadow,
+      decoration: ShapeDecoration(
+        shape: Iron.squircle(Iron.rM,
+            side: BorderSide(
+                color: selected ? hue : Colors.transparent, width: 2)),
+        shadows: selected ? null : Iron.shadow,
       ),
       child: Material(
         color: selected ? Iron.tint(hue) : Iron.card,
-        borderRadius: const BorderRadius.all(Iron.rM),
+        shape: Iron.squircle(Iron.rM),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -1160,9 +1184,9 @@ class StatTile extends StatelessWidget {
     final hue = color ?? Iron.accent;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: Iron.tint(hue),
-        borderRadius: const BorderRadius.all(Iron.rM),
+        shape: Iron.squircle(Iron.rM),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
