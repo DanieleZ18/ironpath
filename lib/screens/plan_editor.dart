@@ -253,16 +253,19 @@ class _PlanEditorPageState extends State<PlanEditorPage> {
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                tooltip: L10n.t('moveUp'),
                 onPressed: i == 0 ? null : () => _move(i, -1),
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                tooltip: L10n.t('moveDown'),
                 onPressed: i == _items.length - 1 ? null : () => _move(i, 1),
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.close_rounded),
+                tooltip: L10n.t('removeFromPlan'),
                 onPressed: () => setState(() => _items.removeAt(i)),
               ),
             ],

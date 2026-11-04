@@ -88,15 +88,24 @@ class ExerciseDetailView extends StatelessWidget {
                       BentoLabel(L10n.t('muscles'),
                           icon: Icons.accessibility_new_rounded),
                       const SizedBox(height: 10),
-                      const Spacer(),
-                      Center(
-                        child: MuscleGlyph(
-                            muscles: ex.muscles,
-                            color: hue,
-                            size: 120,
-                            radius: Iron.inner(Iron.rL, 16)),
+                      // front and back, so muscles on either side show
+                      // (glutes, hamstrings); the primary one is fullest
+                      Expanded(
+                        child: Center(
+                          child: FittedBox(
+                            child: MuscleMap(
+                              sets: {
+                                for (var i = 0; i < ex.muscles.length; i++)
+                                  ex.muscles[i]: i == 0 ? 2.0 : 1.2,
+                              },
+                              full: 2,
+                              color: hue,
+                              height: 110,
+                              onTint: true,
+                            ),
+                          ),
+                        ),
                       ),
-                      const Spacer(),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 6,

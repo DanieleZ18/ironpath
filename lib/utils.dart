@@ -51,8 +51,9 @@ String fmtMonthDay(DateTime d) => '${d.month}/${d.day}';
 String fmtHoursMinutes(int seconds, bool zh) {
   final h = seconds ~/ 3600;
   final m = (seconds % 3600) ~/ 60;
-  if (zh) return h == 0 ? '$m分钟' : '$h小时$m分';
-  return h == 0 ? '$m min' : '$h h $m min';
+  // whole hours drop the "0 min" tail: "6 h", not "6 h 0 min"
+  if (zh) return h == 0 ? '$m分钟' : (m == 0 ? '$h小时' : '$h小时$m分');
+  return h == 0 ? '$m min' : (m == 0 ? '$h h' : '$h h $m min');
 }
 
 /// One-character (zh) or three-letter (en) weekday label, Monday = 1.

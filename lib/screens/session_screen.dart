@@ -597,7 +597,6 @@ class _SessionScreenState extends State<SessionScreen> {
         Row(
           children: [
             _roundBtn(Icons.remove_rounded, onMinus, label: '− $label'),
-            const SizedBox(width: 6),
             Expanded(
               child: TextField(
                 controller: ctrl,
@@ -615,7 +614,6 @@ class _SessionScreenState extends State<SessionScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 6),
             _roundBtn(Icons.add_rounded, onPlus, label: '+ $label'),
           ],
         ),
@@ -672,20 +670,32 @@ class _SessionScreenState extends State<SessionScreen> {
     );
   }
 
+  /// A 42 px disc with a 48 px hit area (the platform minimum): the ring of
+  /// slack around it catches taps that land just off the disc mid-set.
   Widget _roundBtn(IconData icon, VoidCallback onTap, {required String label}) {
     return Semantics(
       button: true,
       label: label,
-      child: Material(
-        color: Iron.tint(_hue),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-              width: 42,
-              height: 42,
-              child: Icon(icon, size: 22, color: Iron.inkOf(_hue))),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: Material(
+              color: Iron.tint(_hue),
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: Icon(icon, size: 22, color: Iron.inkOf(_hue))),
+              ),
+            ),
+          ),
         ),
       ),
     );

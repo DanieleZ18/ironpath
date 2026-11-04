@@ -174,6 +174,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                           2 => 'intermediate',
                                           _ => 'advanced',
                                         }),
+                                        // the question asks how long; the
+                                        // level names alone don't answer it
+                                        subtitle: L10n.t('obLevel${tier}Sub'),
                                         icon: tierIcon(tier),
                                         color: Iron.tier(tier),
                                         selected: _tier == tier,
@@ -336,11 +339,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
     required VoidCallback onTap,
     required IconData icon,
     required Color color,
+    String? subtitle,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: ChoiceTile(
         label: label,
+        subtitle: subtitle,
         icon: icon,
         color: color,
         selected: selected,

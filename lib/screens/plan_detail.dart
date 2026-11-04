@@ -294,16 +294,23 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           BentoLabel(L10n.t('muscleFocus'),
               icon: Icons.accessibility_new_rounded, hue: hue),
           const SizedBox(height: 10),
-          const Spacer(),
-          Center(
-            child: MuscleGlyph(
-                muscles: ranked,
-                color: hue,
-                size: 128,
-                onTint: true,
-                radius: Iron.inner(Iron.rL, 16)),
+          // front and back, shaded by how much of the plan hits each
+          // muscle, grown to fill the tile the stats beside it make tall
+          Expanded(
+            child: Center(
+              child: FittedBox(
+                child: MuscleMap(
+                  sets: {
+                    for (final e in score.entries) e.key: e.value.toDouble()
+                  },
+                  full: ranked.isEmpty ? 1 : score[ranked.first]!.toDouble(),
+                  color: hue,
+                  height: 110,
+                  onTint: true,
+                ),
+              ),
+            ),
           ),
-          const Spacer(),
           const SizedBox(height: 10),
           Text(ranked.take(3).map(L10n.muscle).join(' · '),
               style: Iron.body(14, weight: FontWeight.w800)),

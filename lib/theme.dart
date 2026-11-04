@@ -1215,7 +1215,11 @@ class ChoiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hue = color ?? Iron.accent;
-    return Pressable(
+    // announced as a selectable option with its state, not a bare button
+    return Semantics(
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      child: Pressable(
         child: AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       decoration: ShapeDecoration(
@@ -1254,17 +1258,19 @@ class ChoiceTile extends StatelessWidget {
                   child: selected
                       ? Icon(Icons.check_circle_rounded,
                           key: const ValueKey(true), size: 24, color: hue)
+                      // an empty choice ring is a control, so it needs
+                      // 3:1 against the card (Iron.line is a hairline tone)
                       : Icon(Icons.circle_outlined,
                           key: const ValueKey(false),
                           size: 24,
-                          color: Iron.line),
+                          color: Iron.faint),
                 ),
               ],
             ),
           ),
         ),
       ),
-    ));
+    )));
   }
 }
 
