@@ -143,6 +143,17 @@ as a native vector skeletal animation — the SVG / Lottie idea, drawn and
 driven in code, no assets. A rounded figure in the app's palette has a 2D
 rig: poses are authored as where the hips, torso, hands and feet go, and a
 two-bone solver places knees and elbows (bone lengths never change).
+The figure (2026-11-04, `lib/widgets/body_paint.dart`): every bone is a
+`Segment` drawn from a `Profile` of half-widths on its two sides — front /
+back of the limb in side view, outer / inner in front view — so limbs swell
+into a muscle belly and taper to the joints; the torso is a profile from
+pelvis to shoulders (belly, waist, chest; sacrum, lumbar curve, shoulder
+blades), plus glutes, deltoids, hands, feet and a hair cap. Muscles are
+`Segment.region`s on the anatomically right side (biceps face the forearm
+they fold onto, calves face the thigh), so they stay put through any pose.
+Near limbs carry a thin stage-coloured gap (none at the hip / shoulder
+seams); every part has a soft shade on the side away from a top-left
+light.
 Motions are parametric families (squat, hinge, lunge, press, row, curl,
 plank, crunch, hang…) that exercises pick with their grip, props (bench,
 bar, cable, dumbbells, plate, box, wall, machine pads) and timing; side view
@@ -156,10 +167,15 @@ the session set card (tap to open the how-to). `test/exercise_motion_test.dart`
 checks every exercise has its own demo, no joint sinks into the floor at
 any moment, bones keep their length, and it paints in both appearances.
 
-**Exercise glyphs** (`lib/widgets/muscle_glyph.dart`): list rows keep a
-small static body figure with the muscles highlighted — primary muscle full
-strength (decides front/back view), secondary lighter. Below 80px the
-figure zooms to the upper or lower half of the body. Lists never animate.
+**Exercise glyphs** (`lib/widgets/muscle_glyph.dart`): list rows and the
+Exercises grid keep a small static anatomy chart — the same silhouette
+language as the demo figure, front or back, every muscle group drawn in a
+shade off the skin (pecs, six-pack, obliques, lats, traps, delts, biceps,
+triceps, forearms, erectors, glutes, outer hip, quads, adductors,
+hamstrings, calves) — with the primary muscle full strength (it decides
+front / back) and secondary ones lighter. The geometry is built once per
+view. Below 80px the chart zooms to the upper or lower half of the body.
+Lists never animate.
 
 **Bento layouts** (2026-11-01, `lib/widgets/bento.dart`): screens are built
 from tiles of different sizes that share one 10px gutter — `BentoRow`

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### A more detailed figure
+- The exercise figure now has a real body: limbs taper from a muscle
+  belly to slimmer joints, the torso has a chest, waist and back curve,
+  plus glutes, hands, feet and hair, and a soft shade on the side away from
+  the light. Overlapping parts are separated by a thin line of the
+  background, and limbs grow out of the body without seams.
+- Muscles light up as muscle shapes where they actually are: biceps on the
+  front of the upper arm and triceps on the back (no longer one "arm"
+  colour), quads on the front of the thigh and hamstrings behind, calves on
+  the back of the shin, adductors on the inner thigh, pecs, a six-pack,
+  lats, traps and the outer hip.
+- The small body chart in lists and the Exercises grid is now an anatomy
+  figure, front or back, with every muscle group drawn in and the trained
+  ones lit.
+
 ### Colours follow the phone
 - New default colour theme, System (跟随系统): on Android 12+ the app takes
   its colour from your wallpaper, the way Material You does, and changes

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'body_paint.dart';
 
-/// Tiny body figure with the trained muscles highlighted — the stand-in for
-/// exercise illustrations. The primary muscle (first in the list) decides
-/// front or back view and is drawn full strength; secondary muscles that
-/// are visible from that side are drawn lighter. Below [_zoomBelow] px the
+/// A small anatomy chart: the body from the front or the back with every
+/// muscle group drawn in, the trained ones lit. The primary muscle (first
+/// in the list) decides the view and is drawn full strength; secondary
+/// muscles visible from that side are lighter. Below [_zoomBelow] px the
 /// figure zooms into the half of the body the primary muscle lives in, so
-/// list-size glyphs stay legible.
+/// list-size glyphs stay legible. Same silhouette language as the exercise
+/// demos (lib/widgets/body_paint.dart).
 
 const _backView = {
   'back',
@@ -41,54 +43,6 @@ Rect _viewFor(String primary, bool zoom) {
       ? const Rect.fromLTWH(22, 50, 56, 56) // hips to feet
       : const Rect.fromLTWH(17, 0, 66, 66); // head to hips
 }
-
-/// Regions visible per view. Shared regions (shoulders, arms, legs…) exist
-/// in both; muscle keys map onto them below.
-enum _R {
-  head,
-  traps,
-  shoulders,
-  chest,
-  upperBack,
-  core,
-  lowerBack,
-  upperArms,
-  forearms,
-  glutes,
-  outerHips,
-  thighs,
-  innerThighs,
-  calves,
-}
-
-Set<_R> _regionsFor(String muscle, bool back) => switch (muscle) {
-      'chest' => back ? {} : {_R.chest},
-      'back' => back ? {_R.upperBack} : {},
-      'shoulders' => {_R.shoulders},
-      'traps' => {_R.traps},
-      'biceps' => back ? {} : {_R.upperArms},
-      'triceps' => back ? {_R.upperArms} : {},
-      'core' => back ? {} : {_R.core},
-      'lower_back' => back ? {_R.lowerBack} : {},
-      'glutes' => back ? {_R.glutes} : {},
-      // the thigh block is the quads from the front, the hamstrings behind
-      'quads' => back ? {} : {_R.thighs},
-      'hamstrings' => back ? {_R.thighs} : {},
-      'adductors' => back ? {} : {_R.innerThighs},
-      'abductors' => {_R.outerHips},
-      'forearms' => {_R.forearms},
-      'calves' => {_R.calves},
-      'full_body' || 'cardio' => {
-          _R.shoulders,
-          _R.upperArms,
-          back ? _R.upperBack : _R.chest,
-          back ? _R.lowerBack : _R.core,
-          if (back) _R.glutes,
-          _R.thighs,
-          _R.calves,
-        },
-      _ => {},
-    };
 
 class MuscleGlyph extends StatelessWidget {
   final List<String> muscles;
@@ -124,31 +78,241 @@ class MuscleGlyph extends StatelessWidget {
           hue: Iron.inkOf(hue),
           base: Color.lerp(onTint ? Iron.card : Iron.tint(hue), Iron.faint,
               Iron.isDark ? 0.3 : 0.2)!,
+          stage: onTint ? Iron.card : Iron.tint(hue),
         ),
       ),
     );
   }
 }
 
+/// The muscle shapes of the chart.
+enum _M {
+  traps,
+  delts,
+  chest,
+  latsFront,
+  lats,
+  abs,
+  obliques,
+  erectors,
+  biceps,
+  triceps,
+  forearms,
+  glutes,
+  abductors,
+  quads,
+  adductors,
+  hamstrings,
+  calves,
+}
+
+Set<_M> _litFor(String muscle, bool back) => switch (muscle) {
+      'chest' => back ? {} : {_M.chest},
+      'back' => back ? {_M.lats} : {_M.latsFront},
+      'shoulders' => {_M.delts},
+      'traps' => {_M.traps},
+      'biceps' => back ? {} : {_M.biceps},
+      'triceps' => back ? {_M.triceps} : {},
+      'forearms' => {_M.forearms},
+      'core' => back ? {} : {_M.abs, _M.obliques},
+      'lower_back' => back ? {_M.erectors} : {},
+      'glutes' => back ? {_M.glutes} : {},
+      'quads' => back ? {} : {_M.quads},
+      'hamstrings' => back ? {_M.hamstrings} : {},
+      'adductors' => {_M.adductors},
+      'abductors' => {_M.abductors},
+      'calves' => {_M.calves},
+      'full_body' || 'cardio' => back
+          ? {
+              _M.delts,
+              _M.triceps,
+              _M.lats,
+              _M.erectors,
+              _M.glutes,
+              _M.hamstrings,
+              _M.calves,
+            }
+          : {_M.delts, _M.chest, _M.biceps, _M.abs, _M.quads, _M.calves},
+      _ => {},
+    };
+
+/// One view of the chart in the 100 × 100 design box: the silhouette, and
+/// every muscle's shapes (both sides of the body).
+class _Chart {
+  final List<Path> body;
+  final Path head;
+  final Path hair;
+  final Map<_M, List<Path>> muscles;
+  const _Chart(this.body, this.head, this.hair, this.muscles);
+}
+
+Offset _mx(Offset p) => Offset(100 - p.dx, p.dy);
+
+_Chart _build(bool back) {
+  final body = <Path>[];
+  final m = <_M, List<Path>>{for (final k in _M.values) k: []};
+  void add(_M k, Path p) => m[k]!.add(p);
+
+  // ---- silhouette
+  final head = ellipse(const Offset(50, 8.6), const Offset(0, 1), 7.2, 6.0);
+  body.add(Segment(const Offset(50, 14.5), const Offset(50, 21),
+      const Profile.even([2.9, 2.7, 2.8])).outline());
+  // pelvis floor → hips → waist → chest → shoulders → neck base
+  body.add(Segment(const Offset(50, 62), const Offset(50, 20),
+          const Profile.even([4.6, 10.2, 8.6, 8.0, 8.5, 10.0, 11.4, 4.0]))
+      .outline());
+  for (final left in [true, false]) {
+    Offset p(double x, double y) => left ? Offset(x, y) : _mx(Offset(x, y));
+    final out = left ? const Offset(-1, 0) : const Offset(1, 0);
+    final armDir = unit(p(33.2, 45.5) - p(37.0, 27.5));
+    final delt = ellipse(p(38.2, 25.8), armDir, 5.6, 4.6);
+    final upper = Segment(p(37.0, 27.5), p(33.2, 45.5),
+        const Profile([3.6, 3.9, 3.6, 3.0, 2.6], [3.3, 3.6, 3.4, 2.9, 2.5]),
+        aSide: out);
+    final fore = Segment(p(33.2, 45.5), p(30.0, 62.0),
+        const Profile([3.0, 3.3, 2.8, 2.2, 1.8], [2.8, 3.0, 2.6, 2.1, 1.8]),
+        aSide: out);
+    final hand = Segment(
+        p(30.0, 61.5), p(29.2, 68.0), const Profile.even([1.9, 2.3, 2.1, 1.6]));
+    final thigh = Segment(p(44.6, 59.5), p(44.0, 80.0),
+        const Profile([5.6, 5.4, 4.9, 4.1, 3.4], [4.6, 4.8, 4.3, 3.6, 3.2]),
+        aSide: out);
+    final shin = Segment(p(44.0, 80.0), p(44.2, 95.0),
+        const Profile([3.3, 3.7, 3.3, 2.5, 2.0], [3.4, 3.9, 3.4, 2.5, 2.0]),
+        aSide: out);
+    final foot = Segment(
+        p(44.2, 95.0), p(41.8, 98.4), const Profile.even([2.0, 2.0, 1.6]));
+    body.addAll([
+      delt,
+      upper.outline(),
+      fore.outline(),
+      hand.outline(),
+      thigh.outline(),
+      shin.outline(),
+      foot.outline(),
+    ]);
+
+    // ---- muscles on both views
+    add(_M.delts, ellipse(p(38.2, 26.4), armDir, 4.8, 3.8));
+    add(_M.forearms, fore.region(onA: true, t0: 0.04, t1: 0.8, depth: 2));
+    add(_M.adductors,
+        thigh.region(onA: false, t0: 0.04, t1: back ? 0.5 : 0.68, depth: 0.9));
+    add(
+        _M.abductors,
+        ellipse(
+            p(back ? 40.6 : 39.2, back ? 56.2 : 58.6),
+            unit(p(back ? 40.2 : 39.2, 60) - p(back ? 41.4 : 39.2, 53)),
+            3.4,
+            back ? 2.5 : 2.2));
+    if (!back) {
+      add(
+          _M.chest,
+          smoothClosed([
+            p(49.6, 24.8),
+            p(44.0, 24.0),
+            p(39.8, 25.6),
+            p(38.8, 29.0),
+            p(41.4, 33.6),
+            p(46.2, 34.6),
+            p(49.6, 33.2),
+          ]));
+      add(_M.latsFront,
+          ellipse(p(39.8, 36.2), unit(p(40.6, 41) - p(39.4, 31)), 5.2, 1.5));
+      add(
+          _M.traps,
+          Segment(p(47.6, 19.8), p(41.6, 23.4),
+              const Profile([1.6, 1.4, 0.9], [1.4, 1.2, 0.8])).outline());
+      add(_M.obliques,
+          ellipse(p(42.1, 45.6), unit(p(42.6, 54) - p(41.4, 37)), 8.0, 1.6));
+      add(_M.biceps, upper.region(onA: true, t0: 0.15, t1: 0.88, depth: 1.7));
+      add(_M.quads, thigh.region(onA: true, t0: 0.08, t1: 0.92, depth: 1.7));
+      add(_M.calves, shin.region(onA: true, t0: 0.08, t1: 0.55, depth: 0.7));
+      add(_M.calves, shin.region(onA: false, t0: 0.06, t1: 0.55, depth: 0.8));
+      // six blocks of the abdominal wall
+      final cx = left ? 47.0 : 53.0;
+      for (final (top, bottom) in [(36.2, 41.4), (42.4, 47.4), (48.4, 54.4)]) {
+        add(
+            _M.abs,
+            Path()
+              ..addRRect(RRect.fromRectAndRadius(
+                  Rect.fromLTRB(cx - 2.4, top, cx + 2.4, bottom),
+                  const Radius.circular(1.6))));
+      }
+    } else {
+      add(
+          _M.lats,
+          smoothClosed([
+            p(48.8, 31.4),
+            p(44.2, 27.6),
+            p(40.2, 27.8),
+            p(39.4, 33.0),
+            p(41.4, 40.2),
+            p(45.4, 46.2),
+            p(48.8, 44.4),
+          ]));
+      add(
+          _M.erectors,
+          Segment(p(47.4, 43.8), p(47.4, 57.0),
+              const Profile.even([1.2, 2.2, 2.4, 1.8])).outline());
+      add(_M.triceps, upper.region(onA: true, t0: 0.1, t1: 0.88, depth: 1.75));
+      add(_M.glutes,
+          ellipse(p(45.3, 61.4), unit(p(45.8, 66) - p(44.8, 56)), 5.6, 4.8));
+      add(_M.hamstrings,
+          thigh.region(onA: true, t0: 0.12, t1: 0.9, depth: 1.85));
+      // the calf's two heads
+      add(_M.calves, shin.region(onA: true, t0: 0.04, t1: 0.58, depth: 0.95));
+      add(_M.calves, shin.region(onA: false, t0: 0.04, t1: 0.64, depth: 0.95));
+    }
+  }
+  if (back) {
+    add(
+        _M.traps,
+        smoothClosed(const [
+          Offset(50, 17.2),
+          Offset(44.6, 21.0),
+          Offset(40.2, 23.8),
+          Offset(44.0, 26.6),
+          Offset(47.6, 30.8),
+          Offset(50, 37.8),
+          Offset(52.4, 30.8),
+          Offset(56.0, 26.6),
+          Offset(59.8, 23.8),
+          Offset(55.4, 21.0),
+        ]));
+  }
+  // hair: the crown from the front, most of the head from behind
+  final hair = back
+      ? ellipse(const Offset(50, 6.4), const Offset(0, 1), 7.4, 6.6)
+      : ellipse(const Offset(50, 3.6), const Offset(0, 1), 5.0, 6.6);
+  return _Chart(body, head, hair, m);
+}
+
+final _front = _build(false);
+final _back = _build(true);
+
 class _BodyPainter extends CustomPainter {
   final List<String> muscles;
   final Color hue;
   final Color base;
+  final Color stage;
   final bool zoom;
 
-  _BodyPainter(
-      {required this.muscles,
-      required this.hue,
-      required this.base,
-      required this.zoom});
+  _BodyPainter({
+    required this.muscles,
+    required this.hue,
+    required this.base,
+    required this.stage,
+    required this.zoom,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final primary = muscles.isEmpty ? '' : muscles.first;
     final back = _backView.contains(primary);
-    final strong = _regionsFor(primary, back);
-    final soft = <_R>{
-      for (final m in muscles.skip(1)) ..._regionsFor(m, back),
+    final chart = back ? _back : _front;
+    final strong = _litFor(primary, back);
+    final soft = <_M>{
+      for (final mm in muscles.skip(1)) ..._litFor(mm, back),
     }..removeAll(strong);
 
     // drawn in a 100×100 box; [view] is the window shown, fitted + centred
@@ -161,81 +325,35 @@ class _BodyPainter extends CustomPainter {
     canvas.scale(s);
     canvas.translate(-view.left, -view.top);
 
-    Paint paintFor(_R r) => Paint()
-      ..isAntiAlias = true
-      ..color = strong.contains(r)
-          ? hue
-          : soft.contains(r)
-              ? Color.lerp(base, hue, 0.45)!
-              : base;
-
-    void rr(_R r, double l, double t, double w, double h, double radius) =>
-        canvas.drawRRect(
-            RRect.fromLTRBR(l, t, l + w, t + h, Radius.circular(radius)),
-            paintFor(r));
-
-    // head + neck
-    canvas.drawCircle(const Offset(50, 9), 7.5, paintFor(_R.head));
-    rr(_R.head, 46.5, 15, 7, 5, 2);
-
-    // traps: a soft cap between neck and shoulders
-    final traps = Path()
-      ..moveTo(39, 23)
-      ..quadraticBezierTo(50, 15, 61, 23)
-      ..lineTo(57, 25)
-      ..lineTo(43, 25)
-      ..close();
-    canvas.drawPath(traps, paintFor(_R.traps));
-
-    // shoulders (delts)
-    canvas.drawCircle(const Offset(33.5, 26.5), 6.5, paintFor(_R.shoulders));
-    canvas.drawCircle(const Offset(66.5, 26.5), 6.5, paintFor(_R.shoulders));
-
-    // torso: chest + core (front) or upper + lower back (back)
-    if (back) {
-      final lats = Path()
-        ..moveTo(39.5, 25.5)
-        ..lineTo(60.5, 25.5)
-        ..quadraticBezierTo(62, 36, 57, 44)
-        ..lineTo(43, 44)
-        ..quadraticBezierTo(38, 36, 39.5, 25.5)
-        ..close();
-      canvas.drawPath(lats, paintFor(_R.upperBack));
-      rr(_R.lowerBack, 42.5, 45.5, 15, 9, 3);
-    } else {
-      rr(_R.chest, 39.5, 25.5, 10, 11, 4);
-      rr(_R.chest, 50.5, 25.5, 10, 11, 4);
-      rr(_R.core, 42, 38, 16, 17, 4);
+    final dark = stage.computeLuminance() < 0.4;
+    Paint fill(Color c) => Paint()
+      ..color = c
+      ..isAntiAlias = true;
+    final skin = fill(base);
+    for (final p in [...chart.body, chart.head]) {
+      canvas.drawPath(p, skin);
     }
+    canvas.save();
+    canvas.clipPath(chart.head);
+    canvas.drawPath(
+        chart.hair, fill(Color.lerp(base, dark ? stage : Colors.black, 0.18)!));
+    canvas.restore();
 
-    // arms
-    rr(_R.upperArms, 26, 33.5, 7, 15, 3.5);
-    rr(_R.upperArms, 67, 33.5, 7, 15, 3.5);
-    rr(_R.forearms, 24.5, 50, 6.5, 14, 3.25);
-    rr(_R.forearms, 69, 50, 6.5, 14, 3.25);
-
-    // hips / glutes
-    if (back) {
-      canvas.drawCircle(const Offset(45, 61), 6.5, paintFor(_R.glutes));
-      canvas.drawCircle(const Offset(55, 61), 6.5, paintFor(_R.glutes));
-    } else {
-      rr(_R.head, 41.5, 56.5, 17, 7, 3); // pelvis, neutral
+    // every muscle drawn in, a shade off the skin; the trained ones lit
+    final quiet = fill(Color.lerp(
+        base, dark ? Colors.white : Colors.black, dark ? 0.07 : 0.05)!);
+    final lit = fill(hue);
+    final half = fill(Color.lerp(base, hue, 0.45)!);
+    for (final e in chart.muscles.entries) {
+      final paint = strong.contains(e.key)
+          ? lit
+          : soft.contains(e.key)
+              ? half
+              : quiet;
+      for (final p in e.value) {
+        canvas.drawPath(p, paint);
+      }
     }
-
-    // hips: the abductors sit on the outer edge of the pelvis
-    canvas.drawCircle(const Offset(38.5, 60), 3.6, paintFor(_R.outerHips));
-    canvas.drawCircle(const Offset(61.5, 60), 3.6, paintFor(_R.outerHips));
-
-    // legs
-    rr(_R.thighs, 39.5, 66, 9.5, 17, 4.5);
-    rr(_R.thighs, 51, 66, 9.5, 17, 4.5);
-    if (!back) {
-      rr(_R.innerThighs, 46.5, 67, 2.8, 14, 1.4);
-      rr(_R.innerThighs, 50.7, 67, 2.8, 14, 1.4);
-    }
-    rr(_R.calves, 40.5, 84.5, 7.5, 14, 3.75);
-    rr(_R.calves, 52, 84.5, 7.5, 14, 3.75);
-
     canvas.restore();
   }
 
@@ -243,6 +361,7 @@ class _BodyPainter extends CustomPainter {
   bool shouldRepaint(_BodyPainter old) =>
       old.hue != hue ||
       old.base != base ||
+      old.stage != stage ||
       old.zoom != zoom ||
       old.muscles != muscles;
 }

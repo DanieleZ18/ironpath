@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../motion.dart';
 import '../theme.dart';
+import 'body_paint.dart';
 
 // Exercise demos as native vector skeletal animation — the same idea as
 // SVG / Lottie keyframes, but drawn and driven in code: a rounded figure
@@ -578,7 +579,8 @@ enum Part {
   back,
   traps,
   shoulders,
-  arms,
+  biceps,
+  triceps,
   core,
   lowerBack,
   glutes,
@@ -595,7 +597,8 @@ Set<Part> partsFor(String muscle) => switch (muscle) {
       'back' => {Part.back},
       'traps' => {Part.traps},
       'shoulders' => {Part.shoulders},
-      'biceps' || 'triceps' => {Part.arms},
+      'biceps' => {Part.biceps},
+      'triceps' => {Part.triceps},
       'core' => {Part.core},
       'lower_back' => {Part.lowerBack},
       'glutes' => {Part.glutes},
@@ -610,7 +613,8 @@ Set<Part> partsFor(String muscle) => switch (muscle) {
           Part.hamstrings,
           Part.calves,
           Part.core,
-          Part.arms,
+          Part.biceps,
+          Part.triceps,
           Part.shoulders,
           Part.glutes,
           Part.chest,
@@ -697,6 +701,43 @@ Pose keyframes(List<(double, Pose)> keys, double t) {
 
 // ---- painting -----------------------------------------------------------------
 
+// ---- the figure --------------------------------------------------------------
+//
+// Half-widths (design units) along each bone, root → end. Side view: side
+// a is the front of the body part (quads, biceps, shin), side b the back
+// (hamstrings, triceps, calf). Front view: a is the outer edge, b the
+// inner.
+
+const _thighSide =
+    Profile([4.7, 5.0, 4.6, 3.9, 3.1], [5.1, 4.7, 4.3, 3.6, 3.0]);
+const _shinSide = Profile([2.9, 2.8, 2.5, 2.1, 1.8], [3.1, 4.0, 3.4, 2.3, 1.8]);
+const _upperArmSide =
+    Profile([2.9, 3.4, 3.4, 2.9, 2.3], [3.1, 3.4, 3.1, 2.6, 2.2]);
+const _foreArmSide =
+    Profile([2.4, 2.6, 2.3, 1.8, 1.5], [2.4, 2.5, 2.1, 1.7, 1.5]);
+const _thighFront =
+    Profile([5.0, 4.8, 4.3, 3.6, 2.9], [4.3, 4.5, 4.0, 3.3, 2.9]);
+const _shinFront =
+    Profile([2.8, 3.2, 2.9, 2.2, 1.8], [2.9, 3.5, 3.0, 2.2, 1.8]);
+const _upperArmFront =
+    Profile([3.2, 3.4, 3.2, 2.8, 2.3], [2.9, 3.2, 3.0, 2.6, 2.2]);
+const _foreArmFront =
+    Profile([2.6, 2.7, 2.3, 1.8, 1.5], [2.4, 2.5, 2.1, 1.7, 1.5]);
+const _foot = Profile([1.9, 1.9, 1.7, 1.4, 1.1], [1.8, 1.7, 1.6, 1.5, 1.2]);
+const _hand = Profile([1.5, 1.8, 1.7, 1.4], [1.5, 1.7, 1.6, 1.3]);
+const _neck = Profile([2.3, 2.1, 2.0], [2.4, 2.2, 2.1]);
+
+// The torso, from below the hip joint (the pelvis) to above the shoulder:
+// side view front (a) and back (b) — belly, waist, chest; sacrum, the
+// small of the back, the shoulder blades — and the front view's half
+// widths (hips, waist, chest, shoulders).
+const _torsoLow = 0.12, _torsoHigh = 0.04; // extension below / above
+const _torsoSideShape = Profile(
+  [3.6, 4.6, 4.8, 4.5, 4.8, 5.9, 5.8, 3.8],
+  [4.2, 5.2, 4.6, 4.2, 4.8, 5.4, 5.5, 4.0],
+);
+const _torsoFrontShape = Profile.even([4.2, 9.4, 7.6, 6.5, 6.6, 7.6, 8.5, 8.3]);
+
 class _FigurePainter extends CustomPainter {
   final MotionSpec spec;
   final Animation<double>? anim;
@@ -720,6 +761,8 @@ class _FigurePainter extends CustomPainter {
     required this.soft,
   }) : super(repaint: anim);
 
+  bool get _darkStage => stage.computeLuminance() < 0.4;
+
   Color _tone(Part p, {bool far = false}) {
     final c = strong.contains(p)
         ? hue
@@ -729,135 +772,312 @@ class _FigurePainter extends CustomPainter {
     return far ? Color.lerp(c, stage, 0.38)! : c;
   }
 
-  Paint _limb(Color c, double w) => Paint()
-    ..color = c
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = w
-    ..strokeCap = StrokeCap.round
-    ..strokeJoin = StrokeJoin.round
-    ..isAntiAlias = true;
+  Color _skin({bool far = false}) =>
+      far ? Color.lerp(neutral, stage, 0.38)! : neutral;
 
   bool _lit(Part p) => strong.contains(p) || soft.contains(p);
 
-  void _arm(Canvas c, Offset sh, Offset el, Offset wr, bool far) {
-    final up = _tone(Part.arms, far: far);
-    final fore = _lit(Part.forearms)
-        ? _tone(Part.forearms, far: far)
-        : far
-            ? Color.lerp(neutral, stage, 0.38)!
-            : (strong.contains(Part.arms)
-                ? Color.lerp(neutral, hue, 0.45)!
-                : neutral);
-    c.drawLine(el, wr, _limb(fore, 4.8));
-    c.drawLine(sh, el, _limb(up, 6));
-    c.drawCircle(wr, 2.7, Paint()..color = fore);
+  Paint _fill(Color c) => Paint()
+    ..color = c
+    ..isAntiAlias = true;
+
+  // a thin line of the stage colour around a body part that overlaps
+  // another, so arm and torso, leg and leg read apart
+  Paint get _gap => Paint()
+    ..color = stage
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5
+    ..strokeJoin = StrokeJoin.round
+    ..isAntiAlias = true;
+
+  /// Shapes drawn as one silhouette: the gap around all of them first,
+  /// then the fills, so only the outer edge keeps a gap.
+  /// No gap inside [seams]: circles round the joints where a limb grows
+  /// out of the body (hip, shoulder), which would otherwise look stuck on.
+  void _body(Canvas c, List<Path> shapes, Color fill,
+      {bool gap = true, List<(Offset, double)> seams = const []}) {
+    if (gap) {
+      c.save();
+      if (seams.isNotEmpty) {
+        final clip = Path()
+          ..fillType = PathFillType.evenOdd
+          ..addRect(const Rect.fromLTRB(-1e4, -1e4, 1e4, 1e4));
+        for (final (o, r) in seams) {
+          clip.addOval(Rect.fromCircle(center: o, radius: r));
+        }
+        c.clipPath(clip);
+      }
+      for (final s in shapes) {
+        c.drawPath(s, _gap);
+      }
+      c.restore();
+    }
+    for (final s in shapes) {
+      c.drawPath(s, _fill(fill));
+    }
   }
 
-  /// [inward] points from this leg toward the body's midline (front view)
-  /// or into the page (side view: null), for the inner-thigh overlay.
-  void _leg(Canvas c, Offset hip, Offset kn, Offset an, Offset toe, bool far,
-      {Offset? inward, Offset? back}) {
-    final th = _tone(Part.thighs, far: far);
-    final sh = _tone(Part.calves, far: far);
-    final foot = far ? Color.lerp(neutral, stage, 0.38)! : neutral;
-    c.drawLine(an, toe, _limb(foot, 4.2));
-    c.drawLine(kn, an, _limb(sh, 6.6));
-    c.drawLine(hip, kn, _limb(th, 8.4));
-    final d = kn - hip;
-    if (d.distance < 1e-3) return;
-    final n = Offset(-d.dy, d.dx) / d.distance;
-    // hamstrings: the back of the thigh — the side the shin bends away from
-    if (_lit(Part.hamstrings)) {
-      final shin = an - kn;
-      var side = (n.dx * shin.dx + n.dy * shin.dy) < 0 ? n : -n;
-      if (shin.distance > 1e-3 &&
-          (n.dx * shin.dx + n.dy * shin.dy).abs() < 0.15 * shin.distance &&
-          back != null) {
-        side = (n.dx * back.dx + n.dy * back.dy) > 0 ? n : -n;
-      }
-      c.drawLine(hip + side * 2.4 + d * 0.12, kn + side * 2.4 - d * 0.12,
-          _limb(_tone(Part.hamstrings, far: far), 3.8));
+  void _muscle(Canvas c, Path region, Part p, {bool far = false}) {
+    if (_lit(p)) c.drawPath(region, _fill(_tone(p, far: far)));
+  }
+
+  // light falls from the top left; each part's far side is in soft shade
+  static const _toLight = Offset(-0.55, -0.83);
+
+  /// A soft crescent of shade along the side of [seg] turned away from the
+  /// light, tapering out at the joints — over skin and muscle alike.
+  void _shade(Canvas c, Segment seg, {double depth = 0.55}) {
+    final onA = seg.n.dx * _toLight.dx + seg.n.dy * _toLight.dy < 0;
+    c.drawPath(seg.region(onA: onA, t0: 0, t1: 1, depth: depth, inset: 0),
+        _fill(Colors.black.withValues(alpha: _darkStage ? 0.16 : 0.07)));
+  }
+
+  // ---- side view ----
+
+  void _legSide(Canvas c, Rig r, {required bool near}) {
+    final far = !near;
+    final hip = near ? r.hipN : r.hipF;
+    final knee = near ? r.kneeN : r.kneeF;
+    final ankle = near ? r.ankleN : r.ankleF;
+    final toe = near ? r.toeN : r.toeF;
+    // the back of the thigh faces the shin it folds onto; the back of the
+    // shin (the calf) faces the thigh
+    final back = -r.front;
+    final hamSide = sideToward(hip, knee, ankle, back);
+    final thigh = Segment(hip, knee, _thighSide, aSide: -hamSide);
+    final calfSide = sideToward(knee, ankle, hip, back);
+    final shin = Segment(knee, ankle, _shinSide, aSide: -calfSide);
+    final fd = unit(toe - ankle);
+    final foot = Segment(ankle - fd * 1.4, toe, _foot, aSide: knee - ankle);
+    _body(c, [thigh.outline(), shin.outline(), foot.outline()], _skin(far: far),
+        gap: near, seams: [(hip, 7.0)]);
+    _muscle(
+        c, thigh.region(onA: true, t0: 0.1, t1: 0.9, depth: 1.25), Part.thighs,
+        far: far);
+    _muscle(c, thigh.region(onA: false, t0: 0.12, t1: 0.88, depth: 1.05),
+        Part.hamstrings,
+        far: far);
+    // the far leg shows its inner side: that's where the adductors are
+    if (far) {
+      _muscle(c, thigh.region(onA: false, t0: 0.05, t1: 0.62, depth: 2),
+          Part.adductors,
+          far: true);
     }
-    // adductors: the inner thigh
-    if (_lit(Part.adductors)) {
-      final side = inward == null
-          ? Offset.zero
-          : ((n.dx * inward.dx + n.dy * inward.dy) > 0 ? n : -n) * 2.6;
-      c.drawLine(hip + side + d * 0.15, kn + side - d * 0.2,
-          _limb(_tone(Part.adductors, far: far), inward == null ? 3.4 : 3));
+    _muscle(c, shin.region(onA: false, t0: 0.04, t1: 0.62, depth: 1.35),
+        Part.calves,
+        far: far);
+    _shade(c, thigh);
+    _shade(c, shin);
+    // the outer hip (glute medius), above the hip joint
+    if (near) {
+      _muscle(c, ellipse(hip + r.axis * 3.0 - r.front * 1.4, r.axis, 3.6, 2.8),
+          Part.abductors);
     }
-    // abductors: the outer hip, above the thigh's root
-    if (_lit(Part.abductors)) {
-      final out = inward == null ? -n * 0.6 : -inward;
-      c.drawCircle(hip + out * 2.6 - d * 0.02, 3.6,
-          Paint()..color = _tone(Part.abductors, far: far));
-    }
+  }
+
+  void _armSide(Canvas c, Rig r, {required bool near}) {
+    final far = !near;
+    final sh = near ? r.shN : r.shF;
+    final el = near ? r.elbowN : r.elbowF;
+    final wr = near ? r.wristN : r.wristF;
+    // biceps face the forearm they fold onto (forward when the arm hangs)
+    final front = sideToward(sh, el, wr, r.front);
+    final upper = Segment(sh, el, _upperArmSide, aSide: front);
+    final palm = sideToward(el, wr, sh, r.front);
+    final fore = Segment(el, wr, _foreArmSide, aSide: palm);
+    final hd = unit(wr - el);
+    final hand = Segment(wr - hd * 0.6, wr + hd * 3.6, _hand, aSide: palm);
+    final ad = unit(el - sh);
+    final delt = ellipse(sh + ad * 1.2, ad, 4.6, 4.0);
+    _body(c, [delt, upper.outline(), fore.outline(), hand.outline()],
+        _skin(far: far),
+        gap: near, seams: [(sh, 4.8)]);
+    _muscle(c, upper.region(onA: true, t0: 0.18, t1: 0.86, depth: 1.15),
+        Part.biceps,
+        far: far);
+    _muscle(c, upper.region(onA: false, t0: 0.1, t1: 0.9, depth: 1.15),
+        Part.triceps,
+        far: far);
+    _muscle(
+        c, fore.region(onA: true, t0: 0.04, t1: 0.82, depth: 2), Part.forearms,
+        far: far);
+    _muscle(c, ellipse(sh + ad * 1.8, ad, 4.4, 3.2), Part.shoulders, far: far);
+    _shade(c, upper);
+    _shade(c, fore);
   }
 
   void _torsoSide(Canvas c, Rig r) {
-    final mid = lerpO(r.hip, r.shoulder, 0.5);
-    final f = r.front;
-    // glutes sit behind the hip
-    c.drawCircle(r.hip - f * 3.6 + r.axis * -0.6, 5.6,
-        Paint()..color = _tone(Part.glutes));
-    c.drawLine(r.hip, mid, _limb(neutral, 11));
-    c.drawLine(mid, r.shoulder, _limb(neutral, 12.5));
-    void overlay(Part p, Offset a, Offset b, double w) {
-      if (!strong.contains(p) && !soft.contains(p)) return;
-      c.drawLine(a, b, _limb(_tone(p), w));
-    }
-
-    overlay(Part.chest, mid + f * 3.2, r.shoulder + f * 2.8, 5.6);
-    overlay(Part.back, mid - f * 3.2, r.shoulder - f * 2.8, 5.6);
-    overlay(Part.core, r.hip + f * 2.6 + r.axis * 2, mid + f * 2.8, 5);
-    overlay(Part.lowerBack, r.hip - f * 2.6 + r.axis * 2, mid - f * 2.8, 5);
-    overlay(Part.traps, r.shoulder - f * 2.2, r.shoulder + r.axis * 3 - f * 0.5,
-        4.2);
-    if (strong.contains(Part.shoulders) || soft.contains(Part.shoulders)) {
-      c.drawCircle(r.shoulder, 4.4, Paint()..color = _tone(Part.shoulders));
-    }
+    final u = r.axis, f = r.front;
+    final len = (r.shoulder - r.hip).distance;
+    final torso = Segment(r.hip - u * (_torsoLow * len),
+        r.shoulder + u * (_torsoHigh * len), _torsoSideShape,
+        aSide: f);
+    // anatomical position (0 = hip joint, 1 = shoulder) → along the torso
+    double at(double t) => (t + _torsoLow) / (1 + _torsoLow + _torsoHigh);
+    final glute = ellipse(r.hip - f * 3.3 - u * 0.9, u, 5.4, 4.3);
+    final up = unit(r.head - r.shoulder, u);
+    final neck = Segment(
+        r.shoulder + u * 1.0 + f * 0.4, r.head - up * 2.5, _neck,
+        aSide: f);
+    _body(c, [glute, torso.outline(), neck.outline()], neutral);
+    _muscle(c, torso.region(onA: true, t0: at(0.58), t1: at(0.97), depth: 0.55),
+        Part.chest);
+    _muscle(c, torso.region(onA: true, t0: at(0.0), t1: at(0.56), depth: 0.5),
+        Part.core);
+    _muscle(c, torso.region(onA: false, t0: at(0.48), t1: at(0.95), depth: 0.6),
+        Part.back);
+    _muscle(c, torso.region(onA: false, t0: at(0.04), t1: at(0.5), depth: 0.5),
+        Part.lowerBack);
+    _muscle(c, torso.region(onA: false, t0: at(0.84), t1: 1.0, depth: 0.8),
+        Part.traps);
+    _muscle(c, ellipse(r.hip - f * 3.3 - u * 0.9, u, 4.9, 3.8), Part.glutes);
+    _shade(c, torso, depth: 0.42);
   }
 
-  void _torsoFront(Canvas c, Rig r) {
-    final path = Path()
-      ..moveTo(r.hipF.dx, r.hipF.dy)
-      ..lineTo(r.hipN.dx, r.hipN.dy)
-      ..lineTo(r.shN.dx, r.shN.dy)
-      ..lineTo(r.shF.dx, r.shF.dy)
-      ..close();
-    c.drawPath(path, Paint()..color = neutral);
-    c.drawPath(path, _limb(neutral, 5));
-    final mid = lerpO(r.hip, r.shoulder, 0.5);
-    final up = r.axis;
-    final side = r.front;
-    if (strong.contains(Part.chest) ||
-        soft.contains(Part.chest) ||
-        strong.contains(Part.back) ||
-        soft.contains(Part.back)) {
-      final p = strong.contains(Part.chest) || strong.contains(Part.back)
-          ? (strong.contains(Part.chest) ? Part.chest : Part.back)
-          : (soft.contains(Part.chest) ? Part.chest : Part.back);
-      final col = _tone(p);
-      c.drawCircle(r.shoulder - up * 5 + side * 4, 4.2, Paint()..color = col);
-      c.drawCircle(r.shoulder - up * 5 - side * 4, 4.2, Paint()..color = col);
+  void _headSide(Canvas c, Rig r) {
+    final up = unit(r.head - r.shoulder, r.axis);
+    var face = Offset(-up.dy, up.dx);
+    if (face.dx * r.front.dx + face.dy * r.front.dy < 0) face = -face;
+    final head = ellipse(r.head, up, 6.6, 5.9);
+    final jaw = ellipse(r.head + face * 2.4 - up * 3.2, up, 2.8, 2.9);
+    _body(c, [head, jaw], neutral);
+    _hair(c, head, ellipse(r.head - face * 2.6 + up * 2.5, up, 6.6, 6.4));
+  }
+
+  // ---- front view ----
+
+  ({Segment thigh, Segment shin, Segment foot}) _legFront(Rig r,
+      {required bool right}) {
+    final hip = right ? r.hipN : r.hipF;
+    final knee = right ? r.kneeN : r.kneeF;
+    final ankle = right ? r.ankleN : r.ankleF;
+    final toe = right ? r.toeN : r.toeF;
+    final outer = right ? r.front : -r.front;
+    final fd = unit(toe - ankle);
+    return (
+      thigh: Segment(hip, knee, _thighFront, aSide: outer),
+      shin: Segment(knee, ankle, _shinFront, aSide: outer),
+      foot: Segment(ankle - fd * 0.8, toe, _foot, aSide: outer),
+    );
+  }
+
+  void _legFrontMuscles(
+      Canvas c, ({Segment thigh, Segment shin, Segment foot}) leg) {
+    _muscle(c, leg.thigh.region(onA: true, t0: 0.08, t1: 0.92, depth: 1.75),
+        Part.thighs);
+    _muscle(c, leg.thigh.region(onA: false, t0: 0.04, t1: 0.7, depth: 0.95),
+        Part.adductors);
+    _muscle(c, leg.shin.region(onA: true, t0: 0.08, t1: 0.55, depth: 0.7),
+        Part.calves);
+    _muscle(c, leg.shin.region(onA: false, t0: 0.06, t1: 0.55, depth: 0.8),
+        Part.calves);
+    _shade(c, leg.thigh);
+    _shade(c, leg.shin);
+  }
+
+  void _armFront(Canvas c, Rig r, {required bool right}) {
+    final sh = right ? r.shN : r.shF;
+    final el = right ? r.elbowN : r.elbowF;
+    final wr = right ? r.wristN : r.wristF;
+    final outer = right ? r.front : -r.front;
+    final upper = Segment(sh, el, _upperArmFront, aSide: outer);
+    final fore = Segment(el, wr, _foreArmFront, aSide: outer);
+    final hd = unit(wr - el);
+    final hand = Segment(wr - hd * 0.6, wr + hd * 3.4, _hand, aSide: outer);
+    final ad = unit(el - sh);
+    final delt = ellipse(sh + outer * 0.9 + ad * 0.8, ad, 4.2, 3.9);
+    _body(c, [delt, upper.outline(), fore.outline(), hand.outline()], neutral,
+        seams: [(sh, 5.2)]);
+    // biceps face the camera; the triceps show at the outer edge
+    _muscle(c, upper.region(onA: false, t0: 0.16, t1: 0.86, depth: 1.6),
+        Part.biceps);
+    _muscle(c, upper.region(onA: true, t0: 0.1, t1: 0.85, depth: 0.55),
+        Part.triceps);
+    _muscle(
+        c, fore.region(onA: true, t0: 0.04, t1: 0.8, depth: 2), Part.forearms);
+    // the deltoid: a teardrop over the shoulder, pointing down the arm
+    _muscle(
+        c, ellipse(sh + outer * 0.9 + ad * 1.6, ad, 4.4, 3.2), Part.shoulders);
+    _shade(c, upper);
+    _shade(c, fore);
+  }
+
+  ({Segment torso, Segment neck}) _torsoFrontParts(Rig r) {
+    final u = r.axis;
+    final up = unit(r.head - r.shoulder, u);
+    return (
+      torso: Segment(r.hip - u * 2.5, r.shoulder + u * 1.2, _torsoFrontShape,
+          aSide: r.front),
+      neck: Segment(r.shoulder + u * 0.5, r.head - up * 2.5,
+          const Profile.even([2.5, 2.3, 2.2])),
+    );
+  }
+
+  void _torsoFront(Canvas c, Rig r, Segment torso) {
+    final u = r.axis, side = r.front;
+    final len = (r.shoulder - r.hip).distance;
+    // anatomical position (0 = hips, 1 = shoulders) → along the torso
+    double at(double t) => (t * len + 2.5) / (len + 3.7);
+    // chest: two pecs below the collarbones
+    for (final s in [side, -side]) {
+      _muscle(
+          c,
+          ellipse(r.shoulder - u * (0.22 * len + 0.6) + s * 3.9, u, 2.9, 3.9),
+          Part.chest);
     }
-    if (strong.contains(Part.core) || soft.contains(Part.core)) {
-      c.drawLine(r.hip + up * 2, mid, _limb(_tone(Part.core), 6));
-    }
-    for (final s in [r.shN, r.shF]) {
-      if (strong.contains(Part.shoulders) || soft.contains(Part.shoulders)) {
-        c.drawCircle(s, 4.6, Paint()..color = _tone(Part.shoulders));
+    // core: the abdominal wall, with its lines when lit
+    final abs = Segment(r.hip + u * (0.06 * len), r.hip + u * (0.56 * len),
+        const Profile.even([3.0, 3.3, 3.2]));
+    if (_lit(Part.core)) {
+      c.drawPath(abs.outline(), _fill(_tone(Part.core)));
+      final line = Paint()
+        ..color = Color.lerp(_tone(Part.core), stage, 0.35)!
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.6
+        ..strokeCap = StrokeCap.round;
+      c.drawLine(abs.at(0.12), abs.at(0.92), line);
+      for (final t in [0.36, 0.64]) {
+        c.drawLine(abs.at(t) - abs.n * 2.6, abs.at(t) + abs.n * 2.6, line);
       }
     }
-    if (strong.contains(Part.glutes) || soft.contains(Part.glutes)) {
-      for (final s in [r.hipN + side * 2.5, r.hipF - side * 2.5]) {
-        c.drawCircle(s, 4.2, Paint()..color = _tone(Part.glutes));
-      }
+    // the lats flare out under the arms
+    _muscle(c, torso.region(onA: true, t0: at(0.42), t1: at(0.92), depth: 0.35),
+        Part.back);
+    _muscle(
+        c,
+        torso.region(onA: false, t0: at(0.42), t1: at(0.92), depth: 0.35),
+        Part.back);
+    // traps: neck to shoulders
+    for (final s in [side, -side]) {
+      _muscle(
+          c,
+          Segment(r.shoulder + u * 1.6 + s * 1.0, r.shoulder + s * 7.2,
+              const Profile([1.5, 1.4, 1.0], [1.3, 1.1, 0.8])).outline(),
+          Part.traps);
     }
-    if (strong.contains(Part.traps) || soft.contains(Part.traps)) {
-      c.drawLine(r.shN, r.shoulder + up * 3, _limb(_tone(Part.traps), 3.6));
-      c.drawLine(r.shF, r.shoulder + up * 3, _limb(_tone(Part.traps), 3.6));
+    // the outer hips (glute medius) — also how glutes read from the front
+    for (final s in [side, -side]) {
+      final hip = ellipse(r.hip + s * 6.3 + u * 1.2, u, 3.4, 2.2);
+      _muscle(c, hip, Part.abductors);
+      if (!_lit(Part.abductors)) _muscle(c, hip, Part.glutes);
     }
+    _shade(c, torso, depth: 0.3);
+  }
+
+  void _headFront(Canvas c, Rig r) {
+    final up = unit(r.head - r.shoulder, r.axis);
+    final head = ellipse(r.head, up, 6.6, 5.7);
+    _body(c, [head], neutral);
+    _hair(c, head, ellipse(r.head + up * 3.7, up, 5.2, 6.4));
+  }
+
+  /// Hair: [cap] clipped to the head, a shade off the skin.
+  void _hair(Canvas c, Path head, Path cap) {
+    c.save();
+    c.clipPath(head);
+    c.drawPath(
+        cap, _fill(Color.lerp(neutral, _darkStage ? stage : ink, 0.24)!));
+    c.restore();
   }
 
   @override
@@ -890,35 +1110,52 @@ class _FigurePainter extends CustomPainter {
           Rect.fromCenter(
               center: Offset(cx, ground), width: 34 - lift, height: 3.4),
           Paint()..color = Color.lerp(stage, ink, 0.1 - lift / 300)!);
-      canvas.drawLine(Offset(b.left + 4, ground), Offset(b.right - 4, ground),
-          _limb(Color.lerp(stage, ink, 0.14)!, 1.2));
+      canvas.drawLine(
+          Offset(b.left + 4, ground),
+          Offset(b.right - 4, ground),
+          Paint()
+            ..color = Color.lerp(stage, ink, 0.14)!
+            ..strokeWidth = 1.2
+            ..strokeCap = StrokeCap.round);
     }
 
     for (final p in spec.props.where((p) => !p.inFront)) {
       p.paint(canvas, rig, propInk);
     }
 
-    final front = rig.frontView;
-    if (front) {
-      _leg(canvas, rig.hipF, rig.kneeF, rig.ankleF, rig.toeF, false,
-          inward: rig.front, back: null);
-      _leg(canvas, rig.hipN, rig.kneeN, rig.ankleN, rig.toeN, false,
-          inward: -rig.front, back: null);
-      _torsoFront(canvas, rig);
-      canvas.drawLine(rig.shoulder, rig.head, _limb(neutral, 4.4));
-      canvas.drawCircle(rig.head, headR, Paint()..color = neutral);
-      _arm(canvas, rig.shF, rig.elbowF, rig.wristF, false);
-      _arm(canvas, rig.shN, rig.elbowN, rig.wristN, false);
+    if (rig.frontView) {
+      // legs, pelvis and torso are one continuous silhouette
+      final legs = [
+        _legFront(rig, right: false),
+        _legFront(rig, right: true),
+      ];
+      final trunk = _torsoFrontParts(rig);
+      _body(
+          canvas,
+          [
+            for (final l in legs) ...[
+              l.thigh.outline(),
+              l.shin.outline(),
+              l.foot.outline(),
+            ],
+            trunk.torso.outline(),
+            trunk.neck.outline(),
+          ],
+          neutral);
+      for (final l in legs) {
+        _legFrontMuscles(canvas, l);
+      }
+      _torsoFront(canvas, rig, trunk.torso);
+      _headFront(canvas, rig);
+      _armFront(canvas, rig, right: false);
+      _armFront(canvas, rig, right: true);
     } else {
-      _arm(canvas, rig.shF, rig.elbowF, rig.wristF, true);
-      _leg(canvas, rig.hipF, rig.kneeF, rig.ankleF, rig.toeF, true,
-          back: -rig.front);
+      _armSide(canvas, rig, near: false);
+      _legSide(canvas, rig, near: false);
       _torsoSide(canvas, rig);
-      canvas.drawLine(rig.shoulder, rig.head, _limb(neutral, 4.4));
-      canvas.drawCircle(rig.head, headR, Paint()..color = neutral);
-      _leg(canvas, rig.hipN, rig.kneeN, rig.ankleN, rig.toeN, false,
-          back: -rig.front);
-      _arm(canvas, rig.shN, rig.elbowN, rig.wristN, false);
+      _headSide(canvas, rig);
+      _legSide(canvas, rig, near: true);
+      _armSide(canvas, rig, near: true);
     }
 
     for (final p in spec.props.where((p) => p.inFront)) {
