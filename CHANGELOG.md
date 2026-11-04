@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-11-04
 
 ### Logging and progress, the way strength apps do it
 - The workout now logs every set as a row, like Strong and Hevy: set,
@@ -161,6 +161,20 @@
 - Theme, appearance and language changes cross-fade; the app follows the
   phone's dark mode live.
 - Honours Reduce Motion / Remove animations everywhere.
+
+### Polish
+- Workout: the kg and reps − / + buttons have a 48 px touch area (the
+  platform minimum) while keeping their size on screen.
+- Choice cards (onboarding, settings) show a clearly visible empty ring
+  and tell screen readers whether they are selected.
+- Plan editor: the move up, move down and remove buttons are labelled for
+  screen readers.
+- The exercise sheet and plan detail show the muscle map front and back,
+  so muscles on the back of the body (glutes, hamstrings) light up too.
+- Onboarding: each level says what it means (new or returning, 6+ months
+  of regular training, years of steady training).
+- "Works" is now "Muscles worked"; whole hours read "6 h" instead of
+  "6 h 0 min".
 
 ### Fixes
 - Tab bar labels overflowed the bar at large text sizes; they now stay
