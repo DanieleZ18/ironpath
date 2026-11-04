@@ -20,8 +20,9 @@ void main() {
 
   test('exercise copy is complete and muscles are known', () {
     const muscles = {
-      'chest', 'back', 'shoulders', 'biceps', 'triceps', 'core', 'legs',
-      'glutes', 'calves', 'lower_back', 'cardio', 'full_body', 'traps',
+      'chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms', 'core',
+      'quads', 'hamstrings', 'adductors', 'abductors', 'glutes', 'calves',
+      'lower_back', 'cardio', 'full_body', 'traps',
     };
     const categories = {'bodyweight', 'dumbbell', 'barbell', 'machine', 'cable'};
     for (final e in exercisesSeed) {

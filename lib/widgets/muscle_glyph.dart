@@ -9,13 +9,32 @@ import '../theme.dart';
 /// figure zooms into the half of the body the primary muscle lives in, so
 /// list-size glyphs stay legible.
 
-const _backView = {'back', 'triceps', 'glutes', 'lower_back', 'calves', 'traps'};
-const _lowerBody = {'legs', 'glutes', 'calves'};
+const _backView = {
+  'back',
+  'triceps',
+  'glutes',
+  'hamstrings',
+  'lower_back',
+  'calves',
+  'traps',
+  'abductors',
+};
+const _lowerBody = {
+  'quads',
+  'hamstrings',
+  'adductors',
+  'abductors',
+  'glutes',
+  'calves',
+};
 const _zoomBelow = 80.0;
 
 /// Visible window of the 100×100 figure for a primary muscle.
 Rect _viewFor(String primary, bool zoom) {
-  if (!zoom || primary == 'full_body' || primary == 'cardio' || primary.isEmpty) {
+  if (!zoom ||
+      primary == 'full_body' ||
+      primary == 'cardio' ||
+      primary.isEmpty) {
     return const Rect.fromLTWH(0, 0, 100, 100);
   }
   return _lowerBody.contains(primary)
@@ -36,7 +55,9 @@ enum _R {
   upperArms,
   forearms,
   glutes,
+  outerHips,
   thighs,
+  innerThighs,
   calves,
 }
 
@@ -50,7 +71,12 @@ Set<_R> _regionsFor(String muscle, bool back) => switch (muscle) {
       'core' => back ? {} : {_R.core},
       'lower_back' => back ? {_R.lowerBack} : {},
       'glutes' => back ? {_R.glutes} : {},
-      'legs' => {_R.thighs},
+      // the thigh block is the quads from the front, the hamstrings behind
+      'quads' => back ? {} : {_R.thighs},
+      'hamstrings' => back ? {_R.thighs} : {},
+      'adductors' => back ? {} : {_R.innerThighs},
+      'abductors' => {_R.outerHips},
+      'forearms' => {_R.forearms},
       'calves' => {_R.calves},
       'full_body' || 'cardio' => {
           _R.shoulders,
@@ -128,8 +154,8 @@ class _BodyPainter extends CustomPainter {
     final s = size.shortestSide / view.width;
     canvas.save();
     canvas.clipRect(Offset.zero & size);
-    canvas.translate((size.width - view.width * s) / 2,
-        (size.height - view.height * s) / 2);
+    canvas.translate(
+        (size.width - view.width * s) / 2, (size.height - view.height * s) / 2);
     canvas.scale(s);
     canvas.translate(-view.left, -view.top);
 
@@ -194,9 +220,17 @@ class _BodyPainter extends CustomPainter {
       rr(_R.head, 41.5, 56.5, 17, 7, 3); // pelvis, neutral
     }
 
+    // hips: the abductors sit on the outer edge of the pelvis
+    canvas.drawCircle(const Offset(38.5, 60), 3.6, paintFor(_R.outerHips));
+    canvas.drawCircle(const Offset(61.5, 60), 3.6, paintFor(_R.outerHips));
+
     // legs
     rr(_R.thighs, 39.5, 66, 9.5, 17, 4.5);
     rr(_R.thighs, 51, 66, 9.5, 17, 4.5);
+    if (!back) {
+      rr(_R.innerThighs, 46.5, 67, 2.8, 14, 1.4);
+      rr(_R.innerThighs, 50.7, 67, 2.8, 14, 1.4);
+    }
     rr(_R.calves, 40.5, 84.5, 7.5, 14, 3.75);
     rr(_R.calves, 52, 84.5, 7.5, 14, 3.75);
 

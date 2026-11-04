@@ -409,17 +409,24 @@ class Cable extends Prop {
   final bool bothHands;
   final bool rope; // short rope ends at the hands
   final bool far; // runs to the far hand only
+  final bool ankle; // an ankle cuff on the near leg
   const Cable(this.anchor,
-      {this.bothHands = true, this.rope = false, this.far = false});
+      {this.bothHands = true,
+      this.rope = false,
+      this.far = false,
+      this.ankle = false});
 
   @override
   void paint(Canvas c, Rig r, PropInk ink) {
     final line = ink.stroke(ink.dark, 1.2);
-    final grip = far
-        ? r.wristF
-        : bothHands
-            ? (r.wristN + r.wristF) / 2
-            : r.wristN;
+    final grip = ankle
+        ? r.ankleN
+        : far
+            ? r.wristF
+            : bothHands
+                ? (r.wristN + r.wristF) / 2
+                : r.wristN;
+    if (ankle) c.drawCircle(grip, 3.2, ink.stroke(ink.dark, 1.6));
     c.drawLine(anchor, grip, line);
     c.drawCircle(anchor, 3, ink.fill(ink.mid));
     if (rope) {
@@ -485,7 +492,7 @@ class Dumbbells extends Prop {
       ];
 }
 
-enum PlateAt { hands, shoulders, hip }
+enum PlateAt { hands, shoulders, frontRack, hip }
 
 /// A barbell seen from the side: the near plate, with the bar's end.
 class Plate extends Prop {
@@ -498,6 +505,7 @@ class Plate extends Prop {
   Offset centre(Rig r) => switch (at) {
         PlateAt.hands => (r.wristN + r.wristF) / 2,
         PlateAt.shoulders => r.shoulder - r.front * 4.5 + r.axis * 0.5,
+        PlateAt.frontRack => r.shoulder + r.front * 4.5 + r.axis * 1,
         PlateAt.hip => r.hip + r.front * 6.5,
       };
 
@@ -513,6 +521,36 @@ class Plate extends Prop {
   Iterable<Offset> extent(Rig r) {
     final o = centre(r);
     return [o - const Offset(10, 10), o + const Offset(10, 10)];
+  }
+}
+
+/// A barbell seen from the front: the bar across the hands with a plate
+/// at each end.
+class FrontBarbell extends Prop {
+  final double halfWidth;
+  const FrontBarbell({this.halfWidth = 40});
+
+  @override
+  bool get inFront => true;
+
+  @override
+  void paint(Canvas c, Rig r, PropInk ink) {
+    final o = (r.wristN + r.wristF) / 2;
+    c.drawLine(Offset(o.dx - halfWidth, o.dy), Offset(o.dx + halfWidth, o.dy),
+        ink.stroke(ink.dark, 2.2));
+    for (final x in [o.dx - halfWidth + 3, o.dx + halfWidth - 3]) {
+      c.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromCenter(center: Offset(x, o.dy), width: 5, height: 16),
+              const Radius.circular(2)),
+          ink.fill(ink.dark.withValues(alpha: 0.92)));
+    }
+  }
+
+  @override
+  Iterable<Offset> extent(Rig r) {
+    final o = (r.wristN + r.wristF) / 2;
+    return [o - Offset(halfWidth, 8), o + Offset(halfWidth, 8)];
   }
 }
 
@@ -545,6 +583,10 @@ enum Part {
   lowerBack,
   glutes,
   thighs,
+  hamstrings,
+  adductors,
+  abductors,
+  forearms,
   calves
 }
 
@@ -557,10 +599,15 @@ Set<Part> partsFor(String muscle) => switch (muscle) {
       'core' => {Part.core},
       'lower_back' => {Part.lowerBack},
       'glutes' => {Part.glutes},
-      'legs' => {Part.thighs},
+      'quads' => {Part.thighs},
+      'hamstrings' => {Part.hamstrings},
+      'adductors' => {Part.adductors},
+      'abductors' => {Part.abductors},
+      'forearms' => {Part.forearms},
       'calves' => {Part.calves},
       'full_body' || 'cardio' => {
           Part.thighs,
+          Part.hamstrings,
           Part.calves,
           Part.core,
           Part.arms,
@@ -690,25 +737,61 @@ class _FigurePainter extends CustomPainter {
     ..strokeJoin = StrokeJoin.round
     ..isAntiAlias = true;
 
+  bool _lit(Part p) => strong.contains(p) || soft.contains(p);
+
   void _arm(Canvas c, Offset sh, Offset el, Offset wr, bool far) {
     final up = _tone(Part.arms, far: far);
-    final fore = far
-        ? Color.lerp(neutral, stage, 0.38)!
-        : (strong.contains(Part.arms)
-            ? Color.lerp(neutral, hue, 0.45)!
-            : neutral);
+    final fore = _lit(Part.forearms)
+        ? _tone(Part.forearms, far: far)
+        : far
+            ? Color.lerp(neutral, stage, 0.38)!
+            : (strong.contains(Part.arms)
+                ? Color.lerp(neutral, hue, 0.45)!
+                : neutral);
     c.drawLine(el, wr, _limb(fore, 4.8));
     c.drawLine(sh, el, _limb(up, 6));
     c.drawCircle(wr, 2.7, Paint()..color = fore);
   }
 
-  void _leg(Canvas c, Offset hip, Offset kn, Offset an, Offset toe, bool far) {
+  /// [inward] points from this leg toward the body's midline (front view)
+  /// or into the page (side view: null), for the inner-thigh overlay.
+  void _leg(Canvas c, Offset hip, Offset kn, Offset an, Offset toe, bool far,
+      {Offset? inward, Offset? back}) {
     final th = _tone(Part.thighs, far: far);
     final sh = _tone(Part.calves, far: far);
     final foot = far ? Color.lerp(neutral, stage, 0.38)! : neutral;
     c.drawLine(an, toe, _limb(foot, 4.2));
     c.drawLine(kn, an, _limb(sh, 6.6));
     c.drawLine(hip, kn, _limb(th, 8.4));
+    final d = kn - hip;
+    if (d.distance < 1e-3) return;
+    final n = Offset(-d.dy, d.dx) / d.distance;
+    // hamstrings: the back of the thigh — the side the shin bends away from
+    if (_lit(Part.hamstrings)) {
+      final shin = an - kn;
+      var side = (n.dx * shin.dx + n.dy * shin.dy) < 0 ? n : -n;
+      if (shin.distance > 1e-3 &&
+          (n.dx * shin.dx + n.dy * shin.dy).abs() < 0.15 * shin.distance &&
+          back != null) {
+        side = (n.dx * back.dx + n.dy * back.dy) > 0 ? n : -n;
+      }
+      c.drawLine(hip + side * 2.4 + d * 0.12, kn + side * 2.4 - d * 0.12,
+          _limb(_tone(Part.hamstrings, far: far), 3.8));
+    }
+    // adductors: the inner thigh
+    if (_lit(Part.adductors)) {
+      final side = inward == null
+          ? Offset.zero
+          : ((n.dx * inward.dx + n.dy * inward.dy) > 0 ? n : -n) * 2.6;
+      c.drawLine(hip + side + d * 0.15, kn + side - d * 0.2,
+          _limb(_tone(Part.adductors, far: far), inward == null ? 3.4 : 3));
+    }
+    // abductors: the outer hip, above the thigh's root
+    if (_lit(Part.abductors)) {
+      final out = inward == null ? -n * 0.6 : -inward;
+      c.drawCircle(hip + out * 2.6 - d * 0.02, 3.6,
+          Paint()..color = _tone(Part.abductors, far: far));
+    }
   }
 
   void _torsoSide(Canvas c, Rig r) {
@@ -817,8 +900,10 @@ class _FigurePainter extends CustomPainter {
 
     final front = rig.frontView;
     if (front) {
-      _leg(canvas, rig.hipF, rig.kneeF, rig.ankleF, rig.toeF, false);
-      _leg(canvas, rig.hipN, rig.kneeN, rig.ankleN, rig.toeN, false);
+      _leg(canvas, rig.hipF, rig.kneeF, rig.ankleF, rig.toeF, false,
+          inward: rig.front, back: null);
+      _leg(canvas, rig.hipN, rig.kneeN, rig.ankleN, rig.toeN, false,
+          inward: -rig.front, back: null);
       _torsoFront(canvas, rig);
       canvas.drawLine(rig.shoulder, rig.head, _limb(neutral, 4.4));
       canvas.drawCircle(rig.head, headR, Paint()..color = neutral);
@@ -826,11 +911,13 @@ class _FigurePainter extends CustomPainter {
       _arm(canvas, rig.shN, rig.elbowN, rig.wristN, false);
     } else {
       _arm(canvas, rig.shF, rig.elbowF, rig.wristF, true);
-      _leg(canvas, rig.hipF, rig.kneeF, rig.ankleF, rig.toeF, true);
+      _leg(canvas, rig.hipF, rig.kneeF, rig.ankleF, rig.toeF, true,
+          back: -rig.front);
       _torsoSide(canvas, rig);
       canvas.drawLine(rig.shoulder, rig.head, _limb(neutral, 4.4));
       canvas.drawCircle(rig.head, headR, Paint()..color = neutral);
-      _leg(canvas, rig.hipN, rig.kneeN, rig.ankleN, rig.toeN, false);
+      _leg(canvas, rig.hipN, rig.kneeN, rig.ankleN, rig.toeN, false,
+          back: -rig.front);
       _arm(canvas, rig.shN, rig.elbowN, rig.wristN, false);
     }
 

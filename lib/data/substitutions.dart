@@ -18,6 +18,19 @@ const Map<String, Map<String, String>> substitutions = {
   'nordic_curl': {'knee': 'single_leg_bridge'},
   'db_split_squat': {'knee': 'db_hip_thrust'},
   'hack_squat': {'knee': 'db_hip_thrust'},
+  'cossack_squat': {'knee': 'glute_bridge'},
+  'sumo_squat_bw': {'knee': 'glute_bridge'},
+  'curtsy_lunge': {'knee': 'glute_bridge'},
+  'walking_lunge': {'knee': 'glute_bridge'},
+  'sissy_squat': {'knee': 'glute_bridge'},
+  'reverse_nordic': {'knee': 'glute_bridge'},
+  'db_lateral_lunge': {'knee': 'db_hip_thrust'},
+  'db_curtsy_lunge': {'knee': 'db_hip_thrust'},
+  'db_walking_lunge': {'knee': 'db_hip_thrust'},
+  'db_reverse_lunge': {'knee': 'db_hip_thrust'},
+  'db_bulgarian_split_squat': {'knee': 'db_hip_thrust'},
+  'bb_front_squat': {'knee': 'bb_hip_thrust'},
+  'bb_lunge': {'knee': 'bb_hip_thrust'},
   // ---- shoulder
   'pike_pushup': {'shoulder': 'pushup'},
   'db_shoulder_press': {'shoulder': 'pushup'},
@@ -38,6 +51,13 @@ const Map<String, Map<String, String>> substitutions = {
   'superman': {'lower_back': 'bird_dog'},
   'back_extension': {'lower_back': 'bird_dog'},
   'db_swing': {'lower_back': 'db_hip_thrust'},
+  'db_sumo_deadlift': {'lower_back': 'db_hip_thrust'},
+  'db_good_morning': {'lower_back': 'glute_bridge'},
+  'bb_rdl': {'lower_back': 'bb_hip_thrust'},
+  'bb_good_morning': {'lower_back': 'bb_hip_thrust'},
+  'bb_sumo_deadlift': {'lower_back': 'bb_hip_thrust'},
+  'cable_pull_through': {'lower_back': 'cable_kickback'},
+  'reverse_hyper': {'lower_back': 'bird_dog'},
 };
 
 /// First matching alternative for an exercise given the user's flagged

@@ -6,6 +6,8 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../weekly_program.dart' show recommendationScore;
+import '../widgets/bento.dart';
 import '../widgets/ios_chrome.dart';
 import '../widgets/plan_card.dart';
 import 'plan_detail.dart';
@@ -172,9 +174,30 @@ class LibraryScreenState extends State<LibraryScreen> {
     refresh();
   }
 
+  /// Zooms a tier's best plan out of its tile.
+  void _openTier(BuildContext source, TierSummary s) =>
+      openPlanDetail(source, s.bestPlan,
+              radius: Iron.rL.x, color: Iron.tint(Iron.tier(s.tier)))
+          .then((_) => refresh());
+
   @override
   Widget build(BuildContext context) {
     final custom = Store.instance.customPlans;
+    final settings = Store.instance.settings;
+    final summaries = tierSummaries();
+    // the level that fits the onboarding answers leads, full width; the
+    // other two sit beneath as half tiles
+    TierSummary? lead;
+    for (final s in summaries) {
+      for (final p in s.plans) {
+        if (lead == null ||
+            recommendationScore(p, settings) <
+                recommendationScore(lead.bestPlan, settings)) {
+          lead = s;
+        }
+      }
+    }
+    lead ??= summaries.first;
     return CustomScrollView(
       controller: widget.scrollController,
       slivers: [
@@ -189,7 +212,26 @@ class LibraryScreenState extends State<LibraryScreen> {
           padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset(context)),
           sliver: SliverList.list(
             children: [
-              // ---- my plans first: they're the ones people come back to
+              // ---- by level: the recommended tier, then the other two
+              TierCard(
+                summary: lead,
+                onStart: () => _start(lead!.bestPlan),
+                onOpen: (card) => _openTier(card, lead!),
+                recommended: true,
+              ),
+              const SizedBox(height: bentoGap),
+              BentoRow(children: [
+                for (final s in summaries.where((s) => s != lead))
+                  TierCard(
+                    summary: s,
+                    compact: true,
+                    onStart: () => _start(s.bestPlan),
+                    onOpen: (card) => _openTier(card, s),
+                  ),
+              ]),
+
+              // ---- my plans: the ones people come back to
+              const SizedBox(height: 22),
               SectionTitle(L10n.t('myPlans'),
                   padding: const EdgeInsets.fromLTRB(4, 4, 4, 10)),
               IronCard(

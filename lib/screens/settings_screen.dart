@@ -12,6 +12,15 @@ import '../widgets/theme_crossfade.dart';
 import '../utils.dart';
 import 'onboarding_screen.dart';
 
+/// Settings as a pushed page (from the gear on Today).
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      Scaffold(backgroundColor: Iron.bg, body: const SettingsScreen());
+}
+
 class SettingsScreen extends StatefulWidget {
   final ScrollController? scrollController;
   const SettingsScreen({super.key, this.scrollController});
@@ -144,7 +153,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return CustomScrollView(
       controller: widget.scrollController,
       slivers: [
-        largeTitleBar(L10n.t('tabSettings'), trailing: null),
+        largeTitleBar(L10n.t('tabSettings'),
+            trailing: null,
+            leading: (ModalRoute.of(context)?.canPop ?? false)
+                ? const IronBackButton()
+                : null),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset(context)),
           sliver: SliverList.list(

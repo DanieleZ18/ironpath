@@ -4,11 +4,13 @@ import 'package:flutter/services.dart';
 
 import '../l10n.dart';
 import '../widgets/ios_chrome.dart';
+import 'exercises_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'library_screen.dart';
-import 'settings_screen.dart';
 
+/// Four tabs — Today, Plans, Exercises, History. Settings open from the
+/// gear on Today.
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
 
@@ -18,7 +20,7 @@ class RootShell extends StatefulWidget {
 
 class _RootShellState extends State<RootShell> {
   int _tab = 0;
-  // Key the tab bodies so Library refreshes its lists when switching back
+  // Key the tab bodies so each refreshes its lists when switching back
   // after edits made elsewhere.
   final _homeKey = GlobalKey<HomeScreenState>();
   final _libraryKey = GlobalKey<LibraryScreenState>();
@@ -48,20 +50,17 @@ class _RootShellState extends State<RootShell> {
     setState(() => _tab = i);
     if (i == 0) _homeKey.currentState?.refresh();
     if (i == 1) _libraryKey.currentState?.refresh();
-    if (i == 2) _historyKey.currentState?.refresh();
+    if (i == 3) _historyKey.currentState?.refresh();
   }
 
   @override
   Widget build(BuildContext context) {
     String t(String key) => L10n.t(key);
     final tabs = [
-      HomeScreen(
-          key: _homeKey,
-          scrollController: _scroll[0],
-          goLibrary: () => _select(1)),
+      HomeScreen(key: _homeKey, scrollController: _scroll[0]),
       LibraryScreen(key: _libraryKey, scrollController: _scroll[1]),
-      HistoryScreen(key: _historyKey, scrollController: _scroll[2]),
-      SettingsScreen(scrollController: _scroll[3]),
+      ExercisesScreen(scrollController: _scroll[2]),
+      HistoryScreen(key: _historyKey, scrollController: _scroll[3]),
     ];
     return Scaffold(
       // content scrolls under the translucent tab bar
@@ -76,11 +75,18 @@ class _RootShellState extends State<RootShell> {
         index: _tab,
         onTap: _select,
         items: [
-          (CupertinoIcons.house, CupertinoIcons.house_fill, t('tabHome')),
-          (CupertinoIcons.square_list, CupertinoIcons.square_list_fill,
-              t('tabLibrary')),
+          (CupertinoIcons.sun_max, CupertinoIcons.sun_max_fill, t('tabToday')),
+          (
+            CupertinoIcons.square_list,
+            CupertinoIcons.square_list_fill,
+            t('tabLibrary')
+          ),
+          (
+            CupertinoIcons.square_grid_2x2,
+            CupertinoIcons.square_grid_2x2_fill,
+            t('tabExercises')
+          ),
           (CupertinoIcons.clock, CupertinoIcons.clock_fill, t('tabHistory')),
-          (CupertinoIcons.gear, CupertinoIcons.gear_solid, t('tabSettings')),
         ],
       ),
     );

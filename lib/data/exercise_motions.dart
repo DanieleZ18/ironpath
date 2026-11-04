@@ -35,7 +35,7 @@ Pose _stand({double torso = 2, Offset? handN, Offset? handF}) {
 
 // ---- squats ---------------------------------------------------------------
 
-enum _Hold { reach, goblet, barbell, hang }
+enum _Hold { reach, goblet, barbell, front, hang }
 
 Pose _squat(double d, _Hold hold, {bool sumo = false}) {
   final hip = Offset(50 - (sumo ? 4 : 9) * d, standHipY + (sumo ? 19 : 21) * d);
@@ -53,6 +53,10 @@ Pose _squat(double d, _Hold hold, {bool sumo = false}) {
     case _Hold.barbell:
       hand = sh - f * 3.5 + ax * 1.5;
       elbow = const Offset(-0.5, 1);
+    case _Hold.front:
+      // front rack: bar on the shoulders, elbows driven up and forward
+      hand = sh + f * 5 + ax * 1;
+      elbow = const Offset(1, -0.2);
     case _Hold.hang:
       hand = hip + f * 3 + const Offset(0, 14);
   }
@@ -231,7 +235,8 @@ MotionSpec _legPress() {
 
 enum _Lunge { split, reverse, forward, bulgarian }
 
-Pose _lunge(double d, _Lunge mode, {bool dumbbells = false}) {
+Pose _lunge(double d, _Lunge mode,
+    {bool dumbbells = false, bool barbell = false}) {
   final stepping = mode == _Lunge.reverse || mode == _Lunge.forward;
   final step = stepping ? (d * 1.6).clamp(0.0, 1.0) : 1.0;
   final lift = stepping ? 7 * math.sin(math.pi * step) : 0.0;
@@ -252,24 +257,32 @@ Pose _lunge(double d, _Lunge mode, {bool dumbbells = false}) {
       standY + (mode == _Lunge.bulgarian ? 20 : 17) * d);
   final torso = 3 + 5 * d;
   final sh = shoulderOf(hip, torso);
+  final rack = sh - frontOf(torso) * 3.5 + dirOf(torso) * 1.5;
   return Pose(
     hip: hip,
     torso: torso,
     footN: front,
     footF: back,
     kneeF: const Offset(0.3, 1),
-    handN: sh + Offset(dumbbells ? 1 : 3, 27),
-    handF: sh + Offset(dumbbells ? -1 : 1, 27),
+    handN: barbell ? rack : sh + Offset(dumbbells ? 1 : 3, 27),
+    handF: barbell
+        ? rack + const Offset(-2, 0)
+        : sh + Offset(dumbbells ? -1 : 1, 27),
+    elbowN: barbell ? const Offset(-0.5, 1) : const Offset(-0.4, 1),
+    elbowF: barbell ? const Offset(-0.5, 1) : const Offset(-0.4, 1),
     toeF: mode == _Lunge.bulgarian ? -100 : lerpD(90, 150, step),
   );
 }
 
-MotionSpec _lungeSpec(_Lunge mode, {bool dumbbells = false}) => MotionSpec(
-      (t) => _lunge(pingpong(t), mode, dumbbells: dumbbells),
+MotionSpec _lungeSpec(_Lunge mode,
+        {bool dumbbells = false, bool barbell = false}) =>
+    MotionSpec(
+      (t) => _lunge(pingpong(t), mode, dumbbells: dumbbells, barbell: barbell),
       props: [
         if (mode == _Lunge.bulgarian)
           const Bench(Offset(16, 73), Offset(36, 73)),
         if (dumbbells) const Dumbbells(DumbbellStyle.along),
+        if (barbell) const Plate(PlateAt.shoulders),
       ],
     );
 
@@ -296,7 +309,7 @@ MotionSpec _stepUp() => MotionSpec(
       ],
     );
 
-MotionSpec _lateralLunge() => MotionSpec(
+MotionSpec _lateralLunge({Prop? prop}) => MotionSpec(
       (t) {
         final s = swing(t);
         final a = s.abs();
@@ -318,6 +331,7 @@ MotionSpec _lateralLunge() => MotionSpec(
       },
       frontView: true,
       period: _slow,
+      props: [if (prop != null) prop],
       stillAt: 0.25,
     );
 
@@ -1103,11 +1117,12 @@ MotionSpec _legCurl() => MotionSpec(
       ],
     );
 
-MotionSpec _hipAbduction() => MotionSpec(
+MotionSpec _hipAbduction({bool adduction = false}) => MotionSpec(
       (t) {
-        // seated, seen from the front: the knees push the pads apart; the
-        // thighs (aimed at the camera) lengthen on screen as they open
-        final d = pingpong(t);
+        // seated, seen from the front: the knees push the pads apart (or
+        // squeeze them together); the thighs (aimed at the camera)
+        // lengthen on screen as they open
+        final d = adduction ? 1 - pingpong(t) : pingpong(t);
         const hip = Offset(50, 62);
         final shN = shoulderOf(hip, 0) + const Offset(9, 0);
         final shF = shoulderOf(hip, 0) - const Offset(9, 0);
@@ -1132,8 +1147,8 @@ MotionSpec _hipAbduction() => MotionSpec(
             width: 24),
         Slab((_) => const Offset(36, 68), (_) => const Offset(64, 68),
             width: 5),
-        Roller((r) => r.kneeN + const Offset(4.5, 0), radius: 3.4),
-        Roller((r) => r.kneeF - const Offset(4.5, 0), radius: 3.4),
+        Roller((r) => r.kneeN + Offset(adduction ? -4.5 : 4.5, 0), radius: 3.4),
+        Roller((r) => r.kneeF - Offset(adduction ? -4.5 : 4.5, 0), radius: 3.4),
       ],
     );
 
@@ -1808,7 +1823,7 @@ MotionSpec _shrug({required Prop prop}) => MotionSpec((t) {
       );
     }, props: [prop]);
 
-MotionSpec _carry() => MotionSpec(
+MotionSpec _carry({bool suitcase = false}) => MotionSpec(
       (t) {
         final ph = 2 * math.pi * t;
         final s = math.sin(ph), c = math.cos(ph);
@@ -1820,11 +1835,14 @@ MotionSpec _carry() => MotionSpec(
           footN: Offset(52 + 7 * s, ankleY - 3.5 * math.max(0, c)),
           footF: Offset(49 - 7 * s, ankleY - 3.5 * math.max(0, -c)),
           handN: sh + const Offset(1, 27),
-          handF: sh + const Offset(-1, 27),
+          // the free arm swings with the stride
+          handF: suitcase
+              ? sh + Offset(-1 - 5 * s, 26)
+              : sh + const Offset(-1, 27),
         );
       },
       period: const Duration(milliseconds: 1100),
-      props: const [Dumbbells(DumbbellStyle.along)],
+      props: [Dumbbells(DumbbellStyle.along, far: !suitcase)],
     );
 
 MotionSpec _jumpingJack() => MotionSpec(
@@ -1857,6 +1875,670 @@ MotionSpec _deadHang() => MotionSpec(
       period: _slow,
       props: const [_pullBar],
       stillAt: 0,
+    );
+
+// ---- legs, hips & forearms (v0.4) -------------------------------------------------
+
+/// Cossack squat, seen from the front: wide stance, sitting all the way
+/// down over one leg while the other stays straight with its toes up.
+MotionSpec _cossack() => MotionSpec(
+      (t) {
+        final s = swing(t);
+        final a = s.abs();
+        final hip = Offset(50 + 15 * s, 50 + 17 * a);
+        return Pose(
+          hip: hip,
+          torso: -5 * s,
+          footN: const Offset(72, ankleY),
+          footF: const Offset(28, ankleY),
+          kneeN: const Offset(1, -0.3),
+          kneeF: const Offset(-1, -0.3),
+          handN: Offset(hip.dx + 2.5, 42 + 10 * a),
+          handF: Offset(hip.dx - 2.5, 42 + 10 * a),
+          elbowN: const Offset(1, 1),
+          elbowF: const Offset(-1, 1),
+          // the straight leg's toes come up
+          toeN: s < 0 ? lerpD(125, 20, a) : 125,
+          toeF: s > 0 ? lerpD(125, 20, a) : 125,
+        );
+      },
+      frontView: true,
+      period: _slow,
+      stillAt: 0.25,
+    );
+
+/// Copenhagen plank: a side plank with the top leg resting on a bench.
+MotionSpec _copenhagen() => MotionSpec(
+      (t) {
+        final th = 5 + 0.5 * swing(t);
+        const topFoot = Offset(12, 65);
+        final torso = 90 - th;
+        final side = frontOf(torso); // the body's underside
+        final hipF = topFoot + _polar(th) * (thighLen + shinLen - 0.5);
+        final hip = hipF + side * 5;
+        final probe = Pose(
+            hip: hip,
+            torso: torso,
+            footN: topFoot,
+            footF: topFoot,
+            handN: hip,
+            handF: hip);
+        final shLow = probe.shoulder + side * 9;
+        return probe.copyWith(
+          footF: topFoot,
+          // the lower leg hangs under the bench, knee soft
+          footN: hip + side * 5 + const Offset(-16, 19),
+          kneeN: const Offset(-1, 0),
+          kneeF: const Offset(0, -1),
+          handN: Offset(shLow.dx + 6, 89),
+          handF: hip - side * 10 + const Offset(2, 0),
+          elbowN: const Offset(0, 1),
+          elbowF: const Offset(0, -1),
+          toeN: -150,
+          toeF: 135,
+        );
+      },
+      frontView: true,
+      period: _slow,
+      props: const [Bench(Offset(2, 63), Offset(22, 63))],
+      stillAt: 0,
+    );
+
+/// Sumo squat from the front: wide stance, toes out, knees pushed out.
+MotionSpec _sumoSquatFront({Prop? prop}) => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        final hip = Offset(50, standHipY + 17 * d);
+        return Pose(
+          hip: hip,
+          torsoScale: lerpD(1, 0.94, d),
+          footN: const Offset(69, ankleY),
+          footF: const Offset(31, ankleY),
+          kneeN: const Offset(1, -0.3),
+          kneeF: const Offset(-1, -0.3),
+          handN: Offset(51.5, 44 + 8 * d),
+          handF: Offset(48.5, 44 + 8 * d),
+          elbowN: const Offset(1, 1),
+          elbowF: const Offset(-1, 1),
+          toeN: 125,
+          toeF: 125,
+        );
+      },
+      frontView: true,
+      props: [if (prop != null) prop],
+    );
+
+/// Curtsy lunge from the front: one foot steps back and across behind the
+/// other, and the hips sink.
+MotionSpec _curtsy({bool dumbbells = false}) => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        final step = (d * 1.6).clamp(0.0, 1.0);
+        final lift = 5 * math.sin(math.pi * step);
+        final hip = Offset(lerpD(50, 47, step), standHipY + 14 * d);
+        final sh = shoulderOf(hip, 0);
+        return Pose(
+          hip: hip,
+          thighScale: lerpD(1, 0.9, step),
+          footN: lerpO(const Offset(55, ankleY), const Offset(36, 87.5), step) -
+              Offset(0, lift),
+          footF: const Offset(45, ankleY),
+          kneeN: const Offset(-0.6, 0.8),
+          kneeF: const Offset(-1, -0.2),
+          handN: sh + const Offset(9, 0) + Offset(dumbbells ? 1 : 3, 26),
+          handF: sh - const Offset(9, 0) + Offset(dumbbells ? -1 : -3, 26),
+          elbowN: const Offset(1, 0),
+          elbowF: const Offset(-1, 0),
+          toeN: lerpD(128, 170, step),
+          toeF: 128,
+        );
+      },
+      frontView: true,
+      props: [if (dumbbells) const Dumbbells(DumbbellStyle.end)],
+    );
+
+/// Walking lunge: a lunge on each leg in turn, standing tall between.
+MotionSpec _walkingLunge({bool dumbbells = false}) => MotionSpec(
+      (t) {
+        Pose stand() => _stand(
+            handN: shoulderOf(_standHip, 2) + Offset(dumbbells ? 1 : 3, 27),
+            handF: shoulderOf(_standHip, 2) + Offset(dumbbells ? -1 : 1, 27));
+        Pose lunge(bool nearFront) {
+          const hip = Offset(51, 68);
+          final sh = shoulderOf(hip, 6);
+          final front = const Offset(64, ankleY);
+          final back = const Offset(38, 86);
+          return Pose(
+            hip: hip,
+            torso: 6,
+            footN: nearFront ? front : back,
+            footF: nearFront ? back : front,
+            kneeN: nearFront ? const Offset(1, 0) : const Offset(0.3, 1),
+            kneeF: nearFront ? const Offset(0.3, 1) : const Offset(1, 0),
+            handN: sh + Offset(dumbbells ? 1 : 3, 27),
+            handF: sh + Offset(dumbbells ? -1 : 1, 27),
+            toeN: nearFront ? 90 : 150,
+            toeF: nearFront ? 150 : 90,
+          );
+        }
+
+        return keyframes([
+          (0.0, stand()),
+          (0.2, lunge(true)),
+          (0.3, lunge(true)),
+          (0.5, stand()),
+          (0.7, lunge(false)),
+          (0.8, lunge(false)),
+          (1.0, stand()),
+        ], t);
+      },
+      period: const Duration(milliseconds: 4400),
+      props: [if (dumbbells) const Dumbbells(DumbbellStyle.along)],
+      stillAt: 0.25,
+    );
+
+/// Sissy squat: heels up, knees far forward, the body leaning back in one
+/// line from the knees, a hand on a post.
+MotionSpec _sissy() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        final hip = lerpO(_standHip, const Offset(39, 63), d);
+        final torso = -28 * d;
+        final lift = 4 * d;
+        return Pose(
+          hip: hip,
+          torso: torso,
+          head: 10 * d,
+          footN: Offset(53, ankleY - lift),
+          footF: Offset(50, ankleY - lift),
+          handN: const Offset(66, 52),
+          handF: hip + frontOf(torso) * 5 + const Offset(0, 2),
+          elbowN: const Offset(0, 1),
+          elbowF: const Offset(0, 1),
+          toeN: lerpD(90, 140, d),
+          toeF: lerpD(90, 140, d),
+        );
+      },
+      props: [
+        Slab((_) => const Offset(66, ground), (_) => const Offset(66, 26),
+            width: 3),
+      ],
+    );
+
+/// Reverse Nordic: kneeling tall, leaning back from the knees in one line.
+MotionSpec _reverseNordic() => MotionSpec(
+      (t) {
+        final d = pingpong(t, rest: 0.1, go: 0.45, hold: 0.05);
+        const knee = Offset(48, 87);
+        final a = -lerpD(2, 42, d);
+        final hip = knee + dirOf(a) * thighLen;
+        final sh = shoulderOf(hip, a);
+        return Pose(
+          hip: hip,
+          torso: a,
+          head: 6 * d,
+          footN: const Offset(29, 87),
+          footF: const Offset(27, 87),
+          kneeN: const Offset(0.3, 1),
+          kneeF: const Offset(0.3, 1),
+          handN: sh + frontOf(a) * 5 - dirOf(a) * 6,
+          handF: sh + frontOf(a) * 4 - dirOf(a) * 7,
+          elbowN: const Offset(0.5, 1),
+          elbowF: const Offset(0.5, 1),
+          toeN: -100,
+          toeF: -100,
+        );
+      },
+      period: _slow,
+      props: [
+        Slab((_) => const Offset(24, 90.5), (_) => const Offset(56, 90.5),
+            width: 3),
+      ],
+    );
+
+/// Lying on one side (seen from the front, the floor along the bottom):
+/// the base for clamshells and side-lying raises. [topFoot] places the
+/// upper leg; the lower leg lies on the floor.
+Pose _sideLying({
+  required Offset topFoot,
+  Offset lowerFoot = const Offset(14, 87.5),
+  Offset topKnee = const Offset(0, -1),
+}) {
+  const hip = Offset(52, 79.5);
+  const torso = 90.0; // head to the right
+  final sh = shoulderOf(hip, torso);
+  return Pose(
+    hip: hip,
+    torso: torso,
+    head: -8,
+    footN: lowerFoot,
+    footF: topFoot,
+    // the lower knee bends toward the camera: up on screen, never into
+    // the floor
+    kneeN: const Offset(0, -1),
+    kneeF: topKnee,
+    // the lower arm lies out under the head, the upper hand rests in front
+    handN: sh + const Offset(26, 2),
+    handF: const Offset(62, 86),
+    elbowN: const Offset(0, -1),
+    elbowF: const Offset(0, -1),
+    toeN: 150,
+    toeF: 150,
+  );
+}
+
+MotionSpec _clamshell() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        return _sideLying(
+          lowerFoot: const Offset(24, 87.5),
+          topFoot: const Offset(25, 85),
+          topKnee: Offset(0.2, lerpD(1, -1, d)),
+        );
+      },
+      frontView: true,
+      period: _std,
+    );
+
+MotionSpec _sideLyingRaise() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        return _sideLying(
+          topFoot: lerpO(const Offset(16, 85), const Offset(24, 50), d),
+        );
+      },
+      frontView: true,
+      period: _std,
+    );
+
+/// Quadruped seen from the front; the near knee lifts out to the side.
+MotionSpec _fireHydrant() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        const hip = Offset(50, 66);
+        return Pose(
+          hip: hip,
+          torsoScale: 0.38,
+          head: 0,
+          shinScale: 0.25,
+          footN: lerpO(const Offset(56, 88), const Offset(78, 73), d),
+          footF: const Offset(44, 88),
+          kneeN: const Offset(1, 0),
+          kneeF: const Offset(-1, 0),
+          handN: const Offset(60, 90),
+          handF: const Offset(40, 90),
+          elbowN: const Offset(1, 0),
+          elbowF: const Offset(-1, 0),
+          toeN: 150,
+          toeF: 150,
+        );
+      },
+      frontView: true,
+    );
+
+/// Frog pump: a short-range bridge with the soles together and knees out.
+MotionSpec _frogPump() => MotionSpec(
+      (t) {
+        final d = pingpong(t, rest: 0.05, go: 0.4, hold: 0.1);
+        const sh = Offset(24, 85);
+        final hip = sh + dirOf(lerpD(92, 74, d)) * torsoLen;
+        final torso = angleTo(hip, sh);
+        return Pose(
+          hip: hip,
+          torso: torso,
+          head: -90 - torso,
+          thighScale: 0.72, // knees fall out to the sides
+          footN: const Offset(58, 89),
+          footF: const Offset(57, 89.5),
+          kneeN: const Offset(0.4, -1),
+          kneeF: const Offset(0.4, -1),
+          handN: const Offset(52, 89),
+          handF: const Offset(50, 89),
+          elbowN: const Offset(0, -1),
+          elbowF: const Offset(0, -1),
+          toeN: 70,
+          toeF: 70,
+        );
+      },
+      period: const Duration(milliseconds: 1800),
+    );
+
+/// Sliding leg curl: from a bridge the heels slide out until the legs are
+/// straight and drag back in, hips held high.
+MotionSpec _slidingLegCurl() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        const sh = Offset(22, 85);
+        final hip = sh + dirOf(lerpD(66, 80, d)) * torsoLen;
+        final torso = angleTo(hip, sh);
+        final foot = Offset(lerpD(62, 84, d), 89);
+        return Pose(
+          hip: hip,
+          torso: torso,
+          head: -90 - torso,
+          footN: foot,
+          footF: foot + const Offset(-1.5, 0.5),
+          kneeN: const Offset(0.3, -1),
+          kneeF: const Offset(0.3, -1),
+          handN: const Offset(48, 89),
+          handF: const Offset(46, 89),
+          elbowN: const Offset(0, -1),
+          elbowF: const Offset(0, -1),
+          toeN: 25,
+          toeF: 25,
+        );
+      },
+      period: _slow,
+    );
+
+/// Single-leg calf raise off a step, heel dropping below it; the other
+/// leg bent behind, fingertips on a wall (or a dumbbell in the hand).
+MotionSpec _singleLegCalf({bool weighted = false}) => MotionSpec(
+      (t) {
+        final d = pingpong(t, rest: 0.1, go: 0.3, hold: 0.15);
+        final ankle = Offset(53, lerpD(88, 79, d));
+        final hip = Offset(50, ankle.dy - 38.5);
+        final sh = shoulderOf(hip, 2);
+        return Pose(
+          hip: hip,
+          torso: 2,
+          footN: ankle,
+          footF: hip + const Offset(-7, 25),
+          kneeF: const Offset(1, 0.4),
+          handN: weighted ? sh + const Offset(2, 27) : const Offset(66, 50),
+          handF: const Offset(66, 50),
+          elbowN: weighted ? const Offset(-0.4, 1) : const Offset(-0.3, 1),
+          elbowF: const Offset(-0.3, 1),
+          toeN: lerpD(58, 122, d),
+          toeF: 150,
+        );
+      },
+      props: [
+        const Box(Rect.fromLTRB(56, 84, 94, ground)),
+        const Wall(74, top: 10),
+        if (weighted) const Dumbbells(DumbbellStyle.along, far: false),
+      ],
+    );
+
+/// Tibialis raise: back against a wall, feet out in front, toes lifting.
+MotionSpec _tibialis() => MotionSpec(
+      (t) {
+        final d = pingpong(t, rest: 0.1, go: 0.3, hold: 0.15);
+        const hip = Offset(41, 55);
+        final sh = shoulderOf(hip, -12);
+        return Pose(
+          hip: hip,
+          torso: -12,
+          footN: const Offset(58, ankleY),
+          footF: const Offset(55, ankleY),
+          handN: sh + const Offset(-1, 27),
+          handF: sh + const Offset(-2, 27),
+          toeN: lerpD(90, 35, d),
+          toeF: lerpD(90, 35, d),
+        );
+      },
+      props: const [Wall(37.5)],
+    );
+
+/// Sumo deadlift from the front: wide stance, hands inside the knees.
+MotionSpec _sumoDeadliftFront({required bool barbell}) => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        final hip = Offset(50, lerpD(70, standHipY, d));
+        final hand = Offset(50, lerpD(84, 70, d));
+        return Pose(
+          hip: hip,
+          torsoScale: lerpD(0.72, 1, d),
+          footN: const Offset(70, ankleY),
+          footF: const Offset(30, ankleY),
+          kneeN: const Offset(1, -0.3),
+          kneeF: const Offset(-1, -0.3),
+          handN: hand + const Offset(2, 0),
+          handF: hand - const Offset(2, 0),
+          elbowN: const Offset(1, 0),
+          elbowF: const Offset(-1, 0),
+          toeN: 125,
+          toeF: 125,
+        );
+      },
+      frontView: true,
+      period: _slow,
+      props: [
+        barbell
+            ? const FrontBarbell()
+            : const Dumbbells(DumbbellStyle.vertical, far: false),
+      ],
+    );
+
+/// Good morning: a hinge with the load held at the upper back.
+MotionSpec _goodMorning({required bool barbell}) => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        final hip = Offset(50 - 10 * d, standHipY + 4 * d);
+        final torso = 2 + 68 * d;
+        final sh = shoulderOf(hip, torso);
+        final f = frontOf(torso), ax = dirOf(torso);
+        final hand = sh - f * 3.5 + ax * 1.5;
+        return Pose(
+          hip: hip,
+          torso: torso,
+          head: -torso * 0.3,
+          footN: _fN,
+          footF: _fF,
+          kneeN: const Offset(1, 0.1),
+          handN: hand,
+          handF: hand + const Offset(-2, 0),
+          elbowN: const Offset(-0.6, 1),
+          elbowF: const Offset(-0.6, 1),
+        );
+      },
+      props: [
+        barbell
+            ? const Plate(PlateAt.shoulders)
+            : const Dumbbells(DumbbellStyle.end, far: false),
+      ],
+    );
+
+/// Seated wrist curl: forearm along the thigh, only the wrist moving.
+MotionSpec _wristCurl({bool reverse = false, bool barbell = false}) =>
+    MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        const hip = Offset(42, 63);
+        const torso = 42.0;
+        final drop = reverse ? lerpD(0, -4.5, d) : lerpD(3, -3, d);
+        final hand = Offset(69, 69 + drop);
+        return Pose(
+          hip: hip,
+          torso: torso,
+          head: -22,
+          footN: const Offset(64, ankleY),
+          footF: const Offset(58, ankleY),
+          kneeN: const Offset(1, -0.5),
+          kneeF: const Offset(1, -0.5),
+          handN: hand,
+          handF: barbell ? hand + const Offset(-1.5, 0) : const Offset(58, 67),
+          elbowN: const Offset(-0.4, 1),
+          elbowF: barbell ? const Offset(-0.4, 1) : const Offset(0, 1),
+        );
+      },
+      props: [
+        const Bench(Offset(26, 66), Offset(50, 66)),
+        Dumbbells(DumbbellStyle.end, far: false),
+      ],
+    );
+
+/// Seated calf raise: a load on the knees, balls of the feet on a block.
+MotionSpec _seatedCalf({bool machine = false}) => MotionSpec(
+      (t) {
+        final d = pingpong(t, rest: 0.1, go: 0.3, hold: 0.15);
+        final lift = 6 * d;
+        const hip = Offset(42, 64);
+        final ankle = Offset(60, 86 - lift);
+        return Pose(
+          hip: hip,
+          torso: 4,
+          footN: ankle,
+          footF: ankle + const Offset(-2, 0),
+          kneeN: const Offset(1, -1),
+          kneeF: const Offset(1, -1),
+          handN: Offset(63, 67 - lift * 0.6),
+          handF: Offset(60, 67 - lift * 0.6),
+          elbowN: const Offset(-0.2, 1),
+          elbowF: const Offset(-0.2, 1),
+          toeN: lerpD(88, 132, d),
+          toeF: lerpD(88, 132, d),
+        );
+      },
+      props: [
+        const Bench(Offset(26, 67), Offset(50, 67)),
+        const Box(Rect.fromLTRB(56, 86, 78, ground)),
+        if (machine) ...[
+          Slab((_) => const Offset(74, ground), (_) => const Offset(74, 50),
+              width: 3),
+          Slab((r) => r.kneeN + const Offset(-8, -5.5),
+              (r) => r.kneeN + const Offset(8, -5.5),
+              width: 4.5),
+        ] else
+          const Dumbbells(DumbbellStyle.end),
+      ],
+    );
+
+/// Seated leg curl: legs out in front, heels curling under the seat.
+MotionSpec _seatedLegCurl() {
+  const hip = Offset(40, 64);
+  const torso = -6.0;
+  return MotionSpec(
+    (t) {
+      final d = pingpong(t);
+      final foot = lerpO(const Offset(79, 65), const Offset(63, 84), d);
+      return Pose(
+        hip: hip,
+        torso: torso,
+        footN: foot,
+        footF: foot + const Offset(-1.5, 0.5),
+        kneeN: const Offset(0.4, -1),
+        kneeF: const Offset(0.4, -1),
+        handN: hip + const Offset(3, 7),
+        handF: hip + const Offset(1, 7),
+        toeN: lerpD(100, 160, d),
+        toeF: lerpD(100, 160, d),
+      );
+    },
+    props: [
+      ..._seat(hip, torso),
+      Roller((r) => r.kneeN + const Offset(-6, -6), radius: 4, front: false),
+      Roller((r) => r.ankleN + const Offset(-1.5, -3.2), radius: 3.6),
+    ],
+  );
+}
+
+/// Cable pull-through: facing away from a low pulley, hinging with the
+/// rope between the legs.
+MotionSpec _pullThrough() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        final hip = Offset(50 - 10 * d, standHipY + 5 * d);
+        final torso = 2 + 66 * d;
+        final hand =
+            lerpO(hip + const Offset(5, 10), hip + const Offset(-6, 26), d);
+        return Pose(
+          hip: hip,
+          torso: torso,
+          head: -torso * 0.3,
+          footN: const Offset(56, ankleY),
+          footF: const Offset(48, ankleY),
+          kneeN: const Offset(1, 0.1),
+          handN: hand,
+          handF: hand + const Offset(-1.5, 0),
+          elbowN: const Offset(0, 1),
+          elbowF: const Offset(0, 1),
+        );
+      },
+      props: const [Cable(Offset(6, 86), rope: true)],
+    );
+
+/// Cable kickback: holding the frame, the near leg drives straight back
+/// against an ankle cuff.
+MotionSpec _cableKickback() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        const hip = Offset(52, 53);
+        const torso = 14.0;
+        return Pose(
+          hip: hip,
+          torso: torso,
+          footN: lerpO(const Offset(56, ankleY), hip + dirOf(-142) * 38, d),
+          footF: const Offset(50, ankleY),
+          kneeN: const Offset(0.5, 1),
+          handN: const Offset(76, 48),
+          handF: const Offset(75, 50),
+          elbowN: const Offset(0, 1),
+          elbowF: const Offset(0, 1),
+          toeN: lerpD(90, 170, d),
+        );
+      },
+      props: [
+        Slab((_) => const Offset(78, ground), (_) => const Offset(78, 14),
+            width: 3),
+        const Cable(Offset(90, 88), ankle: true),
+      ],
+    );
+
+/// Cable hip adduction from the front: side-on to the machine, the cuffed
+/// leg sweeps across in front of the standing leg.
+MotionSpec _cableAdduction() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        const hip = Offset(48, standHipY);
+        final sh = shoulderOf(hip, 0);
+        return Pose(
+          hip: hip,
+          footN: lerpO(const Offset(70, 87), const Offset(34, 86), d),
+          footF: const Offset(44, ankleY),
+          kneeN: const Offset(0, -1),
+          kneeF: const Offset(-1, 0),
+          handN: const Offset(80, 46),
+          handF: sh - const Offset(9, 0) + const Offset(-3, 26),
+          elbowN: const Offset(0, 1),
+          elbowF: const Offset(-1, 0),
+          toeN: lerpD(125, 150, d),
+          toeF: 128,
+        );
+      },
+      frontView: true,
+      props: [
+        Slab((_) => const Offset(84, ground), (_) => const Offset(84, 10),
+            width: 3),
+        const Cable(Offset(92, 88), ankle: true),
+      ],
+    );
+
+/// Reverse hyperextension: prone on a high bench, legs lifting to level.
+MotionSpec _reverseHyper() => MotionSpec(
+      (t) {
+        final d = pingpong(t);
+        const hip = Offset(54, 50);
+        const torso = 90.0;
+        final sh = shoulderOf(hip, torso);
+        final foot = lerpO(const Offset(50, 84.5), hip + dirOf(-92) * 38.5, d);
+        return Pose(
+          hip: hip,
+          torso: torso,
+          head: -8,
+          footN: foot,
+          footF: foot + const Offset(1.5, 0.5),
+          kneeN: const Offset(-1, 0.2),
+          kneeF: const Offset(-1, 0.2),
+          handN: sh + const Offset(14, 10),
+          handF: sh + const Offset(12, 11),
+          elbowN: const Offset(0, 1),
+          elbowF: const Offset(0, 1),
+          toeN: lerpD(165, -100, d),
+          toeF: lerpD(165, -100, d),
+        );
+      },
+      props: const [Bench(Offset(54, 56), Offset(94, 56))],
     );
 
 // ---- registry ---------------------------------------------------------------------------
@@ -1985,6 +2667,52 @@ MotionSpec? _build(String id) => switch (id) {
       'db_farmer_carry' => _carry(),
       'jumping_jack' => _jumpingJack(),
       'burpee' => _burpee(),
+      // legs, hips & forearms (v0.4)
+      'cossack_squat' => _cossack(),
+      'copenhagen_plank' => _copenhagen(),
+      'sumo_squat_bw' => _sumoSquatFront(),
+      'curtsy_lunge' => _curtsy(),
+      'db_curtsy_lunge' => _curtsy(dumbbells: true),
+      'walking_lunge' => _walkingLunge(),
+      'db_walking_lunge' => _walkingLunge(dumbbells: true),
+      'db_reverse_lunge' => _lungeSpec(_Lunge.reverse, dumbbells: true),
+      'db_bulgarian_split_squat' =>
+        _lungeSpec(_Lunge.bulgarian, dumbbells: true),
+      'bb_lunge' => _lungeSpec(_Lunge.reverse, barbell: true),
+      'db_lateral_lunge' => _lateralLunge(
+          prop: const Dumbbells(DumbbellStyle.vertical, far: false)),
+      'sissy_squat' => _sissy(),
+      'reverse_nordic' => _reverseNordic(),
+      'clamshell' => _clamshell(),
+      'fire_hydrant' => _fireHydrant(),
+      'side_lying_leg_raise' => _sideLyingRaise(),
+      'frog_pump' => _frogPump(),
+      'sliding_leg_curl' => _slidingLegCurl(),
+      'single_leg_calf_raise' => _singleLegCalf(),
+      'db_single_leg_calf_raise' => _singleLegCalf(weighted: true),
+      'tibialis_raise' => _tibialis(),
+      'db_sumo_deadlift' => _sumoDeadliftFront(barbell: false),
+      'bb_sumo_deadlift' => _sumoDeadliftFront(barbell: true),
+      'db_good_morning' => _goodMorning(barbell: false),
+      'bb_good_morning' => _goodMorning(barbell: true),
+      'bb_front_squat' =>
+        _squatSpec(_Hold.front, props: const [Plate(PlateAt.frontRack)]),
+      'bb_rdl' => MotionSpec((t) => _rdl(pingpong(t)),
+          props: const [Plate(PlateAt.hands)]),
+      'db_wrist_curl' => _wristCurl(),
+      'db_reverse_wrist_curl' => _wristCurl(reverse: true),
+      'bb_wrist_curl' => _wristCurl(barbell: true),
+      'db_reverse_curl' => _curl(prop: const Dumbbells(DumbbellStyle.end)),
+      'bb_reverse_curl' => _curl(prop: const Plate(PlateAt.hands)),
+      'db_suitcase_carry' => _carry(suitcase: true),
+      'db_seated_calf_raise' => _seatedCalf(),
+      'seated_calf_raise_machine' => _seatedCalf(machine: true),
+      'hip_adduction' => _hipAbduction(adduction: true),
+      'seated_leg_curl' => _seatedLegCurl(),
+      'cable_pull_through' => _pullThrough(),
+      'cable_kickback' => _cableKickback(),
+      'cable_hip_adduction' => _cableAdduction(),
+      'reverse_hyper' => _reverseHyper(),
       _ => null,
     };
 

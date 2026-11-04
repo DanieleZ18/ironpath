@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### A clearer flow
+- Four tabs: Today · Plans · Exercises · History. Settings moved behind
+  the gear on Today.
+- Today shows one thing: the workout to do now (with its first move
+  demonstrated) and a seven-day strip of the week — a check on each day
+  trained, a dot on today, rings on the sessions still to come. Tap the
+  strip for the day-by-day plan.
+- Plans opens with the levels (the one that fits you full width, the
+  other two as half tiles), then your plans, then every built-in plan.
+- New Exercises tab: the whole library, searchable, filtered by muscle and
+  by equipment, as a grid of tiles; tap one for the demo and the how-to.
+
+### Library: 101 → 142 exercises
+- "Legs" split into quads, hamstrings, inner thighs (adductors), outer
+  hips (abductors) and calves; forearms added. Every existing exercise
+  re-tagged, the body figures and demos know the new regions.
+- 41 new moves, each with bilingual coaching copy and an animated demo:
+  Cossack squat, Copenhagen plank, sumo squat, curtsy and walking lunges,
+  sissy squat, reverse Nordic, clamshell, fire hydrant, side-lying leg
+  raise, frog pump, sliding leg curl, single-leg and seated calf raises,
+  tibialis raise; dumbbell sumo deadlift, lateral / curtsy / walking /
+  reverse lunges, good morning, Bulgarian split squat, wrist curls,
+  reverse curl, suitcase carry; barbell front squat, RDL, good morning,
+  sumo deadlift, reverse lunge, wrist and reverse curls; hip adduction
+  machine, seated leg curl, seated calf raise, cable pull-through,
+  kickback and hip adduction, reverse hyperextension.
+- Injury-aware swaps cover the new moves.
+
 ### Exercise demos
 - Every exercise (all 101) now shows how it moves: a vector figure
   animated in code, with the working muscles lit in the difficulty colour.

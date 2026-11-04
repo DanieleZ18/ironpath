@@ -69,9 +69,10 @@ BorderSide get _hairline => BorderSide(color: Iron.line, width: 0.5);
 
 /// Large title for a tab page: big on top, collapses into a small centred
 /// title in a frosted bar as the list scrolls (iOS "large title" bar).
-Widget largeTitleBar(String title, {Widget? trailing}) =>
+Widget largeTitleBar(String title, {Widget? trailing, Widget? leading}) =>
     CupertinoSliverNavigationBar(
       largeTitle: Text(title),
+      leading: leading,
       trailing: trailing,
       backgroundColor: Iron.bg.withValues(alpha: 0.8),
       border: Border(bottom: _hairline),

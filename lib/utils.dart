@@ -18,8 +18,18 @@ String fmtWeight(double w) =>
 const _weekdaysZh = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 const _weekdaysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const _monthsEn = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
 ];
 
 /// Friendly day header: "10月29日 · 周四" / "Thu, Oct 29".
@@ -44,3 +54,7 @@ String fmtHoursMinutes(int seconds, bool zh) {
   if (zh) return h == 0 ? '$m分钟' : '$h小时$m分';
   return h == 0 ? '$m min' : '$h h $m min';
 }
+
+/// One-character (zh) or three-letter (en) weekday label, Monday = 1.
+String fmtWeekdayShort(int weekday, bool zh) =>
+    zh ? '一二三四五六日'[weekday - 1] : _weekdaysEn[weekday - 1];

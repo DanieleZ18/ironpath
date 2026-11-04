@@ -19,7 +19,10 @@ Skipped-onboarding users don't see the card.
 
 ## Library (2026-09-09)
 
-101 exercises (40 bodyweight + 28 dumbbell + 33 gym; expanded 2026-10-29 with bodyweight pulling, rear delts, glute/hinge work, core and cable moves) and **17 builtin plans**
+142 exercises (54 bodyweight + 41 dumbbell + 47 gym; expanded 2026-10-29
+with bodyweight pulling, rear delts, glute/hinge work, core and cable
+moves, and 2026-11-04 with 41 leg, hip, adductor, calf and forearm moves)
+and **17 builtin plans**
 across three tiers. **Beginners train with dumbbells and machines, never
 barbells** (2026-09-09): tier-1 gym track is Beginner · Gym A/B (goblet squat,
 machine chest press, lat pulldown, leg press, DB rows/press/RDL — machines
@@ -31,6 +34,29 @@ handout (still in the library for custom plans). Tier 2 gym upper leads with
 dumbbell bench; tier 3 stays bodyweight+dumbbell so dumbbell-only users keep a
 complete track at every tier. Training tips (`lib/data/tips.dart`, 9 bilingual
 entries) rotate on the rest screen; a recovery tip shows on the finish screen.
+
+**Muscle keys** (2026-11-04): chest, back, shoulders, traps, biceps,
+triceps, forearms, core, lower_back, glutes, quads, hamstrings, adductors
+(inner thighs), abductors (outer hips), calves, cardio, full_body. The
+first muscle is the primary: it picks the body figure's view and the demo's
+strong highlight. Labels live in `L10n.muscle`; `test/widget_test.dart`
+rejects unknown keys.
+
+## Flow (2026-11-04)
+
+Four tabs — **Today · Plans · Exercises · History** — and settings behind
+the gear on Today.
+- Today (`home_screen.dart`): the one workout to do now (`TodayCard`, its
+  first move demonstrated) and `WeekStrip`, seven columns with a check per
+  day trained, a dot on today and rings on the sessions left; tap for the
+  day-by-day plan as a sheet.
+- Plans (`library_screen.dart`): the level that fits the onboarding answers
+  full width, the other two as half tiles, then my plans, then every
+  built-in plan by tier.
+- Exercises (`exercises_screen.dart`): search + muscle chips + equipment
+  chips over a two-column grid of `ExerciseTile`s (static figure, name,
+  muscles); tap → the exercise sheet with the demo.
+- History: stats bento, 8-week chart, the log.
 
 ## Design — soft & friendly, Morandi palette (2026-10-29, v4.1)
 
@@ -99,9 +125,9 @@ difficulty, the accent tint is progress, the plain card is information —
 and radius steps down from hero (28) to tile (24) to row (18). Rows size to
 their content, so larger text grows the grid instead of clipping it (tested
 at 160%).
-- home: today hero with the first move demonstrated · this week | last
-  workout · weekly plan · recommended level full width, the other two as
-  half tiles
+- today: hero with the first move demonstrated · the week strip
+- plans: recommended level full width, the other two as half tiles
+- exercises: two-column tile grid
 - plan detail: hero · what it trains (body figure, top muscles) beside
   duration / volume / equipment
 - exercise sheet: the demo as hero · muscles beside target / difficulty /
@@ -214,15 +240,16 @@ lib/
     plans_seed.dart         17 builtin sessions across 3 tiers
     exercise_motions.dart   the 101 exercise demos as parametric motion families
   screens/
-    root.dart               4-tab shell (home / plans / history / settings)
-    home_screen.dart        bento: today hero, week / last workout, weekly plan, levels
+    root.dart               4-tab shell (today / plans / exercises / history)
+    home_screen.dart        Today: hero + week strip (+ weekly plan sheet)
+    exercises_screen.dart   the library: search, muscle/equipment chips, tile grid
     library_screen.dart     builtin plans by tier + my plans
     plan_detail.dart        plan view, start, duplicate-to-edit, delete
     plan_editor.dart        custom plan editor + searchable exercise picker
     session_screen.dart     THE CORE: exercise -> rest -> finished state machine
     exercise_detail_screen.dart  demo hero + bento facts + coaching copy
     history_screen.dart     bento stats + 8-week chart + swipe-to-delete log
-    settings_screen.dart    language, reminder time (stub), disclaimer
+    settings_screen.dart    pushed from Today's gear: appearance, theme, language, …
   widgets/plan_card.dart    tier cards + plan cards, tier labels/icons
   widgets/weekly_program_card.dart  home "today" hero + weekly day list
   widgets/exercise_motion.dart      demo rig: pose, IK solver, props, painter

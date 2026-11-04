@@ -1,22 +1,25 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
-import '../widgets/ios_chrome.dart';
 import '../utils.dart';
 import '../weekly_program.dart';
 import '../widgets/bento.dart';
+import '../widgets/ios_chrome.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/weekly_program_card.dart';
 import 'plan_detail.dart';
 import 'session_screen.dart';
+import 'settings_screen.dart';
 
+/// Today: the one workout to do now, and how the week is going. Plans and
+/// exercises live in their own tabs; settings sit behind the gear.
 class HomeScreen extends StatefulWidget {
-  final VoidCallback goLibrary;
   final ScrollController? scrollController;
-  const HomeScreen({super.key, required this.goLibrary, this.scrollController});
+  const HomeScreen({super.key, this.scrollController});
 
   @override
   State<HomeScreen> createState() => HomeScreenState();
@@ -32,18 +35,13 @@ class HomeScreenState extends State<HomeScreen> {
     final zh = L10n.zh;
     final logs = Store.instance.logs;
     const adFree = false; // AdMob lands week 6-7; placeholder below.
-    final summaries = tierSummaries();
-
-    // Unified recommendation score across all builtin plans:
-    //   equipment availability dominates (can you do it at all),
-    //   then frequency fit (can you follow the weekly rhythm),
-    //   then tier proximity (is it your level).
-    // The badge lands on the tier of the best-scoring plan; each tier card
-    // quick-starts its own best plan.
     final settings = Store.instance.settings;
     final program = deriveWeeklyProgram(settings);
+
+    // without a weekly program (skipped onboarding) the hero recommends the
+    // best-scoring plan across all tiers
     Plan? best;
-    for (final s in summaries) {
+    for (final s in tierSummaries()) {
       for (final p in s.plans) {
         if (best == null ||
             recommendationScore(p, settings) <
@@ -53,32 +51,40 @@ class HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    final done = completedThisWeek(settings, logs);
+    final now = DateTime.now();
+    final done = completedThisWeek(settings, logs, now: now);
     final total = program?.slots.length ?? 0;
     final Plan? today = program == null
         ? best
         : done < total
             ? program.slots[done]
             : null;
-    final lead = summaries.firstWhere((s) => s.tier == best?.tier,
-        orElse: () => summaries.first);
 
     return CustomScrollView(
       controller: widget.scrollController,
       slivers: [
-        largeTitleBar(L10n.t('homeHello'), trailing: null),
+        largeTitleBar(
+          L10n.t('tabToday'),
+          trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: _openSettings,
+            child: Semantics(
+              button: true,
+              label: L10n.t('tabSettings'),
+              child: Icon(CupertinoIcons.gear,
+                  size: 26, color: Iron.inkOf(Iron.accent)),
+            ),
+          ),
+        ),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset(context)),
           sliver: SliverList.list(
             children: [
-              // ---- date under the large title
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
-                child: Text(fmtDayHeader(DateTime.now(), zh).toUpperCase(),
+                child: Text(fmtDayHeader(now, zh).toUpperCase(),
                     style: Iron.eyebrow()),
               ),
-
-              // ---- today
               TodayCard(
                 plan: today,
                 dayIndex: done,
@@ -93,91 +99,16 @@ class HomeScreenState extends State<HomeScreen> {
                         radius: Iron.rXL.x,
                         color: Iron.tint(Iron.tier(today.tier))),
               ),
-
-              // ---- this week and the last workout, side by side
               const SizedBox(height: bentoGap),
-              BentoRow(children: [
-                BentoTile(
-                  hue: Iron.accent,
-                  child: BentoStat(
-                    icon: Icons.calendar_month_rounded,
-                    label: L10n.t('statThisWeek'),
-                    value: total > 0 ? '$done/$total' : '$done',
-                    hue: Iron.accent,
-                    size: 30,
-                    note: total > 0 ? null : L10n.t('statSessions'),
-                    extra: total > 0
-                        ? SetDots(done: done, total: total, size: 10)
-                        : null,
-                  ),
-                ),
-                BentoTile(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BentoLabel(L10n.t('lastWorkout'),
-                          icon: Icons.history_rounded),
-                      const SizedBox(height: 8),
-                      const Spacer(),
-                      Text(
-                        logs.isEmpty
-                            ? L10n.t('noWorkoutsYet')
-                            : logs.first.planTitle(zh),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Iron.body(15, weight: FontWeight.w800),
-                      ),
-                      if (logs.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                            '${fmtDayHeader(logs.first.startedAt, zh)} · ${logs.first.doneSets()}/${logs.first.totalSets()} ${L10n.t('sets')}',
-                            style: Iron.caption(color: Iron.faint)),
-                      ],
-                    ],
-                  ),
-                ),
-              ]),
-
-              if (program != null) ...[
-                const SizedBox(height: bentoGap),
-                WeeklyProgramCard(
-                  program: program,
-                  done: done,
-                  onOpen: (row, p) =>
-                      _openPlan(row, p, radius: Iron.rM.x, color: Iron.card),
-                ),
-              ],
-
-              // ---- browse by tier: the recommended level full width, the
-              // other two as half tiles beneath
-              const SizedBox(height: 22),
-              SectionTitle(
-                L10n.t('browseByLevel'),
-                trailing: TextButton(
-                    onPressed: widget.goLibrary,
-                    child: Text(L10n.t('viewAll'))),
+              WeekStrip(
+                program: program,
+                logs: logs,
+                now: now,
+                onOpenPlan: (row, p) =>
+                    _openPlan(row, p, radius: Iron.rM.x, color: Iron.card),
               ),
-              TierCard(
-                summary: lead,
-                onStart: () => _startPlan(context, lead.bestPlan),
-                onOpen: (card) => _openPlan(card, lead.bestPlan,
-                    radius: Iron.rL.x, color: Iron.tint(Iron.tier(lead.tier))),
-                recommended: true,
-              ),
-              const SizedBox(height: bentoGap),
-              BentoRow(children: [
-                for (final s in summaries.where((s) => s != lead))
-                  TierCard(
-                    summary: s,
-                    compact: true,
-                    onStart: () => _startPlan(context, s.bestPlan),
-                    onOpen: (card) => _openPlan(card, s.bestPlan,
-                        radius: Iron.rL.x, color: Iron.tint(Iron.tier(s.tier))),
-                  ),
-              ]),
-              const SizedBox(height: 12),
               if (!adFree) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 18),
                 const _BannerPlaceholder(),
               ],
             ],
@@ -185,6 +116,12 @@ class HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const SettingsPage()));
+    refresh();
   }
 
   void _startPlan(BuildContext context, Plan plan) {
@@ -202,6 +139,158 @@ class HomeScreenState extends State<HomeScreen> {
       {required double radius, required Color color}) {
     openPlanDetail(source, plan, radius: radius, color: color)
         .then((_) => refresh());
+  }
+}
+
+/// The week as seven columns: a check for each day trained, a dot on
+/// today, hollow rings for the sessions still to come. Tap for the
+/// day-by-day plan.
+class WeekStrip extends StatelessWidget {
+  final WeeklyProgram? program;
+  final List<SessionLog> logs;
+  final DateTime now;
+  final void Function(BuildContext source, Plan plan) onOpenPlan;
+
+  const WeekStrip({
+    super.key,
+    required this.program,
+    required this.logs,
+    required this.now,
+    required this.onOpenPlan,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final zh = L10n.zh;
+    final start = weekStartOf(now);
+    final trained = List<bool>.filled(7, false);
+    for (final l in logs) {
+      if (l.startedAt.isBefore(start)) continue;
+      final i = l.startedAt.difference(start).inDays;
+      if (i >= 0 && i < 7) trained[i] = true;
+    }
+    final done = completedThisWeek(Store.instance.settings, logs, now: now);
+    final total = program?.slots.length ?? 0;
+    final today = now.weekday - 1;
+    // the sessions left this week are pencilled onto the days still to come
+    var remaining = (total - done).clamp(0, 7);
+    final planned = List<bool>.filled(7, false);
+    for (var i = today; i < 7 && remaining > 0; i++) {
+      if (trained[i]) continue;
+      planned[i] = true;
+      remaining--;
+    }
+    return BentoTile(
+      onTap: program == null ? null : () => _showWeek(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(L10n.t('weekStrip'),
+                    style: Iron.body(16, weight: FontWeight.w800)),
+              ),
+              Text(total > 0 ? '$done / $total' : '$done',
+                  style: Iron.body(16,
+                      weight: FontWeight.w800, color: Iron.accent)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Semantics(
+            label: L10n.t('weekStrip'),
+            value: total > 0
+                ? L10n.tf('weekProgress', '$done/$total')
+                : L10n.tf('sessionsN', done),
+            child: Row(
+              children: [
+                for (var i = 0; i < 7; i++)
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _dot(trained[i], planned[i], i == today),
+                        const SizedBox(height: 6),
+                        Text(fmtWeekdayShort(i + 1, zh),
+                            style: Iron.caption(
+                                color: i == today ? Iron.ink : Iron.faint,
+                                weight: i == today
+                                    ? FontWeight.w800
+                                    : FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dot(bool trained, bool planned, bool today) {
+    final accent = Iron.inkOf(Iron.accent);
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: trained ? accent : Colors.transparent,
+        border: Border.all(
+          color: trained
+              ? accent
+              : planned
+                  ? accent.withValues(alpha: 0.5)
+                  : Iron.line,
+          width: planned && !trained ? 2 : 1.5,
+        ),
+      ),
+      child: trained
+          ? Icon(Icons.check_rounded,
+              size: 14, color: Iron.isDark ? Iron.bg : Colors.white)
+          : today
+              ? Container(
+                  width: 7,
+                  height: 7,
+                  decoration:
+                      BoxDecoration(shape: BoxShape.circle, color: accent))
+              : null,
+    );
+  }
+
+  /// The day-by-day plan, as a sheet.
+  void _showWeek(BuildContext context) {
+    final p = program!;
+    final done = completedThisWeek(Store.instance.settings, logs, now: now);
+    showIronSheet<void>(
+      context,
+      (sheet, controller) => Column(
+        children: [
+          SheetHeader(
+            title: L10n.t('weeklyPlan'),
+            trailing: BarTextButton(L10n.t('done'),
+                bold: true, onPressed: () => Navigator.of(sheet).pop()),
+          ),
+          Expanded(
+            child: ListView(
+              controller: controller,
+              padding: EdgeInsets.fromLTRB(
+                  20, 4, 20, 24 + MediaQuery.paddingOf(sheet).bottom),
+              children: [
+                WeeklyProgramCard(
+                  program: p,
+                  done: done,
+                  onOpen: (row, plan) {
+                    Navigator.of(sheet).pop();
+                    onOpenPlan(context, plan);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

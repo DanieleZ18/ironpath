@@ -7,6 +7,10 @@ import 'package:gym_app/data/exercises_seed.dart';
 import 'package:gym_app/l10n.dart';
 import 'package:gym_app/models.dart';
 import 'package:gym_app/screens/exercise_detail_screen.dart';
+import 'package:gym_app/screens/exercises_screen.dart';
+import 'package:gym_app/screens/library_screen.dart';
+import 'package:gym_app/screens/settings_screen.dart';
+import 'package:gym_app/widgets/ios_chrome.dart';
 import 'package:gym_app/screens/onboarding_screen.dart';
 import 'package:gym_app/screens/plan_detail.dart';
 import 'package:gym_app/screens/root.dart';
@@ -65,14 +69,22 @@ void main() {
         await tester.pumpAndSettle();
         for (final tab in [
           CupertinoIcons.square_list,
+          CupertinoIcons.square_grid_2x2,
           CupertinoIcons.clock,
-          CupertinoIcons.gear,
-          CupertinoIcons.house
+          CupertinoIcons.sun_max
         ]) {
           await tester.tap(find.byIcon(tab).last);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
         }
+        // settings open from the gear on Today and come back
+        await tester.tap(find.byIcon(CupertinoIcons.gear));
+        await tester.pumpAndSettle();
+        expect(find.byType(SettingsScreen), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byType(IronBackButton));
+        await tester.pumpAndSettle();
+        expect(find.byType(SettingsScreen), findsNothing);
       });
     }
   }
@@ -104,7 +116,7 @@ void main() {
     // a plan's detail page, then one exercise's sheet
     await tester.tap(find.byIcon(CupertinoIcons.square_list).last);
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(PlanCard).first);
+    await tester.tap(find.byType(TierCard).first);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     // scroll through the whole page (bento tiles and exercise rows)
@@ -119,6 +131,52 @@ void main() {
     expect(tester.takeException(), isNull);
     showExerciseDetail(tester.element(find.byType(PlanDetailPage)),
         exerciseMap['db_bentover_row']!);
+    await tester.pumpAndSettle();
+    expect(find.byType(ExerciseDetailView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('exercises tab filters by muscle and equipment', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await seed();
+    L10n.setLang('en');
+    Iron.setAppearance('light');
+
+    await tester.pumpWidget(app(const RootShell()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(CupertinoIcons.square_grid_2x2).last);
+    await tester.pumpAndSettle();
+    String count(int n) => L10n.tf('exercisesCount', n);
+    expect(find.text(count(exercisesSeed.length)), findsOneWidget);
+
+    // one muscle
+    final adductors =
+        exercisesSeed.where((e) => e.muscles.contains('adductors')).toList();
+    expect(adductors.length, greaterThanOrEqualTo(8));
+    // the chip sits off the right edge of its row: scroll the row (held by
+    // identity, since the first chips unbuild as they leave the viewport)
+    final row = tester.widget(find
+        .ancestor(
+            of: find.text(L10n.muscle('chest')),
+            matching: find.byType(Scrollable))
+        .first);
+    await tester.scrollUntilVisible(find.text(L10n.muscle('adductors')), 120,
+        scrollable: find.byWidget(row));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(L10n.muscle('adductors')));
+    await tester.pumpAndSettle();
+    expect(find.text(count(adductors.length)), findsOneWidget);
+
+    // plus equipment
+    final bw = adductors.where((e) => e.category == 'bodyweight').length;
+    await tester.tap(find.text(L10n.t('bodyweight')).last);
+    await tester.pumpAndSettle();
+    expect(find.text(count(bw)), findsOneWidget);
+
+    // a tile opens the exercise sheet
+    await tester.tap(find.byType(ExerciseTile).first);
     await tester.pumpAndSettle();
     expect(find.byType(ExerciseDetailView), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -190,13 +248,19 @@ void main() {
 
     await tester.pumpWidget(app(const RootShell()));
     await tester.pumpAndSettle();
-    final list = find.byType(Scrollable).first;
+    // Plans is the long tab
+    await tester.tap(find.byIcon(CupertinoIcons.square_list).last);
+    await tester.pumpAndSettle();
+    final list = find
+        .descendant(
+            of: find.byType(LibraryScreen), matching: find.byType(Scrollable))
+        .first;
     await tester.drag(list, const Offset(0, -600));
     await tester.pumpAndSettle();
     final pos = tester.state<ScrollableState>(list).position;
     expect(pos.pixels, greaterThan(0));
 
-    await tester.tap(find.byIcon(CupertinoIcons.house_fill)); // active tab
+    await tester.tap(find.byIcon(CupertinoIcons.square_list_fill)); // active
     await tester.pumpAndSettle();
     expect(pos.pixels, 0);
   });

@@ -85,27 +85,15 @@ class TodayCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: [
-                                IronPill(tierLabel(p.tier),
-                                    color: hue,
-                                    icon: tierIcon(p.tier),
-                                    solid: true),
-                                IronPill(
-                                  recommended
-                                      ? L10n.t('recommendedForYou')
-                                      : '${L10n.tf('dayN', dayIndex + 1)} · ${L10n.t('startHere')}',
-                                  color: hue,
-                                  icon: recommended
-                                      ? Icons.star_rounded
-                                      : Icons.today_rounded,
-                                ),
-                              ],
-                            ),
+                            IronPill(tierLabel(p.tier),
+                                color: hue,
+                                icon: tierIcon(p.tier),
+                                solid: true),
                             const SizedBox(height: 14),
-                            Text(L10n.t('todayPlan'),
+                            Text(
+                                recommended
+                                    ? L10n.t('recommendedForYou')
+                                    : '${L10n.t('todayPlan')} · ${L10n.tf('dayN', dayIndex + 1)}',
                                 style: Iron.eyebrow(color: hue)),
                             const SizedBox(height: 4),
                             Text(p.title(zh), style: Iron.hero(24)),
