@@ -290,6 +290,137 @@ _Chart _build(bool back) {
 final _front = _build(false);
 final _back = _build(true);
 
+/// The front and the back side by side, each muscle shaded by how many
+/// working sets it got (Strava's muscle map, Fitbod's heat map): untouched
+/// muscles stay a quiet shade, [full] sets or more light it fully.
+class MuscleMap extends StatelessWidget {
+  final Map<String, double> sets; // muscle key → working sets
+  final double full;
+  final Color? color;
+  final double height;
+  final bool onTint; // sitting on a tinted block: use the card surface
+
+  const MuscleMap({
+    super.key,
+    required this.sets,
+    this.full = 6,
+    this.color,
+    this.height = 120,
+    this.onTint = false,
+  });
+
+  /// Width of the pair at [height]: two figures cropped to the body.
+  static double widthFor(double height) =>
+      height * (2 * _HeatPainter.span + _HeatPainter.gap) / 100;
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = color ?? Iron.accent;
+    final stage = onTint ? Iron.card : Iron.tint(hue);
+    return SizedBox(
+      width: widthFor(height),
+      height: height,
+      child: CustomPaint(
+        painter: _HeatPainter(
+          sets: sets,
+          full: full,
+          hue: Iron.inkOf(hue),
+          base: Color.lerp(stage, Iron.faint, Iron.isDark ? 0.3 : 0.2)!,
+          stage: stage,
+        ),
+      ),
+    );
+  }
+}
+
+class _HeatPainter extends CustomPainter {
+  /// Each figure is cropped to x ∈ [left, left + span] of its 100 × 100 box.
+  static const left = 23.0;
+  static const span = 54.0;
+  static const gap = 6.0;
+
+  final Map<String, double> sets;
+  final double full;
+  final Color hue;
+  final Color base;
+  final Color stage;
+
+  _HeatPainter({
+    required this.sets,
+    required this.full,
+    required this.hue,
+    required this.base,
+    required this.stage,
+  });
+
+  Map<_M, double> _levels(bool back) {
+    final out = <_M, double>{};
+    for (final e in sets.entries) {
+      if (e.value <= 0) continue;
+      final level = (e.value / full).clamp(0.0, 1.0);
+      for (final m in _litFor(e.key, back)) {
+        if (level > (out[m] ?? 0)) out[m] = level;
+      }
+    }
+    return out;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.height / 100;
+    final dark = stage.computeLuminance() < 0.4;
+    Paint fill(Color c) => Paint()
+      ..color = c
+      ..isAntiAlias = true;
+    final skin = fill(base);
+    final quiet = Color.lerp(
+        base, dark ? Colors.white : Colors.black, dark ? 0.07 : 0.05)!;
+    final hair = fill(Color.lerp(base, dark ? stage : Colors.black, 0.18)!);
+    for (final back in [false, true]) {
+      final chart = back ? _back : _front;
+      final levels = _levels(back);
+      canvas.save();
+      canvas.scale(s);
+      canvas.translate((back ? span + gap : 0) - left, 0);
+      canvas.clipRect(const Rect.fromLTWH(left, 0, span, 100));
+      for (final p in [...chart.body, chart.head]) {
+        canvas.drawPath(p, skin);
+      }
+      canvas.save();
+      canvas.clipPath(chart.head);
+      canvas.drawPath(chart.hair, hair);
+      canvas.restore();
+      for (final e in chart.muscles.entries) {
+        final level = levels[e.key];
+        // a muscle that got any work reads as lit; more sets, deeper
+        final paint = fill(level == null
+            ? quiet
+            : Color.lerp(quiet, hue, 0.35 + 0.65 * level)!);
+        for (final p in e.value) {
+          canvas.drawPath(p, paint);
+        }
+      }
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HeatPainter old) =>
+      old.hue != hue ||
+      old.base != base ||
+      old.stage != stage ||
+      old.full != full ||
+      !_sameSets(old.sets, sets);
+
+  static bool _sameSets(Map<String, double> a, Map<String, double> b) {
+    if (a.length != b.length) return false;
+    for (final e in a.entries) {
+      if (b[e.key] != e.value) return false;
+    }
+    return true;
+  }
+}
+
 class _BodyPainter extends CustomPainter {
   final List<String> muscles;
   final Color hue;

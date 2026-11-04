@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### Logging and progress, the way strength apps do it
+- The workout now logs every set as a row, like Strong and Hevy: set,
+  last time, kg, reps (seconds for holds), done. The demo stays on top;
+  the kg and reps steppers and Complete set are pinned at the bottom, in
+  reach of a thumb. Bodyweight moves log reps only, with an "add weight"
+  option.
+- Each set starts where the last one left off: this workout's previous
+  set, then the same set last time, then the bottom of the target range.
+- When every set reached the top of the range last time, the card says
+  it's time to add weight (or try a harder variant).
+- Rest has −15 s, +15 s and skip.
+- The list button shows the whole workout: tap an exercise to go to it.
+  Leaving early now offers Finish and save (the sets you did are kept) or
+  Discard, instead of losing everything.
+- The finish screen sums the workout up: time, sets, volume (kg × reps),
+  a muscle map of what it worked, and new records (heavier than ever, or
+  more reps at bodyweight).
+- Today: the lineup of the day's moves under the hero, the first move drawn
+  straight on the card, your weekly streak on the week strip, and a muscle
+  map of the week so far.
+- History: a weekly streak tile, the last 30 days as a muscle map, and
+  workout cards that show duration, sets, volume and each exercise's best
+  set.
+- Exercises: every tile shows the move in its key position. The exercise
+  sheet adds "Your records": best set, last time, how often, and a trend
+  line of your top set.
+- Plans: each plan row shows the move it opens with.
+- The ad placeholders no longer show in release builds.
+
 ### A more detailed figure
 - The exercise figure now has a real body: limbs taper from a muscle
   belly to slimmer joints, the torso has a chest, waist and back curve,

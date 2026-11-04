@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../data/exercise_motions.dart';
@@ -110,7 +112,9 @@ class TodayCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
+                  _Lineup(plan: p, hue: hue),
+                  const SizedBox(height: 16),
                   IronButton(
                     label: L10n.t('startWorkout'),
                     icon: Icons.play_arrow_rounded,
@@ -120,6 +124,65 @@ class TodayCard extends StatelessWidget {
                 ],
               ),
             ));
+  }
+}
+
+/// The workout's moves in order, each in its key position: what today
+/// holds, at a glance.
+class _Lineup extends StatelessWidget {
+  final Plan plan;
+  final Color hue;
+  const _Lineup({required this.plan, required this.hue});
+
+  static const _cell = 46.0;
+  static const _gap = 6.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final zh = L10n.zh;
+    final moves = [
+      for (final it in plan.items) Store.instance.exerciseById(it.exerciseId),
+    ].whereType<Exercise>().toList();
+    if (moves.isEmpty) return const SizedBox.shrink();
+    final r = Iron.inner(Iron.rXL, 20);
+    Widget cell(Widget child) => Container(
+          width: _cell,
+          height: _cell,
+          padding: const EdgeInsets.all(3),
+          decoration:
+              ShapeDecoration(color: Iron.card, shape: Iron.squircle(r)),
+          child: child,
+        );
+    return Semantics(
+      label: moves.map((e) => e.name(zh)).join(', '),
+      excludeSemantics: true,
+      child: LayoutBuilder(builder: (context, box) {
+        // as many as fit; the last cell counts the rest
+        final fit = ((box.maxWidth + _gap) / (_cell + _gap)).floor();
+        final shown = moves.length <= fit
+            ? moves
+            : moves.take(math.max(0, fit - 1)).toList();
+        final more = moves.length - shown.length;
+        return Wrap(
+          spacing: _gap,
+          children: [
+            for (final e in shown)
+              cell(ExerciseMotionView(
+                spec: motionFor(e.id),
+                muscles: e.muscles,
+                color: hue,
+                onTint: true,
+                at: motionFor(e.id).stillAt,
+              )),
+            if (more > 0)
+              cell(Center(
+                  child: Text('+$more',
+                      style: Iron.body(14,
+                          weight: FontWeight.w800, color: Iron.inkOf(hue))))),
+          ],
+        );
+      }),
+    );
   }
 }
 
@@ -134,28 +197,23 @@ class _FirstMove extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = exercise.name(L10n.zh);
     return SizedBox(
-      width: 112,
+      width: 120,
       child: Column(
         children: [
-          Container(
+          SizedBox(
             height: 112,
-            padding: const EdgeInsets.all(8),
-            decoration: ShapeDecoration(
-              color: Iron.card,
-              shape: Iron.squircle(Iron.inner(Iron.rXL, 20)),
-            ),
             child: Semantics(
               image: true,
               label: L10n.tf('demoOf', name),
+              // drawn on the card's own tint, so the move belongs to it
               child: ExerciseMotionView(
                 spec: motionFor(exercise.id),
                 muscles: exercise.muscles,
                 color: hue,
-                onTint: true,
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(name,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

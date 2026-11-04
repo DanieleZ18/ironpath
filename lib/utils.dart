@@ -58,3 +58,14 @@ String fmtHoursMinutes(int seconds, bool zh) {
 /// One-character (zh) or three-letter (en) weekday label, Monday = 1.
 String fmtWeekdayShort(int weekday, bool zh) =>
     zh ? '一二三四五六日'[weekday - 1] : _weekdaysEn[weekday - 1];
+
+/// Whole number with thousands separators: 12480 → "12,480".
+String fmtThousands(num v) {
+  final s = v.round().abs().toString();
+  final b = StringBuffer(v < 0 ? '-' : '');
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+    b.write(s[i]);
+  }
+  return b.toString();
+}

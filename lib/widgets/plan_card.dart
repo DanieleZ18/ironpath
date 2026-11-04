@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/exercise_motions.dart';
 import '../data/exercises_seed.dart';
 import '../data/plans_seed.dart';
 import '../l10n.dart';
@@ -7,6 +8,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../weekly_program.dart' show unavailableCount, freqDistance;
+import 'exercise_motion.dart';
 
 String tierLabel(int tier) => L10n.t(switch (tier) {
       1 => 'beginner',
@@ -201,8 +203,7 @@ class PlanCard extends StatelessWidget {
       radius: Iron.rM,
       child: Row(
         children: [
-          IconBlob(plan.builtin ? tierIcon(plan.tier) : tierIcon(0),
-              color: hue, size: 46),
+          _PlanThumb(plan: plan, hue: hue),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -230,6 +231,42 @@ class PlanCard extends StatelessWidget {
             color: Iron.faint,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A plan's thumbnail: the move it opens with, in its key position, on the
+/// tier's tint (the tier glyph for an empty plan).
+class _PlanThumb extends StatelessWidget {
+  final Plan plan;
+  final Color hue;
+  const _PlanThumb({required this.plan, required this.hue});
+
+  @override
+  Widget build(BuildContext context) {
+    final first =
+        plan.items.isEmpty ? null : exerciseMap[plan.items.first.exerciseId];
+    if (first == null) {
+      return IconBlob(plan.builtin ? tierIcon(plan.tier) : tierIcon(0),
+          color: hue, size: 52);
+    }
+    final spec = motionFor(first.id);
+    return Container(
+      width: 52,
+      height: 52,
+      padding: const EdgeInsets.all(4),
+      decoration: ShapeDecoration(
+        color: Iron.tint(hue),
+        shape: Iron.squircle(Iron.inner(Iron.rM, 4)),
+      ),
+      child: ExcludeSemantics(
+        child: ExerciseMotionView(
+          spec: spec,
+          muscles: first.muscles,
+          color: hue,
+          at: spec.stillAt,
+        ),
       ),
     );
   }

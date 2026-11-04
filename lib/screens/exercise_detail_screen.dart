@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../data/exercise_motions.dart';
 import '../l10n.dart';
 import '../models.dart';
+import '../store.dart';
 import '../theme.dart';
+import '../training_stats.dart';
+import '../utils.dart';
 import '../widgets/bento.dart';
 import '../widgets/exercise_motion.dart';
 import '../widgets/ios_chrome.dart';
@@ -154,6 +157,7 @@ class ExerciseDetailView extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
+              ..._records(ex, hue, zh),
               _section(Icons.menu_book_rounded, L10n.t('description'),
                   [ex.desc(zh)], Iron.accent),
               _section(Icons.check_circle_rounded, L10n.t('formCues'),
@@ -170,6 +174,92 @@ class ExerciseDetailView extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// What you've done with this move, once you have: the best set, last
+  /// time, how often, and the trend of your top set (Hevy's exercise page).
+  List<Widget> _records(Exercise ex, Color hue, bool zh) {
+    final logs = Store.instance.logs;
+    final best = bestSet(logs, ex.id);
+    if (best == null) return const [];
+    final timed = isTimed(ex.id);
+    final last = previousSets(logs, ex.id);
+    SessionLog? lastLog;
+    var times = 0;
+    for (final l in logs) {
+      if (l.items.any((i) => i.exerciseId == ex.id && i.doneCount > 0)) {
+        lastLog ??= l;
+        times++;
+      }
+    }
+    SetLog? top;
+    for (final s in last) {
+      if (top == null ||
+          (s.weight ?? -1) > (top.weight ?? -1) ||
+          ((s.weight ?? -1) == (top.weight ?? -1) &&
+              (s.reps ?? -1) > (top.reps ?? -1))) {
+        top = s;
+      }
+    }
+    final trend = trendFor(logs, ex.id);
+    Widget fact(String label, String value, {String? note}) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style:
+                      Iron.caption(color: Iron.faint).copyWith(fontSize: 12)),
+              Text(value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Iron.body(16, weight: FontWeight.w800)),
+              if (note != null)
+                Text(note,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        Iron.caption(color: Iron.faint).copyWith(fontSize: 12)),
+            ],
+          ),
+        );
+    return [
+      BentoTile(
+        hue: hue,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BentoLabel(L10n.t('yourRecords'),
+                icon: Icons.insights_rounded, hue: hue),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                fact(L10n.t('bestSet'), setLabel(best.set, timed: timed),
+                    note: fmtDayHeader(best.at, zh)),
+                fact(L10n.t('lastTimeLabel'),
+                    top == null ? '—' : setLabel(top, timed: timed),
+                    note: lastLog == null
+                        ? null
+                        : L10n.tf('setsDone', last.length)),
+                fact(L10n.t('timesTrained'), L10n.tf('timesN', times)),
+              ],
+            ),
+            if (trend.length >= 2) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 44,
+                width: double.infinity,
+                child: CustomPaint(
+                  painter: _Sparkline(trend,
+                      color: Iron.inkOf(hue), track: Iron.card),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+    ];
   }
 
   Widget _section(IconData icon, String title, List<String> lines, Color hue,
@@ -225,4 +315,54 @@ class ExerciseDetailView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Your top set per session for this move, oldest to newest: a line that
+/// should climb, the latest point marked.
+class _Sparkline extends CustomPainter {
+  final List<double> values;
+  final Color color;
+  final Color track;
+
+  _Sparkline(this.values, {required this.color, required this.track});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final lo = values.reduce((a, b) => a < b ? a : b);
+    final hi = values.reduce((a, b) => a > b ? a : b);
+    final span = hi - lo == 0 ? 1.0 : hi - lo;
+    const pad = 6.0;
+    Offset at(int i) => Offset(
+          pad + (size.width - 2 * pad) * i / (values.length - 1),
+          size.height -
+              pad -
+              (size.height - 2 * pad) *
+                  (hi == lo ? 0.5 : (values[i] - lo) / span),
+        );
+    final base = Paint()
+      ..color = track
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(pad, size.height - pad),
+        Offset(size.width - pad, size.height - pad), base);
+    final path = Path()..moveTo(at(0).dx, at(0).dy);
+    for (var i = 1; i < values.length; i++) {
+      path.lineTo(at(i).dx, at(i).dy);
+    }
+    canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..strokeJoin = StrokeJoin.round
+          ..strokeCap = StrokeCap.round);
+    final end = at(values.length - 1);
+    canvas.drawCircle(end, 5, Paint()..color = track);
+    canvas.drawCircle(end, 3.5, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_Sparkline old) =>
+      old.color != color || old.track != track || old.values != values;
 }

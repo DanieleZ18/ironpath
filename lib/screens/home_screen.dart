@@ -1,14 +1,17 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../training_stats.dart';
 import '../utils.dart';
 import '../weekly_program.dart';
 import '../widgets/bento.dart';
 import '../widgets/ios_chrome.dart';
+import '../widgets/muscle_glyph.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/weekly_program_card.dart';
 import 'plan_detail.dart';
@@ -104,7 +107,10 @@ class HomeScreenState extends State<HomeScreen> {
                 onOpenPlan: (row, p) =>
                     _openPlan(row, p, radius: Iron.rM.x, color: Iron.card),
               ),
-              if (!adFree) ...[
+              const SizedBox(height: bentoGap),
+              _WeekMuscles(logs: logs, now: now),
+              // the ad slot shows in debug builds only until AdMob lands
+              if (!adFree && kDebugMode) ...[
                 const SizedBox(height: 18),
                 const _BannerPlaceholder(),
               ],
@@ -169,6 +175,7 @@ class WeekStrip extends StatelessWidget {
     final done = completedThisWeek(Store.instance.settings, logs, now: now);
     final total = program?.slots.length ?? 0;
     final today = now.weekday - 1;
+    final streak = weekStreak(logs, now: now);
     // the sessions left this week are pencilled onto the days still to come
     var remaining = (total - done).clamp(0, 7);
     final planned = List<bool>.filled(7, false);
@@ -188,6 +195,12 @@ class WeekStrip extends StatelessWidget {
                 child: Text(L10n.t('weekStrip'),
                     style: Iron.body(16, weight: FontWeight.w800)),
               ),
+              if (streak >= 2) ...[
+                IronPill(L10n.tf('streakWeeks', streak),
+                    color: Iron.tier(3),
+                    icon: Icons.local_fire_department_rounded),
+                const SizedBox(width: 10),
+              ],
               Text(total > 0 ? '$done / $total' : '$done',
                   style: Iron.body(16,
                       weight: FontWeight.w800, color: Iron.accent)),
@@ -304,6 +317,58 @@ class _BannerPlaceholder extends StatelessWidget {
         shape: Iron.squircle(Iron.rM),
       ),
       child: Text('AdMob banner', style: Iron.caption(color: Iron.faint)),
+    );
+  }
+}
+
+/// This week's training as a muscle map: which muscles got work so far,
+/// and how much (Strava's muscle map, Fitbod's recovery view).
+class _WeekMuscles extends StatelessWidget {
+  final List<SessionLog> logs;
+  final DateTime now;
+  const _WeekMuscles({required this.logs, required this.now});
+
+  @override
+  Widget build(BuildContext context) {
+    final week = logsThisWeek(logs, now: now).toList();
+    final shade = setsPerMuscle(week);
+    final top = musclesBySets(week, 4);
+    return BentoTile(
+      child: Row(
+        children: [
+          MuscleMap(sets: shade, full: 8, height: 124, onTint: true),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BentoLabel(L10n.t('thisWeekMuscles'),
+                    icon: Icons.accessibility_new_rounded),
+                const SizedBox(height: 10),
+                if (top.isEmpty)
+                  Text(L10n.t('noMusclesYet'), style: Iron.caption())
+                else
+                  for (final m in top)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(L10n.muscle(m.key),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Iron.body(14, weight: FontWeight.w700)),
+                          ),
+                          Text(L10n.tf('setsDone', m.value),
+                              style: Iron.caption(color: Iron.faint)),
+                        ],
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

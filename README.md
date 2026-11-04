@@ -47,16 +47,50 @@ rejects unknown keys.
 Four tabs — **Today · Plans · Exercises · History** — and settings behind
 the gear on Today.
 - Today (`home_screen.dart`): the one workout to do now (`TodayCard`, its
-  first move demonstrated) and `WeekStrip`, seven columns with a check per
-  day trained, a dot on today and rings on the sessions left; tap for the
-  day-by-day plan as a sheet.
+  first move demonstrated on the card's tint and the whole lineup as key-pose
+  thumbnails), `WeekStrip` (seven columns with a check per day trained, a
+  dot on today and rings on the sessions left, the weekly streak once it is
+  two or more; tap for the day-by-day plan as a sheet), and this week's
+  muscle map.
 - Plans (`library_screen.dart`): the level that fits the onboarding answers
   full width, the other two as half tiles, then my plans, then every
-  built-in plan by tier.
+  built-in plan by tier (each row shows its opening move).
 - Exercises (`exercises_screen.dart`): search + muscle chips + equipment
-  chips over a two-column grid of `ExerciseTile`s (static figure, name,
-  muscles); tap → the exercise sheet with the demo.
-- History: stats bento, 8-week chart, the log.
+  chips over a two-column grid of `ExerciseTile`s (the move held in its key
+  position, name, muscles); tap → the exercise sheet with the demo and,
+  once you've done it, "Your records" (best set, last time, how often, a
+  trend line of your top set).
+- History: stats bento (workouts and time, weekly streak, sets), 8-week
+  chart, the last 30 days as a muscle map, then the log: each workout with
+  duration, sets and volume, and every exercise's sets and best set.
+
+## Logging and progress (2026-11-04)
+
+Modelled on how Strong / Hevy log a lift and how Strava / Fitbod show what
+it trained:
+- The session player keeps the demo on top and logs each set as a row:
+  set, last time (the same set of the previous workout), kg, reps (seconds
+  for a hold), done. Steppers for kg (± 2.5) and reps sit pinned above the
+  Complete button; bodyweight moves log reps only unless you add weight.
+- Fields start where the last set left off (this workout's previous set,
+  then last time, then the bottom of the target range).
+- Double progression: when every planned set reached the top of the range
+  last time, the card says it's time to add weight (or a harder variant).
+- Rest: −15 s / +15 s / skip. The list button opens the whole workout;
+  tap an exercise to go to it. Ending early offers Finish and save (the
+  planned sets not done are logged as not done) or Discard.
+- Finish: duration, sets, volume (kg × reps; total reps for bodyweight
+  workouts), the session's muscle map with the muscles it worked most, and
+  any new records (heavier than ever, or more reps at bodyweight).
+- `SetLog.reps` is optional, so logs from before it still load; the maths
+  lives in `lib/training_stats.dart` (rep targets, volume, sets per muscle,
+  previous sets, records, best set, trend, weekly streak), tested in
+  `test/training_stats_test.dart`.
+- `MuscleMap` (`widgets/muscle_glyph.dart`) draws the front and back side
+  by side, each muscle shaded by its working sets: a set counts fully for
+  the move's main muscle and half for the others. Lists next to a map count
+  the sets that worked each muscle.
+- The AdMob placeholders show in debug builds only until AdMob lands.
 
 ## Home-screen widget (2026-11-04)
 
@@ -306,7 +340,8 @@ lib/
   models.dart               Exercise / Plan / PlanItem / SessionLog / SetLog / AppSettings
   store.dart                local-only persistence (SharedPreferences JSON blobs)
   l10n.dart                 hand-rolled zh/en dictionary (upgrade path: gen-l10n)
-  utils.dart                date/duration formatting
+  utils.dart                date/duration/number formatting
+  training_stats.dart       rep targets, volume, sets per muscle, records, streak
   data/
     exercises_seed.dart     combines the seed files, exposes exerciseMap
     exercises_seed_bw.dart  40 bodyweight exercises (bilingual, full coaching copy)
@@ -322,16 +357,16 @@ lib/
     library_screen.dart     builtin plans by tier + my plans
     plan_detail.dart        plan view, start, duplicate-to-edit, delete
     plan_editor.dart        custom plan editor + searchable exercise picker
-    session_screen.dart     THE CORE: exercise -> rest -> finished state machine
+    session_screen.dart     THE CORE: exercise (set table) -> rest -> finished summary
     exercise_detail_screen.dart  demo hero + bento facts + coaching copy
-    history_screen.dart     bento stats + 8-week chart + swipe-to-delete log
+    history_screen.dart     bento stats + 8-week chart + muscle map + swipe-to-delete log
     settings_screen.dart    pushed from Today's gear: appearance, theme, language, …
   widgets/plan_card.dart    tier cards + plan cards, tier labels/icons
   widgets/weekly_program_card.dart  home "today" hero + weekly day list
   widgets/exercise_motion.dart      demo rig: pose, IK solver, props, painter
   widgets/bento.dart        BentoRow / BentoSplit / BentoTile / BentoStat
   widgets/weekly_chart.dart workouts-per-week chart tile
-  widgets/muscle_glyph.dart static muscle figure for list rows
+  widgets/muscle_glyph.dart anatomy glyph for list rows + MuscleMap (front/back heat map)
   widgets/zoom_route.dart   card → page zoom transition
   widgets/ios_chrome.dart   adaptive iOS / Material chrome, glass surfaces
   widget_bridge.dart        feeds the home-screen widget after every save

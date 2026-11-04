@@ -208,16 +208,24 @@ class SetLog {
   final int index; // 0-based within the item
   final bool done;
   final double? weight; // kg, optional
+  final int? reps; // reps done, or seconds held for a timed move; optional
 
-  const SetLog({required this.index, required this.done, this.weight});
+  const SetLog(
+      {required this.index, required this.done, this.weight, this.reps});
 
-  Map<String, dynamic> toJson() =>
-      {'index': index, 'done': done, 'weight': weight};
+  Map<String, dynamic> toJson() => {
+        'index': index,
+        'done': done,
+        'weight': weight,
+        if (reps != null) 'reps': reps,
+      };
 
   factory SetLog.fromJson(Map<String, dynamic> j) => SetLog(
         index: (j['index'] as num).toInt(),
         done: (j['done'] ?? true) as bool,
         weight: j['weight'] == null ? null : (j['weight'] as num).toDouble(),
+        // logs from before reps were recorded have none
+        reps: j['reps'] == null ? null : (j['reps'] as num).toInt(),
       );
 }
 

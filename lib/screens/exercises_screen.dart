@@ -5,9 +5,10 @@ import '../l10n.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../data/exercise_motions.dart';
 import '../widgets/bento.dart';
+import '../widgets/exercise_motion.dart';
 import '../widgets/ios_chrome.dart';
-import '../widgets/muscle_glyph.dart';
 import 'exercise_detail_screen.dart';
 
 /// The exercise library: every move, filtered by muscle and equipment,
@@ -122,7 +123,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                 mainAxisSpacing: bentoGap,
                 crossAxisSpacing: bentoGap,
                 // taller tiles when text is larger, so names never clip
-                mainAxisExtent: 150 +
+                mainAxisExtent: 212 +
                     26 * (MediaQuery.textScalerOf(context).scale(10) - 10),
               ),
               itemCount: matches.length,
@@ -179,8 +180,9 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
       );
 }
 
-/// One exercise as a grid tile: the muscle figure in the difficulty hue,
-/// the name, and its muscles.
+/// One exercise as a grid tile: the move itself in its key position (the
+/// demo, held still, working muscles lit in the difficulty hue), then the
+/// name and its muscles.
 class ExerciseTile extends StatelessWidget {
   final Exercise exercise;
   const ExerciseTile({super.key, required this.exercise});
@@ -190,35 +192,63 @@ class ExerciseTile extends StatelessWidget {
     final e = exercise;
     final zh = L10n.zh;
     final hue = Iron.tier(e.difficulty);
+    final spec = motionFor(e.id);
     final available = e.availableFor(Store.instance.settings.userEquipment);
     return BentoTile(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(8),
       onTap: () => showExerciseDetail(context, e),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              MuscleGlyph(
-                  muscles: e.muscles,
-                  color: hue,
-                  size: 56,
-                  radius: Iron.inner(Iron.rL, 14)),
-              const Spacer(),
-              if (!available)
-                Icon(Icons.lock_outline_rounded, size: 18, color: Iron.faint),
-            ],
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
+              decoration: ShapeDecoration(
+                color: Iron.tint(hue),
+                shape: Iron.squircle(Iron.inner(Iron.rL, 8)),
+              ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ExcludeSemantics(
+                      child: ExerciseMotionView(
+                        spec: spec,
+                        muscles: e.muscles,
+                        color: hue,
+                        at: spec.stillAt,
+                      ),
+                    ),
+                  ),
+                  if (!available)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Icon(Icons.lock_outline_rounded,
+                          size: 16, color: Iron.faint),
+                    ),
+                ],
+              ),
+            ),
           ),
-          const Spacer(),
-          Text(e.name(zh),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Iron.body(15, weight: FontWeight.w800)),
-          const SizedBox(height: 2),
-          Text(e.muscles.take(2).map(L10n.muscle).join(' · '),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Iron.caption(color: Iron.faint)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 10, 6, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(e.name(zh),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Iron.body(15, weight: FontWeight.w800)
+                        .copyWith(height: 1.25)),
+                const SizedBox(height: 2),
+                Text(e.muscles.take(2).map(L10n.muscle).join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Iron.caption(color: Iron.faint)),
+              ],
+            ),
+          ),
         ],
       ),
     );
