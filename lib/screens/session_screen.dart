@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -1484,20 +1483,6 @@ class _FinishViewState extends State<_FinishView>
                 ],
                 const SizedBox(height: 10),
                 _rise(0.65, 0.95, widget.tip),
-                if (kDebugMode) ...[
-                  // AdMob interstitial goes here (week 6-7) — never mid-workout.
-                  const SizedBox(height: 14),
-                  Container(
-                    height: 80,
-                    alignment: Alignment.center,
-                    decoration: ShapeDecoration(
-                      color: Iron.cardHi,
-                      shape: Iron.squircle(Iron.rM),
-                    ),
-                    child: Text(L10n.t('adPlaceholder'),
-                        style: Iron.caption(color: Iron.faint)),
-                  ),
-                ],
               ],
             ),
           ),

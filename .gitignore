@@ -49,3 +49,12 @@ app.*.map.json
 
 # golden-test diff output
 test/failures/
+
+# Local tooling & scratch files
+.claude/
+/work/
+
+# Android release signing credentials
+android/key.properties
+android/app/*.jks
+android/app/*.keystore

@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
@@ -37,7 +36,6 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final zh = L10n.zh;
     final logs = Store.instance.logs;
-    const adFree = false; // AdMob lands week 6-7; placeholder below.
     final settings = Store.instance.settings;
     final program = deriveWeeklyProgram(settings);
 
@@ -109,11 +107,6 @@ class HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: bentoGap),
               _WeekMuscles(logs: logs, now: now),
-              // the ad slot shows in debug builds only until AdMob lands
-              if (!adFree && kDebugMode) ...[
-                const SizedBox(height: 18),
-                const _BannerPlaceholder(),
-              ],
             ],
           ),
         ),
@@ -300,23 +293,6 @@ class WeekStrip extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _BannerPlaceholder extends StatelessWidget {
-  const _BannerPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      alignment: Alignment.center,
-      decoration: ShapeDecoration(
-        color: Iron.cardHi,
-        shape: Iron.squircle(Iron.rM),
-      ),
-      child: Text('AdMob banner', style: Iron.caption(color: Iron.faint)),
     );
   }
 }
