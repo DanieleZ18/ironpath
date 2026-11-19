@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.1 — 2026-11-19
+
+### First public open-source release (GPL-3.0)
+- Officially open-sourced under the GNU General Public License v3.0.
+- Removed all debug ad placeholders and ad copy — IronPath is permanently
+  free and ad-free.
+- Set the official Android Application ID & iOS Bundle ID to
+  `io.github.danielez18.ironpath` (App Group `group.io.github.danielez18.ironpath`).
+- Switched Android release APKs from debug signing to an official RSA-4096
+  release signing key, shipping split ABI APKs (`arm64-v8a`, `armeabi-v7a`,
+  `x86_64`), a universal APK, and `SHA256SUMS.txt`.
+- Note for early testers upgrading from `v0.4.0`: because the package ID and
+  signing key are now finalized, `v0.4.1` installs alongside `v0.4.0` as a
+  separate app; all future releases will upgrade in place.
+
 ## 0.4.0 — 2026-11-04
 
 ### Logging and progress, the way strength apps do it
