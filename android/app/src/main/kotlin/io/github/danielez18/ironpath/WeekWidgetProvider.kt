@@ -1,4 +1,4 @@
-package com.daniele.gym_app
+package io.github.danielez18.ironpath
 
 import android.appwidget.AppWidgetManager
 import android.content.Context

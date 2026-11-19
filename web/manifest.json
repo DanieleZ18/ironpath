@@ -1,11 +1,11 @@
 {
-    "name": "gym_app",
-    "short_name": "gym_app",
+    "name": "IronPath",
+    "short_name": "IronPath",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F4F2EE",
+    "theme_color": "#5E7F6A",
+    "description": "Offline-first, zero-account, ad-free workout trainer.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

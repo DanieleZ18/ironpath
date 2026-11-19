@@ -122,8 +122,8 @@ See also [docs/illustration_system.md](illustration_system.md) for the anatomy v
 ## Home-Screen Widgets
 
 `lib/widget_bridge.dart` syncs weekly progress (done/total, 7-day completion mask, next workout title, localized labels, and light/dark theme accents as signed 32-bit ARGB) via `home_widget` on launch and after every `Store.save()`.
-- **Android**: `android/app/src/main/kotlin/com/daniele/gym_app/WeekWidgetProvider.kt` (`RemoteViews`, light/dark accent support via Android 12+ `setColorInt`).
-- **iOS**: `ios/IronPathWidget/IronPathWidget.swift` (SwiftUI WidgetKit: small, medium, and lock-screen circular/rectangular widgets). Requires adding the Widget Extension target in Xcode and enabling App Group `group.com.daniele.ironpath` on both `Runner` and `IronPathWidget`.
+- **Android**: `android/app/src/main/kotlin/io/github/danielez18/ironpath/WeekWidgetProvider.kt` (`RemoteViews`, light/dark accent support via Android 12+ `setColorInt`).
+- **iOS**: `ios/IronPathWidget/IronPathWidget.swift` (SwiftUI WidgetKit: small, medium, and lock-screen circular/rectangular widgets). Requires adding the Widget Extension target in Xcode and enabling App Group `group.io.github.danielez18.ironpath` on both `Runner` and `IronPathWidget`.
 
 ---
 

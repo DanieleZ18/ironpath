@@ -86,7 +86,7 @@ The SwiftUI WidgetKit sources live in `ios/IronPathWidget/`. To enable the iOS H
 1. Open `ios/Runner.xcworkspace` in Xcode.
 2. **File → New → Target → Widget Extension**, name it `IronPathWidget` (uncheck *Include Configuration App Intent*).
 3. Replace the generated files with `ios/IronPathWidget/IronPathWidget.swift`, `Info.plist`, and `IronPathWidget.entitlements`.
-4. Add the App Group `group.com.daniele.ironpath` under **Signing & Capabilities** for both `Runner` and `IronPathWidget` (matching `WidgetBridge.appGroup` in `lib/widget_bridge.dart`).
+4. Add the App Group `group.io.github.danielez18.ironpath` under **Signing & Capabilities** for both `Runner` and `IronPathWidget` (matching `WidgetBridge.appGroup` in `lib/widget_bridge.dart`).
 
 ## Architecture & Docs
 

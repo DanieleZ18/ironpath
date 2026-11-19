@@ -86,7 +86,7 @@ iOS SwiftUI WidgetKit 源码位于 `ios/IronPathWidget/`。如需启用 iOS 桌�
 1. 在 Xcode 中打开 `ios/Runner.xcworkspace`。
 2. 选择 **File → New → Target → Widget Extension**，命名为 `IronPathWidget`（取消勾选 *Include Configuration App Intent*）。
 3. 将生成的文件替换为仓库中的 `ios/IronPathWidget/IronPathWidget.swift`、`Info.plist` 和 `IronPathWidget.entitlements`。
-4. 在 `Runner` 和 `IronPathWidget` 两个 Target 的 **Signing & Capabilities** 中同时添加 App Group：`group.com.daniele.ironpath`（需与 `lib/widget_bridge.dart` 中的 `WidgetBridge.appGroup` 保持一致）。
+4. 在 `Runner` 和 `IronPathWidget` 两个 Target 的 **Signing & Capabilities** 中同时添加 App Group：`group.io.github.danielez18.ironpath`（需与 `lib/widget_bridge.dart` 中的 `WidgetBridge.appGroup` 保持一致）。
 
 ## 架构与设计文档
 

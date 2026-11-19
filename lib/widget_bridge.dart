@@ -20,7 +20,7 @@ class WidgetBridge {
   WidgetBridge._();
 
   /// Shared with the iOS widget extension (set the same id on both targets).
-  static const appGroup = 'group.com.daniele.ironpath';
+  static const appGroup = 'group.io.github.danielez18.ironpath';
   static const androidProvider = 'WeekWidgetProvider';
   static const iosWidget = 'IronPathWidget';
 

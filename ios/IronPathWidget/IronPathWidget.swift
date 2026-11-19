@@ -9,7 +9,7 @@ import WidgetKit
 // replace the generated Swift with this file, and give both Runner and the
 // extension the App Group below (Signing & Capabilities ▸ App Groups).
 
-private let appGroup = "group.com.daniele.ironpath"
+private let appGroup = "group.io.github.danielez18.ironpath"
 
 struct WeekEntry: TimelineEntry {
   let date: Date

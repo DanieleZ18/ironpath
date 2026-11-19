@@ -1,4 +1,4 @@
-package com.daniele.gym_app
+package io.github.danielez18.ironpath
 
 import io.flutter.embedding.android.FlutterActivity
 

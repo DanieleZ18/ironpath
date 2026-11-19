@@ -15,7 +15,7 @@ if (hasKeystore) {
 }
 
 android {
-    namespace = "com.daniele.gym_app"
+    namespace = "io.github.danielez18.ironpath"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -25,7 +25,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.daniele.gym_app"
+        applicationId = "io.github.danielez18.ironpath"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
